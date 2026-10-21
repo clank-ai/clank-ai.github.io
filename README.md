@@ -35,8 +35,8 @@ npm run check        # checks dist/: no request to another host, no missing file
   Canonical and social URLs are written only once it is set.
 - **The GitHub link.** `GITHUB_URL` in `src/config.ts` points at a placeholder until Clank's repository is public.
 - **The install scripts.** The page shows `curl -fsSL https://[DOMAIN]/install.sh | sh` and
-  `irm https://[DOMAIN]/install.ps1 | iex`; the scripts are not written yet. When they are, put them in `public/`
-  (`public/install.sh`, `public/install.ps1`) and they are served at those addresses.
+  `irm https://[DOMAIN]/install.ps1 | iex`; the scripts are `public/install.sh` and `public/install.ps1`, served at
+  those addresses. `INSTALLER_READY` in `src/config.ts` shows the commands (false: the boxes say it is coming).
 - **The license.** `LICENSE` in `src/config.ts` names it (AGPL-3.0); every page reads it from there.
 
 ## Deploy to Cloudflare Pages

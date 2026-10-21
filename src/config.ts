@@ -14,7 +14,7 @@ export const GITHUB_URL = 'https://github.com/clank-ai/clank';
 export const RELEASED = true;
 
 /** False until the one-line installer is written: the install boxes say it is coming and point to Get started. */
-export const INSTALLER_READY = false;
+export const INSTALLER_READY = true;
 
 /** The license Clank is released under (SPDX: AGPL-3.0-only). Every page names it from here, and only here. */
 export const LICENSE = 'AGPL-3.0';
