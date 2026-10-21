@@ -317,6 +317,14 @@ kbd.key {
   }
 }
 
+/* Blocks for one system, shown only when it is the reader's (src/scripts/system.ts); Windows until one is chosen. */
+html:not([data-system]) [data-for]:not([data-for~='windows']),
+html[data-system='windows'] [data-for]:not([data-for~='windows']),
+html[data-system='macos'] [data-for]:not([data-for~='macos']),
+html[data-system='linux'] [data-for]:not([data-for~='linux']) {
+  display: none !important;
+}
+
 /* ---- The console's cells ---------------------------------------------------------------- */
 
 /* JetBrains Mono's box-drawing and symbol glyphs (src/fonts/README.md): they draw the

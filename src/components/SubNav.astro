@@ -2,6 +2,7 @@
 /**
  * A page's sections, in a bar that stays under the top bar while the page scrolls, the section
  * being read marked. It scrolls sideways on a narrow screen; it never wraps under the content.
+ * A page may put a control at its end (the "end" slot), such as Get started's system switch.
  */
 interface Props {
   items: { id: string; label: string }[];
@@ -11,7 +12,7 @@ const { items, label } = Astro.props;
 ---
 
 <nav class="subnav" aria-label={label} data-subnav>
-  <div class="container">
+  <div class="container bar">
     <ul>
       {
         items.map((item) => (
@@ -23,6 +24,7 @@ const { items, label } = Astro.props;
         ))
       }
     </ul>
+    {Astro.slots.has('end') && <div class="end"><slot name="end" /></div>}
   </div>
 </nav>
 
@@ -69,7 +71,27 @@ const { items, label } = Astro.props;
     border-bottom: 1px solid var(--line);
   }
 
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .end {
+    flex: none;
+    margin-left: auto;
+  }
+
+  /* On a phone the bar keeps its links; the page's own control is at its top. */
+  @media (max-width: 520px) {
+    .end {
+      display: none;
+    }
+  }
+
   ul {
+    flex: 1 1 auto;
+    min-width: 0;
     display: flex;
     gap: 2px;
     list-style: none;

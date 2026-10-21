@@ -1,8 +1,8 @@
 ---
 /**
  * The one-line installer, with a tab per system and a copy button.
- * The commands come from config.ts; the scripts they fetch are not written yet.
- * Every instance on the page follows the same system choice.
+ * The commands come from config.ts. Every instance follows the site's one system choice
+ * (src/scripts/system.ts), and a tab picked here sets it for the whole page.
  */
 import Icon from './Icon.astro';
 import { INSTALL, INSTALLER_READY } from '../config';
@@ -95,12 +95,15 @@ const pieces = (command: string) => command.replace(/([^/])\/(?!\/)/g, '$1/\n').
 )}
 
 <script>
-  const KEY = 'clank-site-os';
-  type OS = 'unix' | 'windows';
+  import { currentSystem, onSystem, setSystem, type System } from '../scripts/system';
 
+  type OS = 'unix' | 'windows';
   const roots = Array.from(document.querySelectorAll<HTMLElement>('[data-install]'));
 
-  function setOS(os: OS, remember: boolean) {
+  /** The install box has one tab for macOS and Linux (one script serves both); the site keeps three systems. */
+  const osOf = (system: System): OS => (system === 'windows' ? 'windows' : 'unix');
+
+  function showOS(os: OS) {
     for (const root of roots) {
       for (const tab of root.querySelectorAll<HTMLButtonElement>('[role="tab"]')) {
         const on = tab.dataset.os === os;
@@ -111,38 +114,26 @@ const pieces = (command: string) => command.replace(/([^/])\/(?!\/)/g, '$1/\n').
         panel.hidden = panel.dataset.os !== os;
       }
     }
-    if (remember) {
-      try {
-        localStorage.setItem(KEY, os);
-      } catch {
-        /* storage may be blocked: the choice simply is not remembered */
-      }
-    }
   }
 
-  function initialOS(): OS {
-    try {
-      const saved = localStorage.getItem(KEY);
-      if (saved === 'unix' || saved === 'windows') return saved;
-    } catch {
-      /* fall through to the platform */
-    }
-    const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
-    const platform = nav.userAgentData?.platform || navigator.platform || navigator.userAgent;
-    return /win/i.test(platform) ? 'windows' : 'unix';
+  /** A tab picked here sets the system for the whole page; macOS / Linux keeps Linux if that was the choice. */
+  function setOS(os: OS) {
+    const now = currentSystem();
+    setSystem(os === 'windows' ? 'windows' : now === 'linux' ? 'linux' : 'macos');
   }
 
-  setOS(initialOS(), false);
+  showOS(osOf(currentSystem()));
+  onSystem((system) => showOS(osOf(system)));
 
   for (const root of roots) {
     const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
     tabs.forEach((tab, index) => {
-      tab.addEventListener('click', () => setOS(tab.dataset.os as OS, true));
+      tab.addEventListener('click', () => setOS(tab.dataset.os as OS));
       tab.addEventListener('keydown', (event) => {
         if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
         event.preventDefault();
         const next = tabs[(index + (event.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
-        setOS(next.dataset.os as OS, true);
+        setOS(next.dataset.os as OS);
         next.focus();
       });
     });

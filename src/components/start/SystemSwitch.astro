@@ -1,0 +1,117 @@
+---
+/**
+ * The reader's system, as three radio buttons: every block on the page that differs by system
+ * follows it (src/scripts/system.ts). Arrow keys move between them, as radio buttons do.
+ */
+interface Props {
+  id: string;
+  compact?: boolean;
+}
+const { id, compact = false } = Astro.props;
+const systems = [
+  ['windows', 'Windows'],
+  ['macos', 'macOS'],
+  ['linux', 'Linux'],
+];
+---
+
+<fieldset class:list={['sys', { compact }]} data-system-switch>
+  <legend class:list={[{ 'sr-only': compact }]}>Your system</legend>
+  <div class="opts">
+    {
+      systems.map(([value, label]) => (
+        <label>
+          <input type="radio" name={`system-${id}`} value={value} checked={value === 'windows'} />
+          <span>{label}</span>
+        </label>
+      ))
+    }
+  </div>
+</fieldset>
+
+<script>
+  import { currentSystem, onSystem, setSystem, type System } from '../../scripts/system';
+
+  const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('[data-system-switch] input'));
+  const show = (system: System) => inputs.forEach((i) => (i.checked = i.value === system));
+  show(currentSystem());
+  onSystem(show);
+  for (const input of inputs) input.addEventListener('change', () => input.checked && setSystem(input.value as System));
+</script>
+
+<style>
+  .sys {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    min-width: 0;
+  }
+
+  legend {
+    float: left;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .opts {
+    display: inline-flex;
+    padding: 3px;
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    background: var(--well);
+  }
+
+  label {
+    position: relative;
+    display: inline-flex;
+  }
+
+  input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 7px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .compact span {
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 0.84rem;
+  }
+
+  label:hover span {
+    color: var(--text-strong);
+  }
+
+  input:checked + span {
+    background: var(--surface-2);
+    color: var(--text-strong);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
+
+  input:focus-visible + span {
+    outline: 2px solid var(--blue);
+    outline-offset: 1px;
+  }
+</style>

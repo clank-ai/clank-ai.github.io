@@ -1,0 +1,150 @@
+---
+/**
+ * One console screen beside a step of Get started: a framed still (src/scripts/start-screens.ts or
+ * src/scripts/crops.ts), scaled to its box, with numbered marks in its left margin at the rows the
+ * step talks about, and the marks said in words under it.
+ */
+interface Mark {
+  /** The row of the screen the mark stands beside, from 0. */
+  row: number;
+  /** What to press there, or what it shows. */
+  text: string;
+}
+interface Props {
+  screen: { html: string; cols: number };
+  title: string;
+  label: string;
+  marks?: Mark[];
+}
+const { screen, title, label, marks = [] } = Astro.props;
+---
+
+<figure class="screen">
+  <div class="window">
+    <div class="window-bar" aria-hidden="true">
+      <span class="dots"><i></i><i></i><i></i></span>
+      <span>{title}</span>
+    </div>
+    <div class="window-body">
+      <div class="crop" style={`--cols: ${screen.cols}`} role="img" aria-label={label}>
+        <pre class="cells" aria-hidden="true" set:html={screen.html} />
+        {
+          marks.length > 0 && (
+            <div class="marks" aria-hidden="true">
+              {marks.map((m, i) => (
+                <span class="mark" style={`--row: ${m.row}`}>
+                  <b>{i + 1}</b>
+                </span>
+              ))}
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </div>
+  {
+    marks.length > 0 && (
+      <figcaption>
+        <ol class="legend">
+          {marks.map((m, i) => (
+            <li>
+              <b aria-hidden="true">{i + 1}</b>
+              <span set:html={m.text} />
+            </li>
+          ))}
+        </ol>
+      </figcaption>
+    )
+  }
+</figure>
+
+<style>
+  .screen {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .crop {
+    position: relative;
+  }
+
+  /* The marks sit on the cells' own grid: the same font size, so a row is 1.32em tall. */
+  .marks {
+    position: absolute;
+    inset: 0;
+    font-size: clamp(5px, calc((100cqi - 2px) / (var(--cols, 60) * 0.6)), var(--cell-max, 12.5px));
+    pointer-events: none;
+  }
+
+  .mark {
+    position: absolute;
+    left: 0;
+    top: calc(var(--row) * 1.32em);
+    width: 1.8em;
+    height: 1.32em;
+    display: grid;
+    place-items: center;
+  }
+
+  .mark b,
+  .legend b {
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--orange);
+    color: var(--on-accent);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 0 0 0 2px #1a1b26;
+  }
+
+  /* On a small screen the rows are close: the marks shrink with the cells, never below 13px. */
+  .mark b {
+    font-size: clamp(8px, 1.35em, 11px);
+    width: clamp(13px, 1.65em, 18px);
+    height: clamp(13px, 1.65em, 18px);
+  }
+
+  .legend {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+
+  .legend li {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: 10px;
+    align-items: baseline;
+  }
+
+  .legend b {
+    transform: translateY(3px);
+  }
+
+  .legend :global(kbd) {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    padding: 0.05em 0.4em;
+    border: 1px solid var(--line-strong);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    background: var(--surface-2);
+    color: var(--text-strong);
+  }
+
+  .legend :global(b.k) {
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+</style>
