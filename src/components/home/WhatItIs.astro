@@ -1,0 +1,178 @@
+---
+/**
+ * Home, right after the hero: what Clank is, in plain words. Three things it does, the layers drawn,
+ * and who it is for.
+ */
+import Diagram from './Diagram.astro';
+
+const does = [
+  ['It runs the agent', 'OpenCode, an open-source coding agent, in a Docker container that sees only your project folder.'],
+  ['It connects the model', 'One on your own GPU, one from a cloud provider with your API key, or both. Switching is one key.'],
+  ['It shows you everything', 'Each request with its tokens and cost, the context window part by part, every step as it happens, and keys to steer it.'],
+];
+
+const who = [
+  ['You have a GPU', 'and want a capable coding agent on your own hardware: no quota, nothing to pay per request, nothing leaving your computer.'],
+  ['You use cloud models', 'and want to choose the model, see what each request costs, and set the limits yourself.'],
+  ['You give an agent longer work', 'a feature across many files, a refactor, a small study, and want to see what fills its context, steer it, and check it step by step.'],
+];
+---
+
+<section class="section what" id="what" aria-labelledby="what-title">
+  <div class="container">
+    <div class="what-grid">
+      <div class="what-text">
+        <p class="eyebrow">What Clank is</p>
+        <h2 id="what-title">A workbench for AI coding agents, on models you control.</h2>
+        <p class="lead">
+          Clank is a program you install on your own computer. It runs a coding agent in a sandbox for each project
+          folder, connects it to the model you choose, and shows you everything the agent does while it works, so you
+          can steer it.
+        </p>
+        <ol class="does">
+          {
+            does.map(([t, d], i) => (
+              <li>
+                <span class="n" aria-hidden="true">{i + 1}</span>
+                <p><b>{t}.</b> {d}</p>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+      <div class="what-art">
+        <Diagram />
+      </div>
+    </div>
+
+    <div class="who">
+      <h3 class="who-title">Who it is for</h3>
+      <ul>
+        {
+          who.map(([t, d]) => (
+            <li>
+              <b>{t}</b>
+              <span>{d}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .what-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    gap: clamp(32px, 5vw, 72px);
+    align-items: center;
+  }
+
+  .what-text {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  h2 {
+    font-size: var(--fs-h2);
+    line-height: 1.08;
+    letter-spacing: -0.022em;
+  }
+
+  .lead {
+    font-size: var(--fs-lead);
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  .does {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 6px;
+  }
+
+  .does li {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+  }
+
+  .n {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 158, 100, 0.55);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--orange);
+  }
+
+  .does p {
+    padding-top: 3px;
+    color: var(--muted);
+  }
+
+  .does b {
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+
+  .what-art {
+    min-width: 0;
+  }
+
+  .who {
+    margin-top: clamp(40px, 5vw, 64px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .who-title {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  .who ul {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .who li {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 20px 22px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--muted);
+  }
+
+  .who b {
+    color: var(--text-strong);
+    font-size: 1.08rem;
+    font-weight: 600;
+  }
+
+  @media (max-width: 980px) {
+    .what-grid,
+    .who ul {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

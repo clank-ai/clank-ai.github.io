@@ -1,13 +1,16 @@
 ---
 /**
- * Home sells, and points onward: what Clank is in one screen, the real workflow in the demo, why it
- * exists in brief, what it is, everything it puts in one place, and where to read more.
+ * Home: what Clank is in one screen (the hero), then in plain words (what it is, who it is for), a
+ * normal session in four steps, a flow built and run in the demo, what is in the box, how it differs
+ * from a hosted agent, everything it puts in one place, the invitation to fork it, and how to start.
  */
 import Base from '../layouts/Base.astro';
 import Hero from '../components/Hero.astro';
+import WhatItIs from '../components/home/WhatItIs.astro';
+import Session from '../components/home/Session.astro';
 import SplitDemo from '../components/demo/SplitDemo.astro';
-import Purpose from '../components/home/Purpose.astro';
-import HowItWorks from '../components/HowItWorks.astro';
+import InTheBox from '../components/home/InTheBox.astro';
+import Differs from '../components/home/Differs.astro';
 import OnePlace from '../components/home/OnePlace.astro';
 import OpenSourceBand from '../components/home/OpenSourceBand.astro';
 import FinalCta from '../components/FinalCta.astro';
@@ -15,14 +18,16 @@ import FinalCta from '../components/FinalCta.astro';
 
 <Base>
   <Hero />
-  <section class="demo-stage" id="demo" aria-label="Demo">
+  <WhatItIs />
+  <Session />
+  <section class="demo-stage" id="demo" aria-label="A flow, built and run">
     <div class="stage-light" aria-hidden="true"></div>
     <div class="container">
       <SplitDemo />
     </div>
   </section>
-  <Purpose />
-  <HowItWorks />
+  <InTheBox />
+  <Differs />
   <OnePlace />
   <OpenSourceBand />
   <FinalCta />
@@ -32,7 +37,8 @@ import FinalCta from '../components/FinalCta.astro';
   .demo-stage {
     position: relative;
     isolation: isolate;
-    padding-bottom: 24px;
+    padding-block: var(--section-gap) 24px;
+    scroll-margin-top: 64px;
   }
 
   /* The demo may use more of a wide screen than the text does. */

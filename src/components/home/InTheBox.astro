@@ -1,0 +1,117 @@
+---
+/** Home: what is in the box, each part with the key that opens it and a link to its place on Features. */
+import { PAGES } from '../../config';
+
+const f = PAGES.features.path;
+const parts = [
+  ['clank', 'The console', 'A terminal app with every page a key away: This folder, Models, Presets, Requests, Workspaces, Help. It works over SSH too.', f],
+  ['F10', 'The Monitor', 'A session as it runs: its context window part by part, what it does this second, its tool calls.', `${f}#monitor`],
+  ['g', 'The Guide', 'Stop, note, pause, compact, undo or drop, each showing its cost before you confirm.', `${f}#monitor`],
+  ['f', 'Flows', 'Long work as boxes, each a fresh session: planned with the model, checked, and stopped for your review.', `${f}#flows`],
+  ['F7', 'The gateway', "Every request passes through it: recorded with its tokens and cost; the loop guard stops an answer that repeats itself.", `${f}#gateway`],
+  ['9', 'Models and presets', 'Any open model on llama.cpp or KVMem. A preset keeps a model with its settings in one small readable file.', `${f}#models`],
+  ['0', 'The cloud, with cost and consent', 'OpenRouter with your key. Each workspace is asked once; each request is priced; daily and monthly limits.', `${f}#cloud`],
+  ['c', 'VS Code', "Clank's own window: the agent beside your files, each change to accept or reject, completion as you type.", `${f}#vscode`],
+  ['F6', 'Workspaces', 'A Docker container per folder: the agent sees that folder, and reaches only Clank.', `${f}#privacy`],
+];
+---
+
+<section class="band" id="in-the-box" aria-labelledby="box-title">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">What is in the box</p>
+      <h2 id="box-title">Everything around the agent, in one program.</h2>
+      <p class="lead">Each part is one key away in the console, and each is told in full on Features.</p>
+    </div>
+    <ul class="box">
+      {
+        parts.map(([key, t, d, href]) => (
+          <li>
+            <a href={href}>
+              <kbd>{key}</kbd>
+              <b>{t}</b>
+              <span>{d}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .box {
+    margin-top: clamp(32px, 4vw, 48px);
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .box a {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+    padding: 22px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--muted);
+    text-decoration: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .box a:hover {
+    border-color: var(--line-strong);
+    color: var(--muted);
+  }
+
+  kbd {
+    align-self: flex-start;
+    min-width: 2.2em;
+    padding: 0.1em 0.5em;
+    border: 1px solid var(--line-strong);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    background: var(--surface-2);
+    color: var(--blue);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  b {
+    margin-top: 4px;
+    color: var(--text-strong);
+    font-size: 1.08rem;
+    font-weight: 600;
+  }
+
+  b::after {
+    content: ' →';
+    color: var(--faint);
+    font-weight: 400;
+  }
+
+  .box a:hover b::after {
+    color: var(--blue);
+  }
+
+  span {
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 980px) {
+    .box {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 600px) {
+    .box {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

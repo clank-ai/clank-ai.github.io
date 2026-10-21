@@ -386,6 +386,15 @@ html[data-system='linux'] [data-for]:not([data-for~='linux']) {
 .cells .key { color: #7aa2f7; font-weight: 700; }
 .cells .sel { color: #e0e5ff; background: #283457; font-weight: 700; }
 .cells .bg { background: #1f2133; }
+.cells .kf { color: #16161e; background: #e0af68; font-weight: 700; }
+.cells .ut { color: #e0e5ff; }
+.cells .ib { background: #1f2133; }
+.cells .pb { color: #bb9af7; background: #1f2133; }
+.cells .ibt { color: #e0e5ff; background: #1f2133; }
+.cells .ibm { color: #8a93bc; background: #1f2133; }
+.cells .ibp { color: #bb9af7; background: #1f2133; font-weight: 700; }
+.cells .ibc { color: #c0caf5; background: #1f2133; }
+.cells .ibk { color: #1f2133; background: #c0caf5; }
 
 /* ---- Layers ---------------------------------------------------------------------------- */
 

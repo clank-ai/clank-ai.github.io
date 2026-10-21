@@ -4,6 +4,7 @@
  * Clank's repository), with example names and numbers: no one's own model or measurements.
  */
 import { Grid, clip, pad } from './demo/cells';
+import { renderOpenCode } from './demo/views';
 
 export interface Crop {
   html: string;
@@ -202,12 +203,12 @@ export function review(): Crop {
 export function miniFlow(states: Record<string, 'done' | 'run' | 'wait' | 'fail' | 'you'>, failRed = false): Crop {
   const g = new Grid(44, 9);
   const mark = { done: ['✓', 'g'], run: ['●', 't'], wait: ['○', 'mu'], fail: ['✗', 'r'], you: ['◆', 'y'] } as const;
-  const put = (id: string, label: string, x: number, y: number) => {
+  const put = (id: string, label: string, x: number, y: number, w = 12) => {
     const st = states[id] ?? 'wait';
     const k = st === 'run' ? 't' : st === 'done' ? 'g' : st === 'fail' ? 'r' : st === 'you' ? 'y' : 'ln';
-    g.box(x, y, 12, 3, { style: st === 'run' ? 'heavy' : st === 'wait' ? 'dash' : 'solid', k });
+    g.box(x, y, w, 3, { style: st === 'run' ? 'heavy' : st === 'wait' ? 'dash' : 'solid', k });
     g.put(x + 2, y + 1, label, st === 'wait' ? 'mu' : st === 'run' ? 'tb' : 'wb');
-    g.put(x + 10, y + 1, mark[st][0], mark[st][1]);
+    g.put(x + w - 2, y + 1, mark[st][0], mark[st][1]);
   };
   put('plan', 'PLAN', 0, 0);
   g.put(12, 1, '──▸', 'mu');
@@ -219,7 +220,7 @@ export function miniFlow(states: Record<string, 'done' | 'run' | 'wait' | 'fail'
   g.put(38, 3, '│', 'ln');
   g.put(16, 4, '╭' + '─'.repeat(21) + '╯', 'ln');
   g.put(16, 5, '▾', 'ln');
-  put('integrate', 'INTEGRATE', 10, 6);
+  put('integrate', 'INTEGRATE', 8, 6, 14);
   g.put(22, 7, '──▸', 'mu');
   put('gate', 'GATE', 25, 6);
   return done(g);
@@ -285,4 +286,30 @@ export function folder(): Crop {
   row(g, 2, 8, [['a', 'key'], [' start the agent here  ', 'mu'], ['c', 'key'], [' VS Code  ', 'mu'], ['f', 'key'], [' build a flow', 'mu']]);
   row(g, 2, 9, [['g', 'key'], [' does every step that is not done', 'mu']]);
   return done(g);
+}
+
+/** OpenCode at work in a folder, as the demo draws it: a request, the files it reads, the one it writes. */
+export function agentAtWork(): Crop {
+  const cols = 58;
+  const html = renderOpenCode(
+    {
+      title: 'my-api · rate limits',
+      usage: '9% · 11.8K',
+      msgs: [
+        { role: 'user', text: 'Add rate limits to the API, per key, with tests and docs.' },
+        { role: 'model', text: 'I will read the server first, then add the limiter and its tests.' },
+        { role: 'tool', tool: 'read', text: 'Read src/api/server.py' },
+        { role: 'tool', tool: 'search', text: 'Grep "limit"', tag: '2 matches' },
+        { role: 'tool', tool: 'write', text: 'Write src/api/limits.py', tag: '+42' },
+      ],
+      input: '',
+      caret: false,
+      busy: true,
+      spin: '⣾',
+      mode: 'Build',
+    },
+    cols,
+    17,
+  );
+  return { html, cols };
 }

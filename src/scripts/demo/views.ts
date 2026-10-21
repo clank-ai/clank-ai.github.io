@@ -65,6 +65,8 @@ export interface OcState {
   caret: boolean;
   busy: boolean;
   spin: string;
+  /** OpenCode's agent, as its prompt shows it: Plan (the default here) or Build. */
+  mode?: string;
 }
 
 const MARK: Record<BoxState, [string, string]> = {
@@ -477,8 +479,9 @@ export function renderOpenCode(s: OcState, cols: number, rows: number): string {
     g.put(3, py, clip('Ask anything…', cols - 6), 'ibm');
     if (s.caret) g.put(3, py, 'A', 'ibk');
   }
-  g.put(3, py + 2, 'Plan', 'ibp');
-  g.put(8, py + 2, clip('your-model · through Clank', cols - 10), 'ibm');
+  const mode = s.mode ?? 'Plan';
+  g.put(3, py + 2, mode, 'ibp');
+  g.put(4 + mode.length, py + 2, clip('your-model · through Clank', cols - 6 - mode.length), 'ibm');
   g.put(1, rows - 1, clip('enter send  tab agents  ctrl+p commands', cols - 12), 'mu');
   g.put(cols - 9, rows - 1, '~/my-api', 'mu');
   return g.html();

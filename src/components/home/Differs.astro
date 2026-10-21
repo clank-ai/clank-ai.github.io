@@ -1,0 +1,140 @@
+---
+/**
+ * Home: how Clank differs from a hosted agent, fairly. Four of the Why page's rows (src/components/Why.astro),
+ * word for word; the middle column describes hosted agents in general, Codex and Claude Code only as examples.
+ */
+import { PAGES } from '../../config';
+
+const rows = [
+  {
+    problem: 'Which model, served how',
+    hosted: "You choose among the provider's models; how they are served is the provider's choice.",
+    clank: 'Any open model, on the engine you choose: its quantization, window, thinking budget, sampling and most output, in readable files.',
+  },
+  {
+    problem: 'Where your work goes',
+    hosted: "Your prompts and the files the agent reads go to the provider's servers.",
+    clank: "They stay on your computer. A cloud model gets a workspace's requests only after your yes for that workspace.",
+  },
+  {
+    problem: 'Limits and prices',
+    hosted: "Usage limits and per-token prices are the provider's, and can change.",
+    clank: "A local model has no usage limit and no price per request. With a cloud model, each request's cost is shown, and the limit is yours.",
+  },
+  {
+    problem: 'Seeing what happens',
+    hosted: 'You see what the product chooses to show.',
+    clank: 'Every request is recorded, the window is shown part by part, and every action shows its cost before you take it.',
+  },
+];
+---
+
+<section class="section" id="differs" aria-labelledby="differs-title">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Clank and hosted agents</p>
+      <h2 id="differs-title">Built for control, and for independence.</h2>
+      <p class="lead">
+        A hosted agent such as Codex or Claude Code runs on its provider's models and servers, a quick way to start. Clank
+        is for when you want to choose the model and how it runs, see everything it does, and keep your work on your
+        computer.
+      </p>
+    </div>
+    <div class="cmp" role="table" aria-label="Clank and a hosted coding agent, by problem">
+      <div class="row head" role="row">
+        <span role="columnheader">The problem</span>
+        <span role="columnheader">A hosted coding agent</span>
+        <span role="columnheader">With Clank</span>
+      </div>
+      {
+        rows.map((r) => (
+          <div class="row" role="row">
+            <b role="rowheader">{r.problem}</b>
+            <span role="cell" class="hosted">{r.hosted}</span>
+            <span role="cell" class="clank">{r.clank}</span>
+          </div>
+        ))
+      }
+    </div>
+    <p class="note">
+      The middle column describes hosted coding agents in general; Codex and Claude Code are examples of them, not the
+      subject of a feature-by-feature comparison.
+    </p>
+    <p class="after"><a class="more" href={PAGES.why.path}>Why Clank, in full</a></p>
+  </div>
+</section>
+
+<style>
+  .cmp {
+    margin-top: clamp(32px, 4vw, 48px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 20px;
+    padding: 16px 22px;
+    border-top: 1px solid var(--line);
+  }
+
+  .row.head {
+    border-top: 0;
+    background: var(--surface);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .row.head span:last-child {
+    color: var(--orange);
+  }
+
+  .row b {
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+
+  .hosted {
+    color: var(--muted);
+  }
+
+  .clank {
+    color: var(--text);
+  }
+
+  .note {
+    margin-top: 12px;
+    font-size: 0.88rem;
+    color: var(--faint);
+  }
+
+  .after {
+    margin-top: 12px;
+  }
+
+  @media (max-width: 760px) {
+    .row {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 4px;
+    }
+
+    .row.head {
+      display: none;
+    }
+
+    .hosted::before {
+      content: 'A hosted agent: ';
+      color: var(--faint);
+    }
+
+    .clank::before {
+      content: 'With Clank: ';
+      color: var(--orange);
+    }
+  }
+</style>
