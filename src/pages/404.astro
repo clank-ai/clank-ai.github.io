@@ -8,7 +8,11 @@ import Base from '../layouts/Base.astro';
     <p class="code">404</p>
     <h1>This page does not exist.</h1>
     <p>The address may be mistyped, or the page may have moved.</p>
-    <a class="btn btn-primary" href="/">Go to Clank's home page</a>
+    <div class="ways">
+      <a class="btn btn-primary" href="/">Go to Clank's home page</a>
+      <a class="btn btn-ghost" href="/get-started">Get started</a>
+      <a class="btn btn-ghost" href="/features">Features</a>
+    </div>
   </section>
 </Base>
 
@@ -34,5 +38,11 @@ import Base from '../layouts/Base.astro';
 
   p {
     color: var(--muted);
+  }
+
+  .ways {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
   }
 </style>

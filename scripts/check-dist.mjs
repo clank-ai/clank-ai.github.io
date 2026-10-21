@@ -1,6 +1,7 @@
 // Checks a built site (dist/ by default) for what the site promises: no request to another
 // host, no asset named by a root path in a page meant to work from any folder, every page link
-// leading to a page, and every local file a page names present.
+// leading to a page, every section a link names (on its own page or another) there, and every
+// local file a page names present.
 //
 // usage: node scripts/check-dist.mjs [dir]
 import { readdir, readFile, access } from 'node:fs/promises';
@@ -59,6 +60,13 @@ for await (const file of files(dist)) {
   }
   for (const m of text.matchAll(/href="#([^"]+)"/g)) {
     if (!text.includes(`id="${m[1]}"`)) problems.push(`${rel}: no element with id "${m[1]}"`);
+  }
+  // A link to a section of another page (/features#flows): that page has the section.
+  for (const m of text.matchAll(/href="\/([^"#?]*)#([^"]+)"/g)) {
+    const page = m[1].replace(/\/$/, '') || 'index';
+    if (!pages.has(page)) continue;
+    const other = await readFile(join(dist, `${page}.html`), 'utf8');
+    if (!other.includes(`id="${m[2]}"`)) problems.push(`${rel}: /${m[1]}#${m[2]} has no element with id "${m[2]}"`);
   }
 }
 

@@ -20,8 +20,8 @@ const columns = [
     title: 'Start',
     links: [
       { label: 'Get started', href: PAGES.start.path },
-      { label: 'A cloud key', href: `${PAGES.start.path}#cloud` },
-      { label: 'Your GPU', href: `${PAGES.start.path}#local` },
+      { label: 'With an API key', href: `${PAGES.start.path}#path-a` },
+      { label: 'With your GPU', href: `${PAGES.start.path}#path-b` },
       { label: 'FAQ', href: PAGES.faq.path },
     ],
   },
@@ -65,12 +65,14 @@ const columns = [
       }
     </nav>
   </div>
-  <div class="container base">
-    <p>Free and open source under <a href={LINKS.license}>{LICENSE}</a>. No trackers, no analytics, no cookies.</p>
-    <p>
-      Clank runs <a href={LINKS.opencode}>OpenCode</a>, the open-source coding agent, and serves local models with
-      engines such as llama.cpp.
-    </p>
+  <div class="container">
+    <div class="base">
+      <p>Free and open source under <a href={LINKS.license}>{LICENSE}</a>. No trackers, no analytics, no cookies.</p>
+      <p>
+        Clank runs <a href={LINKS.opencode}>OpenCode</a>, the open-source coding agent, and serves local models with
+        engines such as llama.cpp.
+      </p>
+    </div>
   </div>
 </footer>
 
