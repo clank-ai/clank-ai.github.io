@@ -37,7 +37,7 @@ npm run check        # checks dist/: no request to another host, no missing file
 - **The install scripts.** The page shows `curl -fsSL https://[DOMAIN]/install.sh | sh` and
   `irm https://[DOMAIN]/install.ps1 | iex`; the scripts are not written yet. When they are, put them in `public/`
   (`public/install.sh`, `public/install.ps1`) and they are served at those addresses.
-- **The license.** `LICENSE` in `src/config.ts` says Apache-2.0; confirm it matches Clank's repository.
+- **The license.** `LICENSE` in `src/config.ts` names it (AGPL-3.0); every page reads it from there.
 
 ## Deploy to Cloudflare Pages
 

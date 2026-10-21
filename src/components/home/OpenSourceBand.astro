@@ -1,47 +1,147 @@
 ---
-/** Home's word on open source: the license, and where to read how Clank is built. */
-import { LICENSE, PAGES } from '../../config';
+/**
+ * Home's word on open source, as a headline idea: Clank is meant to be forked and rebuilt for each
+ * person's needs, and is built to make that easy. The Open source page says how, part by part.
+ */
+import Icon from '../Icon.astro';
+import ForkGraph from '../oss/ForkGraph.astro';
+import { LICENSE, LINKS, PAGES } from '../../config';
+
+const points = [
+  ['One shape for every part', 'each component in the same files, its adapters behind one interface'],
+  ['Every decision written down', 'designs, decisions and plans beside the code, with their reasons'],
+  ['Readable by your own model', 'AGENTS.md says where things are and the rules, for people and for models'],
+];
 ---
 
-<section class="section" aria-labelledby="oss-band-title">
-  <div class="container band-row">
-    <div>
-      <p class="eyebrow">Open source</p>
-      <h2 id="oss-band-title">Open source under <span class="nw">{LICENSE}</span>, and written to be read.</h2>
-      <p class="lead">Its designs, decisions and plans sit beside the code, so you, or your own local model, can read Clank and change it.</p>
+<section class="section" id="open-source" aria-labelledby="oss-band-title">
+  <div class="container">
+    <div class="card">
+      <div class="text">
+        <p class="eyebrow">Open source</p>
+        <h2 id="oss-band-title">Fork it and make it yours.</h2>
+        <p class="lead">
+          Clank is meant to be forked, redesigned and rebuilt for your own needs: your models, your tools, your
+          workflow. It is built to make that easy.
+        </p>
+        <ul class="points">
+          {
+            points.map(([t, d]) => (
+              <li>
+                <b>{t}</b>
+                <span>{d}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="ctas">
+          <a class="btn btn-primary" href={LINKS.fork}><Icon name="github" size={18} /> Fork on GitHub</a>
+          <a class="btn btn-ghost" href={PAGES.openSource.path}>
+            How it is built to be changed
+            <Icon name="arrow" size={18} />
+          </a>
+        </div>
+        <p class="license">Free and open source under <a href={LINKS.license}>{LICENSE}</a>.</p>
+      </div>
+      <ForkGraph compact />
     </div>
-    <a class="more" href={PAGES.openSource.path}>How it is built</a>
   </div>
 </section>
 
 <style>
-  .band-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 16px 40px;
+  .card {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: clamp(28px, 4.5vw, 64px);
+    align-items: center;
+    padding: clamp(24px, 4.5vw, 56px);
+    border: 1px solid rgba(158, 206, 106, 0.3);
+    border-radius: 18px;
+    background:
+      radial-gradient(55% 90% at 100% 50%, rgba(158, 206, 106, 0.07), transparent 70%),
+      linear-gradient(to right, rgba(122, 162, 247, 0.05) 1px, transparent 1px) 0 0 / 36px 72px,
+      linear-gradient(to bottom, rgba(122, 162, 247, 0.05) 1px, transparent 1px) 0 0 / 36px 72px,
+      var(--surface);
   }
 
-  .band-row > div {
+  .text {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    max-width: 44rem;
+    align-items: flex-start;
+    gap: 16px;
+    min-width: 0;
   }
 
   h2 {
-    font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.25rem);
-    line-height: 1.12;
-    letter-spacing: -0.02em;
-  }
-
-  .nw {
-    white-space: nowrap;
+    font-size: var(--fs-h2);
+    line-height: 1.08;
+    letter-spacing: -0.022em;
   }
 
   .lead {
     font-size: var(--fs-lead);
+    line-height: 1.55;
     color: var(--muted);
+  }
+
+  .points {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .points li {
+    display: flex;
+    flex-direction: column;
+    padding-left: 18px;
+    position: relative;
+  }
+
+  .points li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.62em;
+    width: 7px;
+    height: 7px;
+    background: var(--green);
+    transform: rotate(45deg);
+  }
+
+  .points b {
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+
+  .points span {
+    color: var(--muted);
+    font-size: 0.96rem;
+  }
+
+  .ctas {
+    margin-top: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .license {
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 960px) {
+    .card {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 420px) {
+    .ctas .btn {
+      flex: 1 1 100%;
+      white-space: normal;
+      text-align: center;
+    }
   }
 </style>

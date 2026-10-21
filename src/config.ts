@@ -16,8 +16,8 @@ export const RELEASED = true;
 /** False until the one-line installer is written: the install boxes say it is coming and point to Get started. */
 export const INSTALLER_READY = false;
 
-/** The license Clank is released under. */
-export const LICENSE = 'MIT';
+/** The license Clank is released under (SPDX: AGPL-3.0-only). Every page names it from here, and only here. */
+export const LICENSE = 'AGPL-3.0';
 
 /** True once DOMAIN holds a real domain: only then are canonical and social URLs written. */
 export const DOMAIN_IS_SET = !DOMAIN.startsWith('[');
@@ -38,9 +38,20 @@ export const LINKS = {
   design: `${GITHUB_URL}/tree/main/docs/design`,
   decisions: `${GITHUB_URL}/tree/main/docs/decisions`,
   license: `${GITHUB_URL}/blob/main/LICENSE`,
+  agents: `${GITHUB_URL}/blob/main/AGENTS.md`,
+  contributing: `${GITHUB_URL}/blob/main/CONTRIBUTING.md`,
+  roadmap: `${GITHUB_URL}/blob/main/docs/ROADMAP.md`,
+  security: `${GITHUB_URL}/blob/main/SECURITY.md`,
+  issues: `${GITHUB_URL}/issues`,
+  fork: `${GITHUB_URL}/fork`,
   principles: `${GITHUB_URL}/blob/main/docs/PRINCIPLES.md`,
   opencode: 'https://opencode.ai',
 } as const;
+
+/** A path in Clank's repository as a link: a folder (ending in "/") opens as a tree, a file as a file. */
+export function repo(path: string): string {
+  return `${GITHUB_URL}/${path.endsWith('/') ? 'tree' : 'blob'}/main/${path.replace(/\/$/, '')}`;
+}
 
 /**
  * The site's pages. Paths are written from the root ("/features"); the build makes them relative,

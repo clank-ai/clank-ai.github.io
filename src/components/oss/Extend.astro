@@ -1,0 +1,177 @@
+---
+/**
+ * What you can build: the places Clank is made to grow, each with where it lives in the repository.
+ * Some are one module behind an interface that already exists; others are parts the roadmap leaves open.
+ * Every fact here comes from the repository (its docstrings, docs/ROADMAP.md, the design documents).
+ */
+import { repo } from '../../config';
+
+const points: { title: string; tag: string; kind: 'adapter' | 'part' | 'open'; text: string; path: string }[] = [
+  {
+    title: 'Another engine',
+    tag: 'engine adapter',
+    kind: 'adapter',
+    text: 'Serve models with another engine, such as vLLM or SGLang, beside llama.cpp and KVMem: one module, its recordings and a line in ENGINES.',
+    path: 'clank/components/runtime/adapters/',
+  },
+  {
+    title: 'Another cloud provider',
+    tag: 'endpoint adapter',
+    kind: 'adapter',
+    text: 'A provider beside OpenRouter: its address, how its key is sent, what Clank reads from its answers. One module and a line in ENDPOINTS.',
+    path: 'clank/components/runtime/adapters/endpoint.py',
+  },
+  {
+    title: 'Another coding agent',
+    tag: 'agent program adapter',
+    kind: 'adapter',
+    text: 'A coding agent besides OpenCode, in the same sandbox: the command that starts it, its environment, and its configuration for the gateway.',
+    path: 'clank/components/agents/adapters/',
+  },
+  {
+    title: 'A new kind of flow box',
+    tag: 'flows',
+    kind: 'part',
+    text: 'YOU, PLAN, VERIFY, DECOMPOSE, TASK, INTEGRATE and GATE each have their own instructions file. Add a box that benchmarks, reviews a diff, or writes a report.',
+    path: 'clank/components/flows/prompts/',
+  },
+  {
+    title: 'A console page',
+    tag: 'console',
+    kind: 'part',
+    text: "Each component keeps its pages in its console/ folder and declares them in its component.py: a page for your own part, or a new view of one that exists.",
+    path: 'clank/components/gateway/console/',
+  },
+  {
+    title: 'A whole new part',
+    tag: 'component',
+    kind: 'part',
+    text: 'A component of your own, in the same shape, declared in clank/registry.py: the service, the generated documents and the tests read it from there.',
+    path: 'clank/registry.py',
+  },
+  {
+    title: 'Tools and MCP servers',
+    tag: 'roadmap · M8',
+    kind: 'open',
+    text: 'MCP servers are added, checked and given to the agent today. A catalog, installs, a container per server, the tool hub and a skills library are still to design.',
+    path: 'clank/components/tools/',
+  },
+  {
+    title: 'The iPhone app',
+    tag: 'roadmap · M9',
+    kind: 'open',
+    text: "The service's side, the pairing, the phone's page and what agents send it, is in the remote component. The app itself is being redesigned.",
+    path: 'clank/components/remote/',
+  },
+  {
+    title: 'Linux and macOS',
+    tag: 'roadmap · M11',
+    kind: 'open',
+    text: 'The console, the cloud path and the commands are the same there, but untested so far. Linux without Docker Desktop, a Raspberry Pi 5 first, has a proposed design.',
+    path: 'docs/design/0014-linux-and-small-machines.md',
+  },
+];
+---
+
+<ul class="extend">
+  {
+    points.map((p) => (
+      <li class:list={['pt', p.kind]}>
+        <p class="tag">{p.tag}</p>
+        <h3>{p.title}</h3>
+        <p class="text">{p.text}</p>
+        <a class="where" href={repo(p.path)}>
+          <span class="sr-only">Where it lives: </span>
+          {p.path}
+        </a>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .extend {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .pt {
+    --c: var(--yellow);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    padding: 22px 22px 18px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background:
+      radial-gradient(90% 70% at 0% 0%, color-mix(in srgb, var(--c) 7%, transparent), transparent 70%),
+      var(--surface);
+  }
+
+  .pt.part {
+    --c: var(--orange);
+  }
+
+  .pt.open {
+    --c: var(--green);
+    border-style: dashed;
+    border-color: color-mix(in srgb, var(--green) 40%, var(--line));
+  }
+
+  .tag {
+    align-self: flex-start;
+    padding: 1px 8px;
+    border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--c);
+  }
+
+  h3 {
+    margin-top: 4px;
+    font-size: 1.15rem;
+    line-height: 1.3;
+  }
+
+  .text {
+    flex: 1;
+    color: var(--muted);
+    font-size: 0.96rem;
+  }
+
+  .where {
+    margin-top: 6px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--blue);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+
+  .where:hover {
+    text-decoration: underline;
+  }
+
+  .where::after {
+    content: ' ↗';
+    color: var(--faint);
+  }
+
+  @media (max-width: 1000px) {
+    .extend {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .extend {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

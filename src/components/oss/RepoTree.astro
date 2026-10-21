@@ -1,0 +1,130 @@
+---
+/** Clank's repository at a glance: its top folders and the documents to read first, each a link into it. */
+import { repo } from '../../config';
+
+type Row = { path: string; label?: string; note: string; depth: 0 | 1; start?: boolean };
+const rows: Row[] = [
+  { path: 'AGENTS.md', note: 'start here: where things are and the rules, for people and for models', depth: 0, start: true },
+  { path: 'CONTRIBUTING.md', note: 'how a contribution is made', depth: 0 },
+  { path: 'clank/', note: 'the package', depth: 0 },
+  { path: 'clank/kernel/', label: 'kernel/', note: 'records, settings, events, operations, the API, the service', depth: 1 },
+  { path: 'clank/components/', label: 'components/', note: 'one folder per part, each in the same shape', depth: 1 },
+  { path: 'clank/console/', label: 'console/', note: "the console's shell and shared pages", depth: 1 },
+  { path: 'clank/cli/', label: 'cli/', note: 'the clank command', depth: 1 },
+  { path: 'clank/registry.py', label: 'registry.py', note: 'everything declared, in one place', depth: 1 },
+  { path: 'tests/', note: 'by part; contract/ holds every kind of adapter to one contract', depth: 0 },
+  { path: 'vscode/', note: 'the VS Code extension, in TypeScript', depth: 0 },
+  { path: 'tools/', note: 'every check, and the generated documents', depth: 0 },
+  { path: 'docs/', note: 'the why, beside the code', depth: 0 },
+  { path: 'docs/PRINCIPLES.md', label: 'PRINCIPLES.md', note: 'why Clank exists, and its rules', depth: 1 },
+  { path: 'docs/ROADMAP.md', label: 'ROADMAP.md', note: 'every milestone and part, with its status', depth: 1 },
+  { path: 'docs/design/', label: 'design/', note: 'each part designed, section by section, before its code', depth: 1 },
+  { path: 'docs/decisions/', label: 'decisions/', note: 'every choice, with its reasons', depth: 1 },
+  { path: 'docs/plans/', label: 'plans/', note: 'each step, task by task', depth: 1 },
+  { path: 'docs/CODEMAP.md', label: 'CODEMAP.md', note: 'one line per module (generated)', depth: 1 },
+  { path: 'docs/TESTS.md', label: 'TESTS.md', note: 'the tests of each design section (generated)', depth: 1 },
+];
+---
+
+<figure class="tree" aria-labelledby="tree-cap">
+  <figcaption id="tree-cap">
+    <span class="root">clank</span>
+    <span class="cap">github.com/clank-ai/clank</span>
+  </figcaption>
+  <ul>
+    {
+      rows.map((r) => (
+        <li class:list={[`d${r.depth}`, { start: r.start }]}>
+          <a href={repo(r.path)}>{r.label ?? r.path}</a>
+          <span class="note">{r.note}</span>
+        </li>
+      ))
+    }
+  </ul>
+</figure>
+
+<style>
+  .tree {
+    margin: 0;
+    padding: clamp(18px, 2.2vw, 26px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--well);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px 16px;
+    padding-bottom: 12px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .root {
+    color: var(--orange);
+    font-weight: 700;
+  }
+
+  .cap {
+    color: var(--faint);
+    font-size: 0.78rem;
+  }
+
+  ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: minmax(9.5rem, max-content) minmax(0, 1fr);
+    gap: 0 18px;
+    padding: 4px 0;
+  }
+
+  li.d1 {
+    padding-left: 22px;
+    grid-template-columns: minmax(8.1rem, max-content) minmax(0, 1fr);
+    background: linear-gradient(var(--line-strong), var(--line-strong)) 7px 0 / 1px 100% no-repeat;
+  }
+
+  a {
+    color: var(--text-strong);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  a:hover {
+    color: var(--blue);
+    text-decoration: underline;
+  }
+
+  .start a {
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  .note {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 560px) {
+    li,
+    li.d1 {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .note {
+      padding-bottom: 4px;
+    }
+  }
+</style>

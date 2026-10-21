@@ -1,0 +1,267 @@
+---
+/**
+ * "Fork it and make it yours", drawn as a history: Clank's main line, a fork, and the changes one
+ * person might make for their own needs. The changes are examples of what the repository is built
+ * for (an adapter, a box type, a console page, a part left out), not features of Clank.
+ */
+interface Props {
+  /** Fewer lines, for Home. */
+  compact?: boolean;
+}
+const { compact = false } = Astro.props;
+
+const changes: [string, string, string][] = [
+  ['+', 'engine', 'an adapter for the server you run your models on'],
+  ['+', 'flows', 'a box that runs your own benchmarks'],
+  ['+', 'console', 'a page for what you watch most'],
+  ['−', 'remote', 'the phone, if you never use it'],
+  ['+', 'AGENTS.md', 'your rules, for your own local model'],
+];
+const shown = compact ? changes.slice(0, 3) : changes;
+---
+
+<figure class:list={['fork', { compact }]} aria-labelledby={compact ? 'fork-cap-home' : 'fork-cap'}>
+  <figcaption id={compact ? 'fork-cap-home' : 'fork-cap'} class="sr-only">
+    A fork of Clank: from Clank's main line, your own copy, with changes for your needs, for example
+    {shown.map(([, where, what]) => `${where}: ${what}`).join('; ')}.
+  </figcaption>
+  <div class="bar" aria-hidden="true">
+    <span class="dots"><i></i><i></i><i></i></span>
+    <span>git log --graph</span>
+  </div>
+  <ol class="graph" aria-hidden="true">
+    <li class="main">
+      <span class="rail"><i class="dot"></i></span>
+      <span class="txt"><b>clank-ai/clank</b><span class="ref">main</span></span>
+    </li>
+    <li class="split">
+      <span class="rail"><i class="curve"></i></span>
+      <span class="txt fork-label">fork</span>
+    </li>
+    <li class="head">
+      <span class="rail two"><i class="dot mine"></i></span>
+      <span class="txt"><b class="you">your-name/clank</b><span class="ref you">your fork</span></span>
+    </li>
+    {
+      shown.map(([sign, where, what]) => (
+        <li class="change">
+          <span class="rail two"><i class="dot small" /></span>
+          <span class="txt">
+            <span class:list={['sign', sign === '+' ? 'add' : 'drop']}>{sign}</span>
+            <span class="where">{where}</span>
+            <span class="what">{what}</span>
+          </span>
+        </li>
+      ))
+    }
+    <li class="end">
+      <span class="rail two"><i class="dot diamond"></i></span>
+      <span class="txt"><b>yours:</b> your models, your tools, your workflow</span>
+    </li>
+  </ol>
+</figure>
+
+<style>
+  .fork {
+    margin: 0;
+    min-width: 0;
+    border: 1px solid #343a55;
+    border-radius: 12px;
+    background: #16161e;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 0 0 1px rgba(0, 0, 0, 0.35),
+      0 30px 70px -30px rgba(0, 0, 0, 0.8),
+      0 0 120px -50px rgba(158, 206, 106, 0.3);
+    overflow: hidden;
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-bottom: 1px solid #272b3f;
+    background: #111118;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--faint);
+  }
+
+  .dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .dots i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #33384f;
+  }
+
+  .graph {
+    list-style: none;
+    padding: 14px 16px 16px 12px;
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .graph li {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: stretch;
+    min-height: 30px;
+  }
+
+  /* The rails: main runs down the first lane, the fork down the second. */
+  .rail {
+    position: relative;
+  }
+
+  .rail::before {
+    content: '';
+    position: absolute;
+    left: 9px;
+    top: 0;
+    bottom: 0;
+    border-left: 2px solid var(--line-strong);
+  }
+
+  .main .rail::before {
+    top: 50%;
+  }
+
+  .rail.two::after {
+    content: '';
+    position: absolute;
+    left: 29px;
+    top: 0;
+    bottom: 0;
+    border-left: 2px solid var(--green);
+  }
+
+  .end .rail.two::after {
+    bottom: 50%;
+  }
+
+  .curve {
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    width: 22px;
+    height: 50%;
+    border-top: 2px solid var(--green);
+    border-right: 2px solid var(--green);
+    border-top-right-radius: 10px;
+  }
+
+  .dot {
+    position: absolute;
+    z-index: 1;
+    left: 4px;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    margin-top: -6px;
+    border-radius: 50%;
+    background: var(--orange);
+    box-shadow: 0 0 0 3px #16161e;
+  }
+
+  .dot.mine,
+  .dot.small,
+  .dot.diamond {
+    left: 24px;
+    background: var(--green);
+  }
+
+  .dot.small {
+    left: 26px;
+    width: 8px;
+    height: 8px;
+    margin-top: -4px;
+  }
+
+  .dot.diamond {
+    border-radius: 2px;
+    transform: rotate(45deg);
+  }
+
+  .txt {
+    align-self: center;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 10px;
+    min-width: 0;
+    padding-block: 4px;
+    color: var(--text);
+  }
+
+  .txt b {
+    color: var(--text-strong);
+  }
+
+  .txt b.you {
+    color: var(--green);
+  }
+
+  .ref {
+    padding: 0 7px;
+    border: 1px solid var(--line-strong);
+    border-radius: 5px;
+    font-size: 0.74rem;
+    color: var(--muted);
+  }
+
+  .ref.you {
+    border-color: rgba(158, 206, 106, 0.5);
+    color: var(--green);
+  }
+
+  .fork-label {
+    padding-left: 2px;
+    font-size: 0.76rem;
+    color: var(--faint);
+  }
+
+  .change .txt {
+    gap: 0 8px;
+  }
+
+  .sign {
+    font-weight: 700;
+  }
+
+  .sign.add {
+    color: var(--green);
+  }
+
+  .sign.drop {
+    color: var(--red);
+  }
+
+  .where {
+    color: var(--yellow);
+  }
+
+  .what {
+    flex-basis: 100%;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .end .txt {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+  }
+
+  @media (min-width: 560px) {
+    .what {
+      flex-basis: auto;
+    }
+  }
+</style>

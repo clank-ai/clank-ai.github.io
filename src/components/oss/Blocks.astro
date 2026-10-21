@@ -1,0 +1,443 @@
+---
+/**
+ * Clank's parts as building blocks, from its repository: the clients on top, the components in the
+ * middle (each with the kinds of adapter it owns, and room for yours), the kernel underneath; beside
+ * it, one component opened, to show the shape they all share (clank/kernel/components.py).
+ */
+import { repo } from '../../config';
+
+const clients = [
+  ['The console', 'a terminal app'],
+  ['The clank command', 'scripts and SSH'],
+  ['The VS Code extension', 'TypeScript'],
+  ['The phone', 'being redesigned'],
+];
+
+const components: { name: string; what: string; kinds?: [string, string][] }[] = [
+  { name: 'machine', what: 'this computer: its checks and meters' },
+  { name: 'workspaces', what: 'a Docker container per folder', kinds: [['container platform', 'Docker Desktop']] },
+  {
+    name: 'runtime',
+    what: 'models, presets, engines, providers',
+    kinds: [
+      ['engine', 'llama.cpp · KVMem'],
+      ['endpoint', 'OpenRouter'],
+      ['host', 'this computer · WSL'],
+    ],
+  },
+  { name: 'gateway', what: 'every request: routed, recorded, guarded, metered' },
+  { name: 'agents', what: 'the agent, the Monitor, the VS Code window', kinds: [['agent program', 'OpenCode']] },
+  { name: 'flows', what: 'the work as boxes, each a fresh session' },
+  { name: 'tools', what: "MCP servers for the agent" },
+  { name: 'remote', what: "the phone's side of the service" },
+  { name: 'notion', what: 'Notion, each change staged for review' },
+];
+
+const kernel = ['records', 'settings files', 'the state database', 'events', 'operations', 'questions', 'access', 'adapters', 'running programs', 'the API', 'the service'];
+
+const shape: [string, string][] = [
+  ['component.py', 'what it owns and uses, its commands and pages'],
+  ['kinds.py', 'its records: readable settings files'],
+  ['service.py', 'its part of the service'],
+  ['api.py', 'its routes in the API'],
+  ['cli.py', 'its commands'],
+  ['console/', 'its console pages'],
+  ['adapters/', 'its kinds of adapter, one module per program'],
+];
+---
+
+<div class="blocks-wrap">
+  <figure class="blocks" aria-labelledby="blocks-cap">
+    <figcaption id="blocks-cap" class="sr-only">
+      Clank's parts: four clients over one service API; nine components, each owning its kinds of adapter, with room
+      for a component of your own; and the kernel they all build on.
+    </figcaption>
+
+    <div class="tier t-clients">
+      <p class="tier-h"><b>Clients</b><span>each one talks to the service through its API</span></p>
+      <ul class="clients">
+        {clients.map(([n, d]) => <li><b>{n}</b><span>{d}</span></li>)}
+      </ul>
+    </div>
+
+    <p class="joint" aria-hidden="true"><span></span>one API<span></span></p>
+
+    <div class="tier t-comps">
+      <p class="tier-h">
+        <b>Components</b><a href={repo('clank/components/')}>clank/components/</a>
+      </p>
+      <ul class="comps">
+        {
+          components.map((c) => (
+            <li class="comp">
+              <a class="comp-name" href={repo(`clank/components/${c.name}/`)}>{c.name}</a>
+              <span class="comp-what">{c.what}</span>
+              {c.kinds && (
+                <ul class="kinds" aria-label={`${c.name}'s kinds of adapter`}>
+                  {c.kinds.map(([k, have]) => (
+                    <li>
+                      <span class="k">{k}</span>
+                      <span class="have">{have}</span>
+                      <span class="plus">+ yours</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))
+        }
+        <li class="comp yours">
+          <span class="comp-name">+ your component</span>
+          <span class="comp-what">the same files, and a line in <code>registry.py</code></span>
+        </li>
+      </ul>
+    </div>
+
+    <p class="joint" aria-hidden="true"><span></span>built on<span></span></p>
+
+    <div class="tier t-kernel">
+      <p class="tier-h"><b>The kernel</b><a href={repo('clank/kernel/')}>clank/kernel/</a></p>
+      <ul class="kernel">
+        {kernel.map((k) => <li>{k}</li>)}
+      </ul>
+    </div>
+  </figure>
+
+  <aside class="opened" aria-labelledby="opened-title">
+    <p class="o-k">One component, opened</p>
+    <h3 id="opened-title">Every part has the same shape.</h3>
+    <p class="o-lead">Read one component and you can find your way in any other.</p>
+    <div class="files">
+      <p class="dir"><a href={repo('clank/components/runtime/')}>clank/components/runtime/</a></p>
+      <ul>
+        {
+          shape.map(([f, d]) => (
+            <li>
+              <span class="f">{f}</span>
+              <span class="d">{d}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    <p class="o-note">
+      A kind of adapter has one interface, one list and one contract test run against every adapter, on what the real
+      program answered. One module, its recordings and a line in the list add one.
+    </p>
+  </aside>
+</div>
+
+<style>
+  .blocks-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+    gap: 20px;
+    align-items: stretch;
+  }
+
+  .blocks {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(14px, 2vw, 22px);
+    border: 1px solid #343a55;
+    border-radius: var(--radius);
+    background: var(--well);
+    box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.8);
+    font-size: 0.9rem;
+  }
+
+  .tier {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: clamp(12px, 1.6vw, 16px);
+    border: 1px solid var(--c);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--c) 6%, var(--surface));
+  }
+
+  .t-clients {
+    --c: rgba(187, 154, 247, 0.55);
+  }
+
+  .t-comps {
+    --c: rgba(255, 158, 100, 0.55);
+  }
+
+  .t-kernel {
+    --c: rgba(122, 162, 247, 0.55);
+  }
+
+  .tier-h {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 12px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+  }
+
+  .tier-h b {
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .t-clients .tier-h b {
+    color: var(--purple);
+  }
+
+  .t-comps .tier-h b {
+    color: var(--orange);
+  }
+
+  .t-kernel .tier-h b {
+    color: var(--blue);
+  }
+
+  .tier-h span,
+  .tier-h a {
+    color: var(--muted);
+  }
+
+  .tier-h a:hover {
+    color: var(--text-strong);
+  }
+
+  .joint {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 4px;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--faint);
+  }
+
+  .joint span {
+    flex: 1;
+    border-top: 1px dashed var(--line-strong);
+  }
+
+  .clients,
+  .comps,
+  .kernel,
+  .kinds {
+    list-style: none;
+  }
+
+  .clients {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .clients li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background: var(--bg);
+    line-height: 1.35;
+  }
+
+  .clients b {
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+
+  .clients span {
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+
+  .comps {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11.5rem), 1fr));
+    gap: 8px;
+  }
+
+  .comp {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding: 10px 11px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background: var(--bg);
+    line-height: 1.35;
+  }
+
+  .comp-name {
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--text-strong);
+    text-decoration: none;
+  }
+
+  a.comp-name:hover {
+    color: var(--orange);
+    text-decoration: underline;
+  }
+
+  .comp-what {
+    color: var(--muted);
+    font-size: 0.84rem;
+  }
+
+  .kinds {
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .kinds li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 6px;
+    padding-top: 5px;
+    border-top: 1px dashed var(--line);
+    font-size: 0.78rem;
+  }
+
+  .kinds .k {
+    font-family: var(--font-mono);
+    color: var(--yellow);
+  }
+
+  .kinds .have {
+    color: var(--text);
+  }
+
+  .kinds .plus {
+    font-family: var(--font-mono);
+    color: var(--green);
+  }
+
+  .comp.yours {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 14px;
+    border: 1.5px dashed var(--green);
+    background: rgba(158, 206, 106, 0.05);
+  }
+
+  .comp.yours .comp-name {
+    color: var(--green);
+  }
+
+  .comp.yours code {
+    font-size: 0.92em;
+    color: var(--text-strong);
+  }
+
+  .kernel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .kernel li {
+    padding: 2px 9px;
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.82rem;
+  }
+
+  .opened {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: clamp(18px, 2.2vw, 26px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .o-k {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--orange);
+  }
+
+  .opened h3 {
+    font-size: 1.3rem;
+    line-height: 1.25;
+  }
+
+  .o-lead,
+  .o-note {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .files {
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--well);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .dir a {
+    color: var(--orange);
+    font-weight: 700;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+
+  .dir a:hover {
+    text-decoration: underline;
+  }
+
+  .files ul {
+    list-style: none;
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .files li {
+    display: flex;
+    flex-direction: column;
+    padding-left: 14px;
+    border-left: 1px solid var(--line-strong);
+  }
+
+  .files .f {
+    color: var(--text-strong);
+  }
+
+  .files .d {
+    font-family: var(--font-sans);
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 1040px) {
+    .blocks-wrap {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .clients {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>
