@@ -167,9 +167,11 @@ export function renderClank(s: ClankState, cols: number, rows: number): string {
     kx += need;
   }
 
-  const top = 4;
-  const bottom = rows - 2;
-  if (cw >= 66) wideBody(g, s, x0, cw, top, bottom);
+  // With fewer rows (a short window), the blank lines go first: under the view's first line, and over the keys.
+  const roomy = rows >= 36;
+  const top = roomy ? 4 : 3;
+  const bottom = roomy ? rows - 2 : rows - 1;
+  if (cw >= 66) wideBody(g, s, x0, cw, top, bottom, rows >= 33);
   else narrowBody(g, s, x0, cw, top, bottom);
   return g.html();
 }
@@ -192,9 +194,14 @@ function arrow(g: Grid, x: number, y: number, done: boolean) {
   g.put(x, y, done ? '──▸' : '┄┄▸', done ? 'mu' : 'ln');
 }
 
-function wideBody(g: Grid, s: ClankState, x0: number, cw: number, top: number, bottom: number) {
-  const sideH = 11;
-  const flowH = Math.max(8, bottom - top - sideH - 1);
+/**
+ * The flow drawn as boxes, with the two panels under it. It needs 32 rows: the flow panel 18 (its
+ * legend once it has 19), the panels 10, and a line between them only when there is room.
+ */
+function wideBody(g: Grid, s: ClankState, x0: number, cw: number, top: number, bottom: number, gapRow = true) {
+  const sideH = bottom - top >= 32 ? 11 : 10;
+  const between = gapRow ? 1 : 0;
+  const flowH = Math.max(8, bottom - top - sideH - between);
 
   g.box(x0, top, cw, flowH, { title: 'Flow', right: s.panelRight, rk: s.panelRightK ?? 'mu' });
   const ix = x0 + 2;
@@ -253,7 +260,7 @@ function wideBody(g: Grid, s: ClankState, x0: number, cw: number, top: number, b
     g.put(nx + 2, yB + 3, clip(approved ? 'from INTEGRATE' : 'brief from INTEGRATE', bw - 3), 'mu');
 
     const ly = top + flowH - 2;
-    let lx = ix;
+    let lx = flowH >= 19 ? ix : ix + iw;
     for (const [m, k, t] of [
       ['✓', 'g', 'done'],
       ['●', 't', 'running'],
@@ -271,7 +278,7 @@ function wideBody(g: Grid, s: ClankState, x0: number, cw: number, top: number, b
   }
 
   // The panels under the flow
-  const sy = top + flowH + 1;
+  const sy = top + flowH + between;
   const half = Math.floor((cw - 2) / 2);
   sidePanel(g, s, x0, sy, half, sideH);
   waitingPanel(g, s, x0 + half + 2, sy, cw - half - 2, sideH);

@@ -35,6 +35,11 @@ import FinalCta from '../components/FinalCta.astro';
     padding-bottom: 24px;
   }
 
+  /* The demo may use more of a wide screen than the text does. */
+  .demo-stage .container {
+    max-width: calc(1680px + 2 * var(--pad));
+  }
+
   .stage-light {
     position: absolute;
     left: 0;

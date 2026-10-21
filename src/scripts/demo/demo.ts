@@ -369,28 +369,45 @@ function init(root: HTMLElement) {
   let spinTimer = 0;
   let spinFrame = 0;
 
-  // ---- Drawing ----
+  // ---- Drawing, and fitting the screen ----
 
-  const size = { oc: { cols: 60, rows: 38 }, clank: { cols: 100, rows: 38 } };
-  function measure() {
+  const walk = root.querySelector<HTMLElement>('[data-walk]')!;
+  const panes = root.querySelector<HTMLElement>('[data-panes]')!;
+  const nowK = root.querySelector<HTMLElement>('[data-now-k]')!;
+  const pos = root.querySelector<HTMLElement>('[data-pos]')!;
+
+  /** As the stylesheet has them: the panes' padding, the label line over them. */
+  const PAD = 8;
+  const LABEL = 30;
+  /** The walkthrough beside the window: its width, and the gap between them. */
+  const RAIL = { min: 260, max: 340, gap: 20 };
+  /** The cells' font size: never below min, never above max; at comfy, no need to drop rows for it. */
+  const FONT = { min: 7, max: 14, comfy: 11 };
+  /** The panes' widths in cells: what the views are drawn for, and the most worth giving them. */
+  const COLS = { oc: 50, clank: 100, ocMax: 64, clankMax: 112 };
+  const DENSITY = ['d1', 'd2', 'd3', 'd4', 'd5'];
+  const now = root.querySelector<HTMLElement>('[data-now]')!;
+  const prog = root.querySelector<HTMLElement>('[data-prog]')!;
+  const steps = root.querySelector<HTMLElement>('.steps')!;
+  const LONGEST = CAPTIONS.reduce((a, b) => (b.length > a.length ? b : a));
+
+  const size = { oc: { cols: 50, rows: 38 }, clank: { cols: 100, rows: 38 } };
+
+  /** One cell's width as a share of the font size (0.6 for JetBrains Mono), read from the font in use. */
+  function cellRatio(): number {
     const probe = document.createElement('span');
-    probe.textContent = '0000000000';
     probe.className = 'probe';
+    probe.textContent = '0'.repeat(100);
+    probe.style.fontSize = '100px';
     clankPane.appendChild(probe);
-    const cw = probe.getBoundingClientRect().width / 10 || 7;
+    const r = probe.getBoundingClientRect().width / 100 / 100;
     probe.remove();
-    const split = root.dataset.layout === 'split';
-    // A pane caught mid-layout (no width yet) keeps the size it had.
-    if (clankPane.clientWidth < 120 || ocPane.clientWidth < 120) return;
-    const cols = (el: HTMLElement) => {
-      const cs = getComputedStyle(el);
-      const inner = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-      return Math.max(30, Math.floor((inner - 1) / cw));
-    };
-    size.clank.cols = cols(clankPane);
-    size.oc.cols = cols(ocPane);
-    size.clank.rows = size.clank.cols < 66 ? 36 : 38;
-    size.oc.rows = split ? size.clank.rows : 20;
+    return r > 0.3 && r < 0.9 ? r : 0.6;
+  }
+
+  function render() {
+    clankPane.innerHTML = `<pre class="cells">${renderClank(s.clank, size.clank.cols, size.clank.rows)}</pre>`;
+    ocPane.innerHTML = `<pre class="cells">${renderOpenCode(s.oc, size.oc.cols, size.oc.rows)}</pre>`;
   }
 
   let queued = false;
@@ -399,21 +416,173 @@ function init(root: HTMLElement) {
     queued = true;
     requestAnimationFrame(() => {
       queued = false;
-      clankPane.innerHTML = `<pre class="cells">${renderClank(s.clank, size.clank.cols, size.clank.rows)}</pre>`;
-      ocPane.innerHTML = `<pre class="cells">${renderOpenCode(s.oc, size.oc.cols, size.oc.rows)}</pre>`;
+      render();
     });
   }
 
-  function setLayout() {
-    root.dataset.layout = root.clientWidth >= 1000 ? 'split' : 'stack';
-    measure();
-    draw();
+  /** The caption keeps the height of the longest one, so nothing under it moves as it changes. */
+  function holdCaption() {
+    const text = caption.textContent;
+    caption.style.minHeight = '';
+    caption.textContent = LONGEST;
+    caption.style.minHeight = `${caption.offsetHeight}px`;
+    caption.textContent = text;
   }
-  const resize = new ResizeObserver(() => setLayout());
+
+  /** What happens now: opened under the step that plays beside the window, after the steps otherwise. */
+  function placeNow() {
+    const li = chapterButtons.find((b) => b.hasAttribute('aria-current'))?.parentElement;
+    if (root.dataset.layout === 'side' && li) {
+      if (now.parentElement !== li) li.appendChild(now);
+    } else if (now.previousElementSibling !== steps) {
+      steps.after(now);
+    }
+  }
+
+  /**
+   * How tall the walkthrough beside the window would be with these classes on the demo, at its
+   * tallest caption. It is measured on a hidden copy, styled afresh, since the panel itself is
+   * held to the window's height and its styles can lag a change made in the same moment.
+   */
+  function walkHeight(classes: string[]): number {
+    const host = root.cloneNode(false) as HTMLElement;
+    for (const a of ['data-split-demo', 'aria-labelledby', 'style']) host.removeAttribute(a);
+    host.className = ['split-demo', 'lay-side', ...classes].join(' ');
+    host.setAttribute('aria-hidden', 'true');
+    Object.assign(host.style, { position: 'absolute', left: '-10000px', top: '0', visibility: 'hidden', display: 'block' });
+    const copy = walk.cloneNode(true) as HTMLElement;
+    copy.querySelectorAll('[id]').forEach((e) => e.removeAttribute('id'));
+    Object.assign(copy.style, { width: `${walk.offsetWidth}px`, contain: 'none', height: 'auto' });
+    host.appendChild(copy);
+    document.body.appendChild(host);
+    const cap = copy.querySelector<HTMLElement>('[data-caption]')!;
+    let most = 0;
+    for (const c of CAPTIONS) {
+      cap.textContent = c;
+      most = Math.max(most, copy.offsetHeight);
+    }
+    host.remove();
+    return most;
+  }
+
+  /**
+   * Beside the window, the walkthrough is exactly as tall as the window: it leaves out detail, one
+   * level at a time, until it fits with any caption in it, and is let loose (never cut) past the last.
+   * Under the window it keeps all, and the caption keeps the height of the longest one.
+   */
+  function densify() {
+    placeNow();
+    root.classList.remove(...DENSITY, 'loose', 'roomy');
+    caption.style.minHeight = '';
+    if (root.dataset.layout !== 'side') {
+      holdCaption();
+      return;
+    }
+    const base = walk.offsetWidth >= 300 ? ['roomy'] : [];
+    const room = frame.offsetHeight;
+    let level = 0;
+    while (level < DENSITY.length && walkHeight([...base, ...DENSITY.slice(0, level)]) > room) level++;
+    const classes = [...base, ...DENSITY.slice(0, level)];
+    if (walkHeight(classes) > room) classes.push('loose');
+    root.classList.add(...classes);
+  }
+
+  /** The layout, as data-layout (read here) and as the class the stylesheet selects by. */
+  function setLayout(layout: 'side' | 'split' | 'stack') {
+    root.dataset.layout = layout;
+    root.classList.remove('lay-side', 'lay-split', 'lay-stack');
+    root.classList.add(`lay-${layout}`);
+  }
+
+  let lastKey = '';
+  /**
+   * Sizes the demo for the screen: the whole of it, window and walkthrough, fits between the top bar
+   * and the bottom of the window. It picks the layout that gives the cells the largest font, the
+   * font from the room there is, and fewer rows (32 at the least) only when the height is what keeps
+   * the font small.
+   */
+  function fit(force = false) {
+    const W = root.clientWidth;
+    if (W < 200) return;
+    const nav = document.querySelector<HTMLElement>('.nav');
+    const H = window.innerHeight - (nav ? nav.getBoundingClientRect().height : 64) - 24;
+    const key = `${W}:${H}`;
+    if (!force && key === lastKey) return;
+    lastKey = key;
+
+    const lh = parseFloat(getComputedStyle(root).getPropertyValue('--lh')) || 1.36;
+    const ratio = cellRatio();
+    const overV = LABEL + 2 * PAD + 2;
+    const overW = 4 * PAD + 1 + 2 + 2;
+    const want = COLS.oc + COLS.clank;
+    const best = (cellsW: number, cellsH: number) => {
+      const fW = cellsW / (want * ratio);
+      let pick = { f: 0, rows: 38 };
+      for (const rows of [38, 36, 34, 32]) {
+        const fH = cellsH / (rows * lh);
+        const f = Math.min(fW, fH, FONT.max);
+        if (f > pick.f + 0.25) pick = { f, rows };
+        if (fH >= fW || fH >= FONT.comfy) break;
+      }
+      return pick;
+    };
+    const railW = Math.round(Math.min(320, Math.max(RAIL.min, W * 0.2)));
+    const side = best(W - railW - RAIL.gap - overW, H - overV);
+    setLayout('split');
+    root.classList.remove(...DENSITY, 'loose');
+    walk.style.width = '';
+    holdCaption();
+    const under = W >= 700 ? best(W - overW, H - walk.offsetHeight - 16 - overV) : { f: 0, rows: 38 };
+
+    let layout: 'side' | 'split' | 'stack';
+    if (W >= 900 && side.f >= under.f * 0.9) layout = 'side';
+    else if (W >= 700 && under.f >= 8.5) layout = 'split';
+    else if (W >= 900) layout = 'side';
+    else layout = 'stack';
+    setLayout(layout);
+
+    let f: number;
+    if (layout === 'stack') {
+      const inner = W - 2 * PAD - 2;
+      f = Math.max(9, Math.min(12.5, inner / ((W >= 600 ? COLS.clank : 56) * ratio)));
+      const cols = Math.max(30, Math.floor((inner - 2) / (f * ratio)));
+      size.clank.cols = cols;
+      size.oc.cols = cols;
+      size.clank.rows = cols < 66 ? 36 : 38;
+      size.oc.rows = 16;
+      panes.style.gridTemplateColumns = '';
+      walk.style.width = '';
+    } else {
+      const pick = layout === 'side' ? side : under;
+      f = Math.max(FONT.min, pick.f);
+      const cw = f * ratio;
+      const room = W - overW - (layout === 'side' ? railW + RAIL.gap : 0);
+      const total = Math.max(want, Math.floor(room / cw) - 1);
+      const clankCols = Math.min(COLS.clankMax, Math.max(COLS.clank, Math.round((total * 2) / 3)));
+      const ocCols = Math.min(COLS.ocMax, Math.max(COLS.oc, total - clankCols));
+      size.clank.cols = clankCols;
+      size.oc.cols = ocCols;
+      size.clank.rows = pick.rows;
+      size.oc.rows = pick.rows;
+      const ocW = Math.ceil(ocCols * cw + 2 * PAD + 2);
+      const clankW = Math.ceil(clankCols * cw + 2 * PAD + 1);
+      panes.style.gridTemplateColumns = `${ocW}px ${clankW}px`;
+      walk.style.width =
+        layout === 'side' ? `${Math.max(RAIL.min, Math.min(RAIL.max, W - ocW - clankW - 2 - RAIL.gap))}px` : '';
+    }
+    root.style.setProperty('--cell-fs', `${f.toFixed(2)}px`);
+    render();
+    densify();
+  }
+
+  const resize = new ResizeObserver(() => fit());
   resize.observe(root);
-  resize.observe(clankPane);
-  setLayout();
-  void document.fonts?.ready.then(() => setLayout());
+  window.addEventListener('resize', () => fit());
+  fit(true);
+  // Text set in a font still loading takes more room: fit again once each font has come.
+  void document.fonts?.ready.then(() => fit(true));
+  document.fonts?.addEventListener('loadingdone', () => fit(true));
+  window.addEventListener('load', () => fit(true));
 
   // ---- Time ----
 
@@ -444,7 +613,7 @@ function init(root: HTMLElement) {
     }
     toggle.toggleAttribute('data-paused', userPaused);
     toggleLabel.textContent = userPaused ? 'Play' : 'Pause';
-    toggle.setAttribute('aria-label', userPaused ? 'Play the demo' : 'Pause the demo');
+    toggle.setAttribute('aria-label', userPaused ? 'Play the walkthrough' : 'Pause the walkthrough');
   }
 
   function makeCtx(id: number, instant: boolean): Ctx {
@@ -554,7 +723,18 @@ function init(root: HTMLElement) {
   function showStep(index: number) {
     caption.textContent = STEPS[index].caption;
     const ch = chapterAt(index);
-    chapterButtons.forEach((b, i) => (i === ch ? b.setAttribute('aria-current', 'step') : b.removeAttribute('aria-current')));
+    chapterButtons.forEach((b, i) => {
+      b.toggleAttribute('data-done', i < ch);
+      if (i === ch) b.setAttribute('aria-current', 'step');
+      else b.removeAttribute('aria-current');
+    });
+    nowK.textContent = `Now · ${CHAPTERS[ch].name}`;
+    const start = CHAPTERS[ch].step;
+    const end = ch + 1 < CHAPTERS.length ? CHAPTERS[ch + 1].step : STEPS.length;
+    prog.style.width = `${((index - start + 1) / (end - start)) * 100}%`;
+    chapterButtons.forEach((b, i) => b.parentElement?.classList.toggle('on', i === ch));
+    placeNow();
+    pos.textContent = `Step ${ch + 1} of ${CHAPTERS.length}`;
   }
 
   async function play(from: number) {

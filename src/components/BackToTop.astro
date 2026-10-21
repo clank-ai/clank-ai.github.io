@@ -1,5 +1,8 @@
 ---
-/** A way back to the top, shown once the page has scrolled a screen or so. */
+/**
+ * A way back to the top, shown once the page has scrolled a screen or so, and only where it covers
+ * nothing: in the margin of a wide window, and never over the demo, which is wider than the text.
+ */
 ---
 
 <a class="top" href="#top-of-page" data-totop hidden aria-label="Back to the top">
@@ -9,8 +12,18 @@
 <script>
   const button = document.querySelector<HTMLElement>('[data-totop]');
   if (button) {
-    const show = () => (button.hidden = window.scrollY < 900);
+    const wide = window.matchMedia('(min-width: 1360px)');
+    let overDemo = false;
+    const show = () => (button.hidden = window.scrollY < 900 || !wide.matches || overDemo);
+    const demo = document.querySelector('[data-split-demo]');
+    if (demo) {
+      new IntersectionObserver((entries) => {
+        overDemo = entries.some((e) => e.isIntersecting);
+        show();
+      }).observe(demo);
+    }
     window.addEventListener('scroll', show, { passive: true });
+    wide.addEventListener('change', show);
     show();
   }
 </script>
@@ -30,6 +43,10 @@
     background: rgba(31, 33, 51, 0.92);
     color: var(--text-strong);
     box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.6);
+  }
+
+  .top[hidden] {
+    display: none;
   }
 
   .top:hover {
