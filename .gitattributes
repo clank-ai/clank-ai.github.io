@@ -1,0 +1,4 @@
+# Keep line endings as LF in the repository, and in shell scripts on every checkout.
+* text=auto eol=lf
+*.sh text eol=lf
+*.woff2 binary

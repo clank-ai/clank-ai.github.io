@@ -1,0 +1,58 @@
+---
+/**
+ * The page shell: head, fonts (self-hosted), the shared stylesheet, the skip link, the top bar,
+ * the footer and the way back to the top. No trackers, no third-party requests.
+ */
+import '@fontsource-variable/instrument-sans/wght.css';
+import '@fontsource-variable/jetbrains-mono/wght.css';
+import '../styles/global.css';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import BackToTop from '../components/BackToTop.astro';
+import { DOMAIN_IS_SET, SITE, SITE_URL } from '../config';
+
+interface Props {
+  title?: string;
+  description?: string;
+  path?: string;
+  /** Hidden pages (the brand page): kept out of search engines. */
+  noindex?: boolean;
+}
+
+const { title = SITE.title, description = SITE.description, path = '/', noindex = false } = Astro.props;
+const canonical = DOMAIN_IS_SET ? new URL(path, SITE_URL).href : undefined;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#12121a" />
+    <meta name="color-scheme" content="dark" />
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta name="twitter:card" content="summary_large_image" />
+    {canonical && <link rel="canonical" href={canonical} />}
+    {canonical && <meta property="og:url" content={canonical} />}
+    {DOMAIN_IS_SET && <meta property="og:image" content={new URL('/og.png', SITE_URL).href} />}
+  </head>
+  <body>
+    <span id="top-of-page"></span>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Nav />
+    <slot name="subnav" />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+    <BackToTop />
+  </body>
+</html>

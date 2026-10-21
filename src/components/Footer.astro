@@ -1,0 +1,161 @@
+---
+/** The footer on every page: the logo, the site's pages, the project's links, the license and credits. */
+import Logo from './Logo.astro';
+import { LICENSE, LINKS, PAGES, RELEASED } from '../config';
+
+const preview = import.meta.env.MODE === 'preview';
+const columns = [
+  {
+    title: 'Clank',
+    links: [
+      { label: 'Why Clank', href: PAGES.why.path },
+      { label: 'Features', href: PAGES.features.path },
+      { label: 'The Monitor', href: `${PAGES.features.path}#monitor` },
+      { label: 'Flows', href: `${PAGES.features.path}#flows` },
+      { label: 'The gateway', href: `${PAGES.features.path}#gateway` },
+      { label: 'Privacy', href: `${PAGES.features.path}#privacy` },
+    ],
+  },
+  {
+    title: 'Start',
+    links: [
+      { label: 'Get started', href: PAGES.start.path },
+      { label: 'A cloud key', href: `${PAGES.start.path}#cloud` },
+      { label: 'Your GPU', href: `${PAGES.start.path}#local` },
+      { label: 'FAQ', href: PAGES.faq.path },
+    ],
+  },
+  {
+    title: 'Project',
+    links: [
+      { label: 'Open source', href: PAGES.openSource.path },
+      ...(RELEASED
+        ? [
+            { label: 'Docs', href: LINKS.docs },
+            { label: 'GitHub', href: LINKS.github },
+            { label: 'License', href: LINKS.license },
+          ]
+        : []),
+      ...(preview ? [{ label: 'Brand (preview only)', href: PAGES.brand.path }] : []),
+    ],
+  },
+];
+---
+
+<footer class="footer">
+  <div class="container inner">
+    <div class="brand">
+      <Logo height={26} />
+      <p>Precise control over your AI coding agents.</p>
+    </div>
+    <nav aria-label="Footer">
+      {
+        columns.map((col) => (
+          <div class="col">
+            <p class="h">{col.title}</p>
+            <ul>
+              {col.links.map((l) => (
+                <li>
+                  <a href={l.href}>{l.label}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </nav>
+  </div>
+  <div class="container base">
+    <p>Clank is open source under the {LICENSE} license. No trackers, no analytics, no cookies.</p>
+    <p>
+      Clank runs <a href={LINKS.opencode}>OpenCode</a>, the open-source coding agent, and serves local models with
+      engines such as llama.cpp.
+    </p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    margin-top: var(--section-gap);
+    border-top: 1px solid var(--line);
+    background:
+      radial-gradient(60% 120% at 50% 0%, rgba(122, 162, 247, 0.05), transparent 60%),
+      #111118;
+  }
+
+  .inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 40px;
+    padding-block: 60px 44px;
+  }
+
+  .brand {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 22rem;
+  }
+
+  .brand p {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px clamp(40px, 6vw, 88px);
+  }
+
+  .col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 8.5rem;
+  }
+
+  .h {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  ul a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    color: var(--text);
+    font-size: 0.95rem;
+    text-decoration: none;
+  }
+
+  ul a:hover {
+    color: var(--text-strong);
+    text-decoration: underline;
+  }
+
+  .base {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-block: 22px max(30px, env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--line);
+    font-size: 0.86rem;
+    color: var(--faint);
+  }
+
+  .base a {
+    color: var(--muted);
+  }
+</style>

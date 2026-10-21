@@ -1,0 +1,376 @@
+---
+/**
+ * Clank's VS Code window, drawn in HTML: the folder on the left, a change the agent asks for
+ * opened beside the file with Accept and Reject in its title bar, OpenCode in the terminal at the
+ * right edge, and Clank's items in the status bar (vscode/README.md in Clank's repository).
+ */
+const before = [
+  ['14', '  def handle(self, req):', ''],
+  ['15', '      key = req.headers["X-Key"]', ''],
+  ['16', '      return self.route(req)', 'del'],
+  ['', '', 'pad'],
+  ['', '', 'pad'],
+  ['', '', 'pad'],
+];
+const after = [
+  ['14', '  def handle(self, req):', ''],
+  ['15', '      key = req.headers["X-Key"]', ''],
+  ['16', '      if not self.limits.allow(key):', 'add'],
+  ['17', '          return too_many(req)', 'add'],
+  ['18', '      return self.route(req)', 'add'],
+  ['', '', ''],
+];
+const files = [
+  ['src', 'dir', 0],
+  ['api', 'dir', 1],
+  ['limits.py', 'A', 2],
+  ['server.py', 'M', 2],
+  ['tests', 'dir', 0],
+  ['test_limits.py', 'A', 1],
+  ['BRIEF.md', '', 0],
+  ['PLAN.md', '', 0],
+];
+---
+
+<div class="vsc" role="img" aria-label="Clank's VS Code window: a change to server.py waits beside the file, with Accept and Reject; OpenCode runs in the terminal at the right; the status bar shows Clank, Docker and Review.">
+  <div class="title" aria-hidden="true">
+    <span class="dots"><i></i><i></i><i></i></span>
+    <span>server.py ↔ the agent's change · my-api</span>
+  </div>
+  <div class="body" aria-hidden="true">
+    <div class="act">
+      <i></i><i></i><i></i><i class="on"></i>
+    </div>
+    <div class="side">
+      <p class="side-h">EXPLORER · MY-API</p>
+      <ul>
+        {
+          files.map(([name, tag, depth]) => (
+            <li style={`padding-left: ${0.7 + Number(depth) * 1.1}em`} class={tag === 'dir' ? 'dir' : ''}>
+              <span>{tag === 'dir' ? '▾ ' : ''}{name}</span>
+              {tag && tag !== 'dir' && <b class={tag === 'A' ? 'a' : 'm'}>{tag}</b>}
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    <div class="editor">
+      <div class="tabs">
+        <span class="tab on">server.py ↔ proposed</span>
+        <span class="acts"><b class="ok">✓ Accept</b><b class="no">✗ Reject</b></span>
+      </div>
+      <div class="diff">
+        <div class="col">
+          {
+            before.map(([n, code, k]) => (
+              <p class={k}><span class="n">{n}</span>{code}</p>
+            ))
+          }
+        </div>
+        <div class="col">
+          {
+            after.map(([n, code, k]) => (
+              <p class={k}><span class="n">{n}</span>{code}</p>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+    <div class="term">
+      <p class="term-h">OPENCODE</p>
+      <p><span class="u">┃</span> Wire in limits</p>
+      <p class="mu">→ Read server.py</p>
+      <p class="mu">← Edit server.py</p>
+      <p class="y">◆ waits on you</p>
+    </div>
+  </div>
+  <div class="status" aria-hidden="true">
+    <span class="sb">◆ Clank ✓</span>
+    <span>Docker ●</span>
+    <span class="rv">Review</span>
+    <span>Completion ✓</span>
+    <span class="r">Ln 16, Col 9</span>
+  </div>
+</div>
+
+<style>
+  .vsc {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border: 1px solid #343a55;
+    border-radius: 12px;
+    background: #1a1b26;
+    overflow: hidden;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 30px 70px -30px rgba(0, 0, 0, 0.8);
+    font-family: var(--font-mono);
+    font-size: clamp(7px, calc(100cqi / 78), 11px);
+    line-height: 1.6;
+    color: #a9b1d6;
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 12px;
+    background: #111118;
+    border-bottom: 1px solid #272b3f;
+    color: #8a93bc;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .dots {
+    display: flex;
+    gap: 6px;
+    flex: none;
+  }
+
+  .dots i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #33384f;
+  }
+
+  .body {
+    display: grid;
+    grid-template-columns: 2.8em 12.5em minmax(0, 1fr) 11.5em;
+    min-height: 20em;
+  }
+
+  .act {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding-top: 10px;
+    background: #16161e;
+    border-right: 1px solid #22263a;
+  }
+
+  .act i {
+    width: 1.3em;
+    height: 1.3em;
+    border-radius: 3px;
+    border: 1.5px solid #565f89;
+  }
+
+  .act i.on {
+    border-color: #ff9e64;
+    background: rgba(255, 158, 100, 0.2);
+  }
+
+  .side {
+    background: #16161e;
+    border-right: 1px solid #22263a;
+    padding: 8px 0;
+    min-width: 0;
+  }
+
+  .side-h,
+  .term-h {
+    padding: 0 8px 4px;
+    font-size: 0.86em;
+    letter-spacing: 0.08em;
+    color: #8a93bc;
+  }
+
+  .side ul {
+    list-style: none;
+  }
+
+  .side li {
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+    padding-right: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .side li span {
+    overflow: hidden;
+    text-overflow: clip;
+  }
+
+  .side .dir {
+    color: #c0caf5;
+  }
+
+  .side b {
+    font-weight: 700;
+  }
+
+  .side .a {
+    color: #9ece6a;
+  }
+
+  .side .m {
+    color: #e0af68;
+  }
+
+  .editor {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 8px;
+    padding: 0 8px 0 0;
+    background: #16161e;
+    border-bottom: 1px solid #22263a;
+  }
+
+  .tab {
+    padding: 5px 12px;
+    background: #1a1b26;
+    border-top: 1.5px solid #ff9e64;
+    color: #c0caf5;
+    white-space: nowrap;
+  }
+
+  .acts {
+    display: flex;
+    gap: 6px;
+  }
+
+  .acts b {
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .ok {
+    background: #9ece6a;
+    color: #16161e;
+  }
+
+  .no {
+    border: 1px solid #f7768e;
+    color: #f7768e;
+  }
+
+  .diff {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    flex: 1;
+  }
+
+  .diff .col + .col {
+    border-left: 1px solid #22263a;
+  }
+
+  .diff p {
+    display: flex;
+    gap: 0.8em;
+    font-size: 0.92em;
+    padding-right: 6px;
+    white-space: pre;
+    overflow: hidden;
+  }
+
+  .diff .n {
+    flex: none;
+    width: 2em;
+    text-align: right;
+    color: #565f89;
+  }
+
+  .diff .del {
+    background: rgba(247, 118, 142, 0.14);
+  }
+
+  .diff .add {
+    background: rgba(158, 206, 106, 0.13);
+  }
+
+  .diff .pad {
+    background: repeating-linear-gradient(135deg, transparent 0 4px, rgba(65, 72, 104, 0.25) 4px 5px);
+  }
+
+  .term {
+    min-width: 0;
+    padding: 0.7em 0.7em;
+    background: #13131a;
+    border-left: 1px solid #22263a;
+    overflow: hidden;
+  }
+
+  .term p {
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .term .u {
+    color: #bb9af7;
+  }
+
+  .term .mu {
+    color: #8a93bc;
+  }
+
+  .term .y {
+    color: #e0af68;
+  }
+
+  .status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 14px;
+    padding: 3px 10px;
+    background: #16161e;
+    border-top: 1px solid #22263a;
+    color: #a9b1d6;
+    font-size: 0.95em;
+  }
+
+  .status .sb {
+    color: #ff9e64;
+  }
+
+  .status .rv {
+    color: #7aa2f7;
+  }
+
+  .status .r {
+    margin-left: auto;
+    color: #8a93bc;
+  }
+
+  @container surface (max-width: 560px) {
+    .vsc {
+      font-size: clamp(9px, calc(100cqi / 42), 11px);
+    }
+
+    .body {
+      grid-template-columns: 2.4em minmax(0, 1fr);
+    }
+
+    .side,
+    .term {
+      display: none;
+    }
+
+    .diff {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .diff .col:first-child {
+      display: none;
+    }
+
+    .diff .col + .col {
+      border-left: 0;
+    }
+  }
+</style>

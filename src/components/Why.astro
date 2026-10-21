@@ -1,0 +1,175 @@
+---
+/**
+ * Why Clank: the problems met with hosted coding agents, and what Clank does about each.
+ * The middle column describes hosted agents in general; Codex and Claude Code are named only as examples.
+ */
+const rows = [
+  {
+    problem: 'Limits and prices',
+    hosted: "Usage limits and per-token prices are the provider's, and can change.",
+    clank: "A local model has no usage limit and no price per request. With a cloud model, each request's cost is shown, and the limit is yours.",
+  },
+  {
+    problem: 'Where your work goes',
+    hosted: "Your prompts and the files the agent reads go to the provider's servers.",
+    clank: "They stay on your computer. A cloud model gets a workspace's requests only after your yes for that workspace.",
+  },
+  {
+    problem: 'Which model, served how',
+    hosted: "You choose among the provider's models; how they are served is the provider's choice.",
+    clank: 'Any open model, on the engine you choose: its quantization, window, thinking budget, sampling and most output, in readable files.',
+  },
+  {
+    problem: 'Runaway answers',
+    hosted: 'What happens to an answer that repeats itself is up to the product.',
+    clank: 'The loop guard stops an answer that repeats itself while it streams, before it fills the window.',
+  },
+  {
+    problem: 'Long work, full window',
+    hosted: "How the context is kept, and when it is cut, is the product's own.",
+    clank: 'A margin makes a session compact in time. Flows give each step a fresh session with the context it needs.',
+  },
+  {
+    problem: 'Seeing what happens',
+    hosted: 'You see what the product chooses to show.',
+    clank: 'Every request is recorded, the window is shown part by part, and every action shows its cost before you take it.',
+  },
+];
+---
+
+<section class="section" id="aim" aria-labelledby="why-title">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">The aim</p>
+      <h2 id="why-title">Meant to be far more useful than a hosted agent.</h2>
+      <p class="lead">
+        Codex and Claude Code are capable hosted agents. Clank's aim is to be dramatically more useful to the person at
+        the keyboard, by handing them what a hosted product decides on their behalf: the model and how it runs, the
+        limits, the records, and the controls. Here is how it does that, problem by problem.
+      </p>
+    </div>
+
+    <div class="cmp">
+      <div class="cmp-head" aria-hidden="true">
+        <span>The problem</span>
+        <span>A hosted coding agent</span>
+        <span class="c">Clank</span>
+      </div>
+      {
+        rows.map((r) => (
+          <div class="row">
+            <h3>{r.problem}</h3>
+            <p class="hosted">
+              <span class="lbl">A hosted coding agent</span>
+              {r.hosted}
+            </p>
+            <p class="clank">
+              <span class="lbl c">Clank</span>
+              {r.clank}
+            </p>
+          </div>
+        ))
+      }
+    </div>
+    <p class="fine">
+      Each row is a problem met while building and using Clank. The middle column describes hosted coding agents in
+      general; Codex and Claude Code are examples of them, not the subject of a feature-by-feature comparison.
+    </p>
+  </div>
+</section>
+
+<style>
+  .cmp {
+    margin-top: clamp(36px, 4.5vw, 56px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .cmp-head,
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.1fr) minmax(0, 1.5fr);
+    gap: 28px;
+    padding: 18px clamp(18px, 2.4vw, 28px);
+  }
+
+  .cmp-head {
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .c {
+    color: var(--green);
+  }
+
+  .row + .row {
+    border-top: 1px solid var(--line);
+  }
+
+  .row h3 {
+    font-size: 1.02rem;
+    line-height: 1.45;
+  }
+
+  .hosted {
+    color: var(--muted);
+  }
+
+  .clank {
+    color: var(--text);
+  }
+
+  .lbl {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .fine {
+    margin-top: 16px;
+    max-width: 48rem;
+    font-size: 0.88rem;
+    color: var(--faint);
+  }
+
+  @media (max-width: 820px) {
+    .cmp-head {
+      display: none;
+    }
+
+    .row {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+      padding-block: 22px;
+    }
+
+    .lbl {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip: auto;
+      white-space: normal;
+      display: block;
+      margin-bottom: 2px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .lbl.c {
+      color: var(--green);
+    }
+  }
+</style>

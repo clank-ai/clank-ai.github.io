@@ -1,0 +1,17 @@
+---
+/** A still frame of the console (from src/scripts/crops.ts), scaled to fit its box. */
+import type { Crop as CropData } from '../scripts/crops';
+
+interface Props {
+  crop: CropData;
+  label: string;
+  max?: string;
+  class?: string;
+}
+const { crop, label, max, class: cls } = Astro.props;
+const style = `--cols: ${crop.cols}${max ? `; --cell-max: ${max}` : ''}`;
+---
+
+<div class:list={['crop', cls]} style={style} role="img" aria-label={label}>
+  <pre class="cells" aria-hidden="true" set:html={crop.html} />
+</div>

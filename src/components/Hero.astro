@@ -1,0 +1,147 @@
+---
+/** The hero: the approved headline and subline, the installer, and the two ways on. */
+import InstallCommand from './InstallCommand.astro';
+import Icon from './Icon.astro';
+import { LICENSE, LINKS, PAGES, RELEASED } from '../config';
+---
+
+<section class="hero" id="top" aria-labelledby="hero-title">
+  <div class="grid-bg" aria-hidden="true"></div>
+  <div class="light" aria-hidden="true"></div>
+  <div class="container hero-inner">
+    <p class="pill">
+      <span class="pill-mark" aria-hidden="true"></span>
+      Open source <span class="sep" aria-hidden="true">·</span> {LICENSE}
+    </p>
+    <h1 id="hero-title">Precise control over your AI coding agents.</h1>
+    <p class="sub">
+      On your GPU and/or a cloud API key, with far less reliance on hosted tools like Codex and Claude Code.
+    </p>
+    <div class="actions">
+      <InstallCommand id="hero" note={false} />
+      <div class="ctas">
+        <a class="btn btn-primary" href={PAGES.start.path}>
+          Get started
+          <Icon name="arrow" size={18} />
+        </a>
+        {RELEASED && (
+        <a class="btn btn-ghost" href={LINKS.github}>
+          <Icon name="github" size={18} />
+          View on GitHub
+        </a>
+        )}
+      </div>
+    </div>
+    <p class="note">Then type <code class="inline">clank</code> in a project folder. Needs Docker.</p>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    isolation: isolate;
+    padding-block: clamp(56px, 9vw, 112px) clamp(40px, 5vw, 64px);
+  }
+
+  /* A faint grid of terminal cells (one column wide, two rows tall), fading out. */
+  .grid-bg {
+    position: absolute;
+    inset: 0 0 -20% 0;
+    z-index: -1;
+    background-image:
+      linear-gradient(to right, rgba(122, 162, 247, 0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(122, 162, 247, 0.07) 1px, transparent 1px);
+    background-size: 36px 72px;
+    background-position: center top;
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 30% 20%, #000 10%, transparent 75%);
+    mask-image: radial-gradient(ellipse 70% 60% at 30% 20%, #000 10%, transparent 75%);
+    pointer-events: none;
+  }
+
+  .light {
+    position: absolute;
+    inset: -20% 0 0 0;
+    z-index: -1;
+    background: radial-gradient(40% 50% at 20% 10%, rgba(122, 162, 247, 0.1), transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 14px 6px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: rgba(26, 27, 38, 0.8);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: var(--text);
+  }
+
+  .pill-mark {
+    width: 7px;
+    height: 7px;
+    background: var(--green);
+    transform: rotate(45deg);
+  }
+
+  .sep {
+    color: var(--faint);
+  }
+
+  h1 {
+    margin-top: 28px;
+    max-width: 14em;
+    font-size: var(--fs-h1);
+    line-height: 1.02;
+    letter-spacing: -0.032em;
+    font-weight: 600;
+  }
+
+  .sub {
+    margin-top: 24px;
+    max-width: 36rem;
+    font-size: var(--fs-lead);
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  .actions {
+    margin-top: 40px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 20px 28px;
+    width: 100%;
+  }
+
+  .ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .note {
+    margin-top: 14px;
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 420px) {
+    .ctas {
+      width: 100%;
+    }
+
+    .ctas .btn {
+      flex: 1 1 100%;
+    }
+  }
+</style>

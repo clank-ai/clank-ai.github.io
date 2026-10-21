@@ -1,0 +1,196 @@
+---
+/** FAQ: the questions people ask first, grouped by topic. */
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import { FAQ_GROUPS } from '../data/faq';
+import { PAGES } from '../config';
+---
+
+<Base
+  title="FAQ · Clank"
+  description="Practical questions about Clank: OpenCode, several folders, SSH, its settings and the console's look."
+  path={PAGES.faq.path}
+>
+  <PageHeader
+    crumb="FAQ"
+    eyebrow="FAQ"
+    title="Common questions."
+    lead="The practical questions the other pages leave open: working with Clank day to day, and changing it to suit you."
+  />
+  <div class="container faq">
+    <nav class="toc" aria-label="Questions, by topic">
+      <ul>
+        {
+          FAQ_GROUPS.map((g) => (
+            <li>
+              <a href={`#${g.id}`}>{g.title}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <div class="groups">
+      {
+        FAQ_GROUPS.map((g) => (
+          <section id={g.id} aria-labelledby={`${g.id}-title`}>
+            <h2 id={`${g.id}-title`}>{g.title}</h2>
+            <div class="list">
+              {g.items.map((f) => (
+                <details>
+                  <summary>
+                    <span>{f.q}</span>
+                    <span class="pm" aria-hidden="true" />
+                  </summary>
+                  <p>{f.a}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+        ))
+      }
+    </div>
+  </div>
+</Base>
+
+<style>
+  .faq {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 40px clamp(32px, 5vw, 72px);
+    padding-top: clamp(40px, 5vw, 64px);
+    align-items: start;
+  }
+
+  .toc {
+    position: sticky;
+    top: 100px;
+  }
+
+  .toc ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-left: 1px solid var(--line);
+  }
+
+  .toc a {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    padding-left: 16px;
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .toc a:hover {
+    color: var(--text-strong);
+  }
+
+  .groups {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    min-width: 0;
+  }
+
+  section {
+    scroll-margin-top: 100px;
+  }
+
+  h2 {
+    font-size: 1.35rem;
+    margin-bottom: 8px;
+  }
+
+  .list {
+    border-top: 1px solid var(--line);
+  }
+
+  details {
+    border-bottom: 1px solid var(--line);
+  }
+
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    min-height: 60px;
+    padding: 14px 0;
+    color: var(--text-strong);
+    font-size: 1.06rem;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary:hover {
+    color: var(--blue);
+  }
+
+  .pm {
+    position: relative;
+    flex: none;
+    width: 14px;
+    height: 14px;
+  }
+
+  .pm::before,
+  .pm::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 6px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--muted);
+    transition: transform 0.2s ease;
+  }
+
+  .pm::after {
+    transform: rotate(90deg);
+  }
+
+  details[open] .pm::after {
+    transform: rotate(0deg);
+  }
+
+  details p {
+    padding: 0 40px 22px 0;
+    color: var(--muted);
+    max-width: 46rem;
+  }
+
+  @media (max-width: 860px) {
+    .faq {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .toc {
+      position: static;
+    }
+
+    .toc ul {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 8px;
+      border-left: 0;
+    }
+
+    .toc a {
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+    }
+
+    details p {
+      padding-right: 0;
+    }
+  }
+</style>

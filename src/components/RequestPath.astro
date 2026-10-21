@@ -1,0 +1,190 @@
+---
+/** One request, end to end: what Clank does at each hop, and why it matters. */
+const hops = [
+  {
+    where: 'OpenCode, in the workspace',
+    k: 'var(--purple)',
+    what: 'The agent sends its request: your messages, what it read, tool results, the tools it may call. Clank told it the window less a margin.',
+    why: 'The container sees only this folder, and the margin makes it compact before a step overflows the window.',
+  },
+  {
+    where: 'The edge',
+    k: 'var(--line-strong)',
+    what: "The sandbox's only door: to the gateway, the tool hub and Clank's service. Git or the web only by your grant.",
+    why: 'Nothing the agent runs reaches the internet on its own.',
+  },
+  {
+    where: 'The gateway',
+    k: 'var(--yellow)',
+    what: "Records the request, counts what fills the window part by part, checks this workspace may use the cloud, applies the role's sampling, and holds it while you pause.",
+    why: 'Every request is visible, and none goes where you did not allow.',
+  },
+];
+const after = [
+  {
+    where: 'The answer, streamed back',
+    k: 'var(--red)',
+    what: 'The loop guard reads each part as it streams (the thinking, the text, each tool call) and stops one that repeats itself. The tokens and the cost are recorded.',
+    why: "A runaway answer is cut while it streams, not at the answer's limit.",
+  },
+  {
+    where: 'The Monitor',
+    k: 'var(--blue)',
+    what: 'Its phase, its speed, the window by part and the live text, on the console (F10).',
+    why: 'You can stop, note, pause, compact, undo or drop, and see what each costs first.',
+  },
+];
+---
+
+<ol class="path" aria-label="One request, end to end">
+  {
+    hops.map((h, i) => (
+      <li style={`--k: ${h.k}`}>
+        <span class="n" aria-hidden="true">{i + 1}</span>
+        <div class="card">
+          <h3>{h.where}</h3>
+          <p>{h.what}</p>
+          <p class="why"><b>Why</b> {h.why}</p>
+        </div>
+      </li>
+    ))
+  }
+  <li style="--k: var(--teal)">
+    <span class="n" aria-hidden="true">4</span>
+    <div class="fork">
+      <div class="card gpu">
+        <h3>The engine, on your GPU</h3>
+        <p>It reads the exact part of the context on the GPU; with an engine that retrieves, older context comes back from system memory.</p>
+        <p class="why"><b>Why</b> A window larger than your GPU holds, and nothing leaves.</p>
+      </div>
+      <p class="or">or</p>
+      <div class="card cloud">
+        <h3>OpenRouter, in the cloud</h3>
+        <p>Only for a workspace you allowed. OpenRouter's own figure gives the request's cost.</p>
+        <p class="why"><b>Why</b> You pay for what you use, and see what each request cost.</p>
+      </div>
+    </div>
+  </li>
+  {
+    after.map((h, i) => (
+      <li style={`--k: ${h.k}`}>
+        <span class="n" aria-hidden="true">{i + 5}</span>
+        <div class="card">
+          <h3>{h.where}</h3>
+          <p>{h.what}</p>
+          <p class="why"><b>Why</b> {h.why}</p>
+        </div>
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .path {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  li:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 17.5px;
+    top: 36px;
+    bottom: -14px;
+    border-left: 1px dashed var(--line-strong);
+  }
+
+  .n {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid var(--k);
+    background: var(--bg);
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--text-strong);
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px 18px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+  }
+
+  h3 {
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--k, var(--text-strong));
+  }
+
+  .card p {
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+
+  .card .why {
+    color: var(--muted);
+  }
+
+  .why b {
+    margin-right: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  .fork {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .gpu {
+    --k: var(--teal);
+    border-color: color-mix(in srgb, var(--teal) 45%, transparent);
+  }
+
+  .cloud {
+    --k: var(--blue);
+    border-style: dashed;
+    border-color: color-mix(in srgb, var(--blue) 55%, transparent);
+  }
+
+  .or {
+    align-self: center;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--text-strong);
+  }
+
+  @media (max-width: 640px) {
+    .fork {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .or {
+      justify-self: center;
+    }
+  }
+</style>

@@ -1,0 +1,541 @@
+---
+/**
+ * Get started: the repository's guide (docs/getting-started.md in Clank's repository, the source of
+ * truth), designed. The same steps in the same order, with the console's screens beside them and a
+ * copy button on every block of commands.
+ */
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import SubNav from '../components/SubNav.astro';
+import InstallCommand from '../components/InstallCommand.astro';
+import CommandBlock from '../components/CommandBlock.astro';
+import Window from '../components/Window.astro';
+import Crop from '../components/Crop.astro';
+import { addModel, consent, folder, presets } from '../scripts/crops';
+import { GITHUB_URL, INSTALLER_READY, LINKS, PAGES, RELEASED } from '../config';
+
+const sections = [
+  { id: 'needs', label: 'What you need' },
+  { id: 'install', label: 'Install' },
+  { id: 'cloud', label: 'A cloud model' },
+  { id: 'local', label: 'A local model' },
+  { id: 'folder', label: 'Work in a folder' },
+  { id: 'updating', label: 'Updating' },
+  { id: 'trouble', label: 'Troubleshooting' },
+  { id: 'uninstall', label: 'Uninstalling' },
+  { id: 'other', label: 'macOS and Linux' },
+];
+
+const repo = RELEASED ? GITHUB_URL : "<the repository's address>";
+
+const needs = [
+  ['Windows 10 or 11, with WSL 2', 'everything', 'Docker Desktop turns WSL 2 on when it installs'],
+  ['Docker Desktop', "the agent's workspaces", 'each folder you work in gets a container of its own; the first one downloads about a gigabyte'],
+  ['uv', 'installing Clank', 'it brings Python 3.12 by itself'],
+  ['Git', 'getting Clank', ''],
+  ['An OpenRouter account and API key', 'the cloud path', 'free models exist; paid ones need credits'],
+  ['An NVIDIA GPU (16 GB is comfortable)', 'the local path only', 'not needed for the cloud path'],
+];
+
+const cloudSteps = [
+  'Make an API key at openrouter.ai/keys. Add credits if you want paid models.',
+  'Type <code>clank</code>. With no model set up, the console opens on <b>Add a model</b> (later: <kbd>F12</kbd> in the menu, or <kbd>a</kbd> on <b>Providers and models</b>).',
+  'Press <kbd>c</kbd> for <b>Cloud</b>, then Enter on <b>OpenRouter</b>.',
+  'Read the <b>agreement</b>: what goes to OpenRouter (the prompts and the files the agent reads in a workspace you allow), what never goes (Notion, and MCP servers marked local: Space marks or unmarks one), and the data policy (<kbd>o</kbd>). Press <kbd>y</kbd> to agree; <kbd>n</kbd> writes nothing.',
+  "Paste the key into the hidden field and press Enter. It is checked with OpenRouter once and kept in Clank's secrets folder only; the console shows its last four characters, never the rest.",
+  'Pick a model from the live list: <kbd>/</kbd> searches, <kbd>s</kbd> sorts, <kbd>f</kbd> shows only the free ones. Enter picks it.',
+  'Check its settings (filled in for you) and press Enter. Clank sends one short test request and shows the answer and what it cost.',
+  '<b>Ready.</b> Clank says whether Docker is running (<kbd>s</kbd> starts it); Enter takes you to <b>This folder</b>.',
+];
+
+const folderSteps = [
+  'Open a terminal in the folder you want to work in and type <code>clank</code>. The console opens on <b>This folder</b> (<kbd>F4</kbd>).',
+  "It lists what working here needs: Docker, the folder's workspace, its software, a model, the gateway. <kbd>g</kbd> does every step that is not done. The first workspace builds Clank's sandbox image, which takes a few minutes.",
+  "With a cloud model, Clank asks once whether this folder's work may go to OpenRouter. Answer <kbd>y</kbd>, or keep the folder on your computer only. <kbd>u</kbd> changes it later.",
+  '<kbd>a</kbd> starts <b>OpenCode</b> (the agent) in this terminal; leave it with <code>/exit</code> and the console comes back. Or <kbd>c</kbd> opens the folder in VS Code with OpenCode beside your files.',
+  'In <b>review</b> mode (the default) the agent asks before it changes a file: answer under <b>Waiting for you</b> (<kbd>y</kbd>, <kbd>n</kbd>, <kbd>v</kbd> shows the change) or in VS Code. <kbd>r</kbd> switches to <b>auto</b>, where it changes files without asking.',
+];
+
+const trouble = [
+  ['“Docker is stopped”', 'Start Docker Desktop, or <code>clank docker start</code>'],
+  ["A workspace says its container uses an older sandbox image", 'Reopen it: <kbd>F6</kbd>, <kbd>x</kbd>, then <kbd>o</kbd>'],
+  ["<kbd>F10</kbd> opens your terminal's menu instead of the Monitor", '<code>clank console --page monitor</code>'],
+  ['The key is refused (401)', 'Make a new key at OpenRouter and add it again (<code>clank endpoint key openrouter</code>)'],
+  ['“No credits” (402)', 'Add credits at OpenRouter, or pick a free model'],
+  ['<code>clank</code> is not found', 'Open a new terminal after <code>uv tool update-shell</code>'],
+];
+---
+
+<Base
+  title="Get started · Clank"
+  description="From nothing to an AI coding agent working in one of your folders: install Clank, add a cloud model or a model on your GPU, open a folder. Every step, with the commands to copy."
+  path={PAGES.start.path}
+>
+  <SubNav slot="subnav" items={sections} label="Get started, by step" />
+  <PageHeader
+    crumb="Get started"
+    eyebrow="Get started"
+    title="From nothing to an agent in your folder."
+    lead="Install Clank, add a model, open a folder. The quickest path uses a cloud model through an API key (OpenRouter) and needs no GPU; a model on your own GPU is the other path. Written for Windows first; macOS and Linux notes are at the end."
+  />
+
+  <section class="section step-sec" id="needs" aria-labelledby="needs-title">
+    <div class="container">
+      <p class="num">1</p>
+      <h2 id="needs-title" class="h2">What you need</h2>
+      <div class="table-wrap">
+        <table class="t needs">
+          <caption class="sr-only">What you need, what for, and notes</caption>
+          <thead>
+            <tr><th scope="col">What</th><th scope="col">Needed for</th><th scope="col">Notes</th></tr>
+          </thead>
+          <tbody>
+            {needs.map(([what, forWhat, note]) => (
+              <tr><th scope="row">{what}</th><td>{forWhat}</td><td class="mu">{note}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section step-sec" id="install" aria-labelledby="install-title">
+    <div class="container">
+      <p class="num">2</p>
+      <h2 id="install-title" class="h2">Install</h2>
+      <div class="soon">
+        <InstallCommand id="gs" note={false} />
+        <p class="mu">
+          {INSTALLER_READY
+            ? 'The one-line installer does all of this. To install by hand instead:'
+            : 'The faster way, a one-line installer, is coming. Until then, install by hand: it takes a few minutes.'}
+        </p>
+      </div>
+
+      <ol class="steps">
+        <li>
+          <div class="txt"><h3>Install Git, uv and Docker Desktop</h3><p>In PowerShell:</p></div>
+          <CommandBlock label="install Git, uv and Docker Desktop" lines={['winget install --id Git.Git -e', 'winget install --id astral-sh.uv -e', 'winget install --id Docker.DockerDesktop -e']} />
+          <p class="mu">Then open Docker Desktop once, accept its terms and let it finish starting. Close PowerShell and open a new one, so the new programs are on its path.</p>
+        </li>
+        <li>
+          <div class="txt"><h3>Get Clank and install it</h3></div>
+          <CommandBlock label="get Clank and install it" lines={[`git clone ${repo} Clank`, 'cd Clank', 'uv tool install --editable .', 'uv tool update-shell']} />
+          {!RELEASED && (
+            <p class="note">
+              <b>The repository's address</b> is shared with you while the repository is private; it is public with the
+              first release. Its owner adds you as a collaborator on GitHub first; <code>git clone</code> then asks you to
+              sign in to GitHub (or install the GitHub CLI with <code>winget install --id GitHub.cli -e</code> and run
+              <code>gh auth login</code>).
+            </p>
+          )}
+        </li>
+        <li>
+          <div class="txt"><h3>Check the computer</h3><p>Open a new PowerShell once more, then:</p></div>
+          <CommandBlock label="check the computer" lines={['clank doctor']} />
+          <p class="mu">It changes nothing; it says what is ready and what is missing (Docker, WSL, a GPU), each with what to do.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="band step-sec" id="cloud" aria-labelledby="cloud-title">
+    <div class="container two">
+      <div>
+        <p class="num">3a</p>
+        <h2 id="cloud-title" class="h2">Add a cloud model (OpenRouter)</h2>
+        <ol class="list">
+          {cloudSteps.map((s) => <li set:html={s} />)}
+        </ol>
+        <p class="mu after">
+          What it costs shows on the header, Home, Requests (<kbd>F7</kbd>), the Monitor and <code>clank cost</code>.
+          You can set a daily or monthly limit (<kbd>L</kbd> anywhere, or <code>clank cost limit</code>); when it is
+          reached, cloud requests pause until you raise it.
+        </p>
+      </div>
+      <div class="shots">
+        <Window title="clank · Add a model">
+          <Crop crop={addModel()} label="Add a model: c for a cloud model with your key, l for a local model on this GPU." />
+        </Window>
+      </div>
+    </div>
+  </section>
+
+  <section class="section step-sec" id="local" aria-labelledby="local-title">
+    <div class="container two">
+      <div>
+        <p class="num">3b</p>
+        <h2 id="local-title" class="h2">Or a model on your own GPU</h2>
+        <p class="para">
+          Clank runs local models with llama.cpp or KVMem (an engine that keeps a long context partly in system memory).
+          On Windows they run in WSL. This path is not one step yet: the engine is built in WSL and the model file
+          downloaded, then a <b>preset</b> (the model with its settings) is loaded into the main slot.
+        </p>
+        <p class="para">
+          Start from <b>Add a model</b> → <kbd>l</kbd> <b>Local</b>: it lists the presets with what each needs and walks
+          you through each step, asking first.
+          {RELEASED && <span> One setup worth building again, with every setting and why, is written up in <a href={LINKS.models}>docs/models</a>.</span>}
+        </p>
+      </div>
+      <div class="shots">
+        <Window title="clank · Add a model · Local">
+          <Crop crop={presets()} label="Local presets, each with its fit on this GPU and what it still needs." />
+        </Window>
+      </div>
+    </div>
+  </section>
+
+  <section class="band step-sec" id="folder" aria-labelledby="folder-title">
+    <div class="container two">
+      <div>
+        <p class="num">4</p>
+        <h2 id="folder-title" class="h2">Work in a folder</h2>
+        <ol class="list">
+          {folderSteps.map((s) => <li set:html={s} />)}
+        </ol>
+        <p class="mu after">
+          Then look around: the <a href={`${PAGES.features.path}#monitor`}>Monitor</a> (<kbd>F10</kbd>) shows what the
+          agent does and what fills its context window, and lets you stop, pause, guide or undo it;
+          <a href={`${PAGES.features.path}#flows`}>Flows</a> (F10's Flow view, <kbd>n</kbd>) split a larger piece of
+          work into steps, each a fresh session.
+          {RELEASED && <span> <a href={LINKS.console}>docs/console.md</a> explains every page and key.</span>}
+        </p>
+      </div>
+      <div class="shots">
+        <Window title="clank · This folder · F4">
+          <Crop crop={folder()} label="This folder: each step working here needs, then the keys to start the agent or open VS Code." />
+        </Window>
+        <Window title="clank · once per folder, with a cloud model">
+          <Crop crop={consent()} label="Clank asks once whether this folder's work may go to OpenRouter: y allows, n keeps it local." />
+        </Window>
+      </div>
+    </div>
+  </section>
+
+  <section class="section step-sec" id="updating" aria-labelledby="updating-title">
+    <div class="container two">
+      <div>
+        <p class="num">5</p>
+        <h2 id="updating-title" class="h2">Updating</h2>
+        <p class="para">Clank has no update command yet. To update, in the Clank folder:</p>
+        <p class="para mu">
+          Run these at the computer itself, not over SSH: started from an SSH session, the service runs where it cannot
+          use Docker's sign-in. If Clank then says a workspace's container uses an older sandbox image, reopen that
+          workspace: <b>Workspaces</b> (<kbd>F6</kbd>), <kbd>x</kbd> to stop it, then <kbd>o</kbd> to open it again.
+        </p>
+      </div>
+      <div class="shots">
+        <CommandBlock label="update Clank" lines={['git pull', 'clank stop', 'clank serve --background', 'clank gateway restart']} />
+      </div>
+    </div>
+  </section>
+
+  <section class="section step-sec" id="trouble" aria-labelledby="trouble-title">
+    <div class="container">
+      <p class="num">6</p>
+      <h2 id="trouble-title" class="h2">Troubleshooting</h2>
+      <div class="table-wrap">
+        <table class="t trouble">
+          <caption class="sr-only">What you see, and what to do</caption>
+          <thead>
+            <tr><th scope="col">What you see</th><th scope="col">What to do</th></tr>
+          </thead>
+          <tbody>
+            {trouble.map(([see, todo]) => (
+              <tr><th scope="row" set:html={see} /><td set:html={todo} /></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section step-sec" id="uninstall" aria-labelledby="uninstall-title">
+    <div class="container two">
+      <div>
+        <p class="num">7</p>
+        <h2 id="uninstall-title" class="h2">Uninstalling</h2>
+        <p class="para mu">
+          Clank's own folder, <code>%USERPROFILE%\.clank</code>, keeps your settings, records and keys: delete it to
+          remove those too. Workspace containers are removed from <b>Workspaces</b> (<kbd>F6</kbd>, <kbd>d</kbd>) before
+          that, or from Docker Desktop.
+        </p>
+      </div>
+      <div class="shots">
+        <CommandBlock label="uninstall Clank" lines={['clank stop', 'uv tool uninstall clank']} />
+      </div>
+    </div>
+  </section>
+
+  <section class="section step-sec" id="other" aria-labelledby="other-title">
+    <div class="container">
+      <h2 id="other-title" class="h2">macOS and Linux</h2>
+      <p class="para wide">
+        Clank's console, the cloud path and its commands are the same; install uv, Git and Docker (Docker Desktop on
+        macOS; Docker Engine on Linux) the way your system does, then follow step 2 from <code>git clone</code>. Neither
+        has been tested yet. On Linux, the agent's container reaching Clank's gateway through Docker Engine is still
+        being built, so the agent may not reach the model there yet.
+      </p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  section[id] {
+    scroll-margin-top: 120px;
+  }
+
+  .step-sec {
+    padding-top: clamp(64px, 7vw, 104px);
+  }
+
+  .num {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--orange);
+  }
+
+  .h2 {
+    margin-top: 6px;
+    font-size: clamp(1.6rem, 1.25rem + 1.5vw, 2.25rem);
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+  }
+
+  .mu {
+    color: var(--muted);
+  }
+
+  .para {
+    margin-top: 14px;
+    max-width: 44rem;
+  }
+
+  .para.wide {
+    max-width: 52rem;
+  }
+
+  .table-wrap {
+    margin-top: 22px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow-x: auto;
+  }
+
+  .t {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+
+  .t th,
+  .t td {
+    padding: 13px 18px;
+    text-align: left;
+    vertical-align: top;
+    border-top: 1px solid var(--line);
+  }
+
+  .t thead th {
+    border-top: 0;
+    background: var(--surface);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .t tbody th {
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+
+  .needs tbody th {
+    width: 32%;
+  }
+
+  .trouble tbody th {
+    width: 45%;
+    font-weight: 500;
+  }
+
+  .soon {
+    margin-top: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 40rem;
+  }
+
+  .steps {
+    margin-top: 32px;
+    list-style: none;
+    counter-reset: s;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    max-width: 46rem;
+  }
+
+  .steps > li {
+    counter-increment: s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-left: 46px;
+  }
+
+  .steps > li::before {
+    content: counter(s);
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--line-strong);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-strong);
+  }
+
+  .txt {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .txt h3 {
+    font-size: 1.1rem;
+    line-height: 1.7;
+  }
+
+  .note {
+    padding: 12px 16px;
+    border: 1px solid color-mix(in srgb, var(--yellow) 35%, transparent);
+    background: rgba(224, 175, 104, 0.05);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+
+  .note b {
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+
+  .two {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 32px clamp(32px, 5vw, 64px);
+    align-items: start;
+  }
+
+  .list {
+    margin-top: 20px;
+    padding-left: 1.5em;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .list li::marker {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--orange);
+  }
+
+  .list :global(b),
+  .para b {
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+
+  .list :global(code),
+  .para code,
+  .after code,
+  .note code,
+  .t :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    padding: 0.08em 0.35em;
+    border-radius: 5px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--text-strong);
+  }
+
+  .list :global(kbd),
+  .para kbd,
+  .after kbd,
+  .t :global(kbd) {
+    font-family: var(--font-mono);
+    font-size: 0.82em;
+    padding: 0.05em 0.4em;
+    border: 1px solid var(--line-strong);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    background: var(--surface-2);
+    color: var(--text-strong);
+  }
+
+  .after {
+    margin-top: 18px;
+  }
+
+  .shots {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0;
+    position: sticky;
+    top: 140px;
+  }
+
+  @media (max-width: 960px) {
+    .two {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .shots {
+      position: static;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .t thead {
+      display: none;
+    }
+
+    .t tr {
+      display: grid;
+      gap: 4px;
+      padding: 12px 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .t tbody tr:first-child {
+      border-top: 0;
+    }
+
+    .t th,
+    .t td {
+      display: block;
+      width: auto !important;
+      padding: 0;
+      border: 0;
+    }
+
+    .steps > li {
+      padding-left: 40px;
+    }
+  }
+</style>

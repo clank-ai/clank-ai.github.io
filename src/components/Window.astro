@@ -1,0 +1,19 @@
+---
+/** A framed screen: a title bar, then whatever it shows. */
+interface Props {
+  title: string;
+  class?: string;
+  pad?: boolean;
+}
+const { title, class: cls, pad = true } = Astro.props;
+---
+
+<div class:list={['window', cls]}>
+  <div class="window-bar" aria-hidden="true">
+    <span class="dots"><i></i><i></i><i></i></span>
+    <span>{title}</span>
+  </div>
+  <div class:list={[pad && 'window-body']}>
+    <slot />
+  </div>
+</div>

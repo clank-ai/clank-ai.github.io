@@ -1,0 +1,86 @@
+---
+/** A preset: one small file that says how a model runs. The values are an example. */
+---
+
+<div class="code">
+  <p class="code-name"><span>your-preset.json</span><span class="eg">an example</span></p>
+  <pre><code><span class="p">{"{"}</span>
+  <span class="k">"title"</span>: <span class="s">"your preset"</span>,
+  <span class="k">"engine"</span>: <span class="s">"kvmem-llamacpp"</span>,
+  <span class="k">"model"</span>: <span class="s">"your-model"</span>,
+  <span class="k">"options"</span>: <span class="p">{"{"}</span>
+    <span class="k">"kvmem.budget"</span>: <span class="n">16384</span>,
+    <span class="k">"kv.type"</span>: <span class="s">"q8_0"</span>,
+    <span class="k">"max_output"</span>: <span class="n">8192</span>,
+    <span class="k">"thinking.budget"</span>: <span class="n">4096</span>
+  <span class="p">{"}"}</span>
+<span class="p">{"}"}</span></code></pre>
+  <p class="code-cmd"><span class="prompt">$</span> clank preset check your-preset</p>
+</div>
+
+<style>
+  .code {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #343a55;
+    border-radius: 12px;
+    background: var(--well);
+    overflow: hidden;
+    box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.8);
+  }
+
+  .code-name {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--line);
+    background: #111118;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .eg {
+    color: var(--yellow);
+  }
+
+  pre {
+    margin: 0;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-size: 0.86rem;
+    line-height: 1.65;
+    color: var(--text);
+  }
+
+  .k {
+    color: var(--blue);
+  }
+
+  .s {
+    color: var(--green);
+  }
+
+  .n {
+    color: var(--orange);
+  }
+
+  .p {
+    color: var(--muted);
+  }
+
+  .code-cmd {
+    padding: 10px 16px;
+    border-top: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+    color: var(--text-strong);
+    overflow-wrap: anywhere;
+  }
+
+  .prompt {
+    margin-right: 10px;
+    color: var(--green);
+  }
+</style>

@@ -1,0 +1,469 @@
+---
+/**
+ * Why Clank: the purpose in full. Two aims held to equally (precise control, and far less
+ * dependence on cloud providers and hosted agents), everything it takes to run models on your own
+ * PC brought into one place, and what Clank does that a hosted agent leaves to its provider.
+ */
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import SubNav from '../components/SubNav.astro';
+import Why from '../components/Why.astro';
+import { PAGES } from '../config';
+
+const f = PAGES.features.path;
+const sections = [
+  { id: 'control', label: 'Precise control' },
+  { id: 'independence', label: 'Less dependence' },
+  { id: 'one-place', label: 'One place' },
+  { id: 'aim', label: 'The aim' },
+];
+
+const control = [
+  {
+    t: 'Every setting visible, and yours',
+    d: 'The engine and its build, the model file and its quantization, the window, the most output, the thinking budget, sampling for each role, the context margin and the cost limits. Each lives in a readable file, each is shown where it applies, and each is yours to change.',
+    href: `${f}#models`,
+  },
+  {
+    t: 'Every request recorded',
+    d: 'Each request the agent makes passes Clank’s gateway, which keeps its model, its tokens in, cached, out and thinking, its time and its cost, on your computer, one line each in Requests.',
+    href: `${f}#gateway`,
+  },
+  {
+    t: 'The context window, part by part',
+    d: 'How full the window is and what fills it: the system prompt, tool definitions, thinking, calls, their results, and any text that repeats. How it grew, step by step, and what you could free before it fills.',
+    href: `${f}#context`,
+  },
+  {
+    t: 'The agent, watched and steered live',
+    d: 'What it does this second, the call it is writing, the text as it streams. The Guide stops it, adds a note, pauses it at the gateway, compacts, undoes a step or drops a tool result, and shows what each costs first.',
+    href: `${f}#monitor`,
+  },
+  {
+    t: 'Runaway answers stopped',
+    d: 'The loop guard reads every answer as it streams and stops one that repeats itself, instead of letting it run to its limit and be sent again with every later step.',
+    href: `${f}#gateway`,
+  },
+  {
+    t: 'Long work as flows of fresh, prepared sessions',
+    d: 'A plan, a check, tasks and a summary, each a fresh session that starts with exactly the context it needs. A check that sends work back with numbered findings, a model per box, and you at the final review.',
+    href: `${f}#flows`,
+  },
+];
+
+const independence = [
+  {
+    t: 'Local models with no usage limits',
+    d: 'An open model on your own GPU has no quota and no price per request. Run it as long and as often as the work needs.',
+    href: `${f}#models`,
+  },
+  {
+    t: 'Long contexts on a card you own',
+    d: 'With KVMem, the window can be larger than your GPU holds: the part that matters is read on the GPU, the rest waits in system memory.',
+    href: `${f}#context`,
+  },
+  {
+    t: 'The cloud, when you choose it',
+    d: 'A cloud model through OpenRouter, with your own key, for a workspace you allowed, under a day’s and a month’s limit you set.',
+    href: `${f}#cloud`,
+  },
+  {
+    t: 'A model for each task',
+    d: 'A flow can plan with one model and run its tasks on another, local or cloud. Clank loads each box’s model before it starts.',
+    href: `${f}#flows`,
+  },
+  {
+    t: 'Your work stays on your machine',
+    d: 'Your files, conversations, keys and records stay on your computer. With a local model, nothing leaves at all.',
+    href: `${f}#privacy`,
+  },
+  {
+    t: 'Open all the way down',
+    d: 'Clank is open source, and so is OpenCode, the agent it runs. With a local model, nothing in the chain is a service you cannot read.',
+    href: PAGES.openSource.path,
+  },
+];
+
+const steps = [
+  ['Check the machine', 'Look up drivers, CUDA, WSL 2, Docker and disk, a guide for each.', 'clank doctor checks it all, says what is missing, and changes nothing.'],
+  ['A sandbox for the agent', 'Write a container for it, mount the folder, decide what it may reach.', 'One workspace per folder, built on first use after asking. It reaches only Clank.'],
+  ['An engine', 'Build llama.cpp or another engine with the right options for your GPU.', 'Clank installs KVMem or llama.cpp by its recipe, or adopts a build you made.'],
+  ['A model file', 'Find a model, pick a quantization, download it, check it.', 'A preset names the file and its SHA-256; Clank downloads it, resumes it, checks it.'],
+  ['Its settings', 'Work out the flags: the window, the cache, the most output, the thinking budget.', 'A preset holds them in one small file, and says whether it fits your GPU now.'],
+  ['Load and switch', 'Start and stop servers by hand, a port for each.', 'Load, switch and unload from the console: Models (8), Presets (9), one key each.'],
+  ['A cloud provider', 'Open an account, store a key, point the agent at the provider and a model.', 'Add a model, c: agree once, paste the key, pick a model that takes tool calls; one test request.'],
+  ['Cost and limits', 'Watch the provider’s dashboard.', 'Each request’s cost in the console; a day’s and a month’s limit that pause cloud requests.'],
+  ['Work in a folder', 'Point the agent at the model, mount the folder, install its packages.', 'This folder (F4): g does every step, a starts the agent, c opens VS Code.'],
+];
+---
+
+<Base
+  title="Why Clank"
+  description="Why Clank exists: precise control over the models behind your coding agents, far less dependence on cloud providers and hosted agents, and everything it takes to run LLMs on your PC in one place."
+  path={PAGES.why.path}
+>
+  <SubNav slot="subnav" items={sections} label="Why Clank, by section" />
+  <PageHeader
+    crumb="Why Clank"
+    eyebrow="Why Clank"
+    title="Why Clank exists."
+    lead="Two aims, held to equally: precise control over the models behind your coding agents, and far less dependence on cloud providers and hosted agents such as Codex and Claude Code. Reaching them meant putting everything it takes to run models on your own PC in one place."
+  />
+
+  <section class="section" id="control" aria-labelledby="control-title">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">The first aim</p>
+        <h2 id="control-title">Control the models behind your agents, precisely.</h2>
+        <p class="lead">
+          A coding agent is only as good as the model it talks to, and as how that model is served, fed and watched.
+          Clank makes each of those yours: seen as it happens, recorded, and changed in files you can read.
+        </p>
+      </div>
+      <ul class="items">
+        {
+          control.map((c) => (
+            <li>
+              <h3>{c.t}</h3>
+              <p>{c.d}</p>
+              <a class="more" href={c.href}>See it</a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="band" id="independence" aria-labelledby="independence-title">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">The second aim</p>
+        <h2 id="independence-title">Depend dramatically less on cloud providers and hosted agents.</h2>
+        <p class="lead">
+          Clank runs on models you choose, where you choose. A hosted agent stays available to you; it stops being the
+          only way to get the work done.
+        </p>
+      </div>
+      <ul class="items">
+        {
+          independence.map((c) => (
+            <li>
+              <h3>{c.t}</h3>
+              <p>{c.d}</p>
+              <a class="more" href={c.href}>See it</a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="one-place" aria-labelledby="one-place-title">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">One place</p>
+        <h2 id="one-place-title">Everything it takes to run LLMs on your PC, local and cloud.</h2>
+        <p class="lead">
+          Running a model on your own hardware, or adding a cloud provider, usually means a dozen tools and guides.
+          Clank brings every step into one console and one set of commands. It does each step for you, asks first, and
+          shows what it did.
+        </p>
+      </div>
+      <div class="table-wrap">
+        <table class="steps">
+          <caption class="sr-only">Each step of running a model on your PC, by hand and with Clank</caption>
+          <thead>
+            <tr>
+              <th scope="col">The step</th>
+              <th scope="col">By hand</th>
+              <th scope="col" class="c">With Clank</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              steps.map(([step, hand, clank]) => (
+                <tr>
+                  <th scope="row">{step}</th>
+                  <td class="hand">{hand}</td>
+                  <td class="clank">{clank}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="journeys">
+        <div class="journey local">
+          <p class="k"><span class="dot"></span>From install to a working session, on your GPU</p>
+          <ol>
+            <li><code>install</code><span>one line</span></li>
+            <li><code>clank doctor</code><span>checks the machine</span></li>
+            <li><code>clank</code><span>Add a model opens</span></li>
+            <li><code>l</code><span>a preset that fits</span></li>
+            <li><code>y y y</code><span>engine, model, load</span></li>
+            <li><code>F4 · g</code><span>the folder's workspace</span></li>
+            <li><code>a</code><span>the agent, at work</span></li>
+          </ol>
+        </div>
+        <div class="journey cloud">
+          <p class="k"><span class="dot"></span>From install to a working session, with a cloud key</p>
+          <ol>
+            <li><code>install</code><span>one line</span></li>
+            <li><code>clank doctor</code><span>checks the machine</span></li>
+            <li><code>clank</code><span>Add a model opens</span></li>
+            <li><code>c</code><span>OpenRouter, agreed once</span></li>
+            <li><code>paste</code><span>your key, checked</span></li>
+            <li><code>F4 · g</code><span>the folder's workspace</span></li>
+            <li><code>a</code><span>the agent, at work</span></li>
+          </ol>
+        </div>
+      </div>
+      <p class="after"><a class="more" href={PAGES.start.path}>Every step, with the screens</a></p>
+    </div>
+  </section>
+
+  <div class="band flush aim-band">
+    <Why />
+  </div>
+</Base>
+
+<style>
+  .items {
+    margin-top: clamp(32px, 4vw, 48px);
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    gap: 1px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--line);
+    overflow: hidden;
+  }
+
+  .items li {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: clamp(20px, 2.4vw, 28px);
+    background: var(--bg);
+  }
+
+  .band .items li {
+    background: #17171f;
+  }
+
+  .items h3 {
+    font-size: 1.12rem;
+    line-height: 1.35;
+  }
+
+  .items p {
+    color: var(--muted);
+    font-size: 0.97rem;
+  }
+
+  .items .more {
+    margin-top: auto;
+    min-height: 36px;
+    font-size: 0.92rem;
+  }
+
+  .table-wrap {
+    margin-top: clamp(32px, 4vw, 48px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow-x: auto;
+  }
+
+  .steps {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.96rem;
+  }
+
+  .steps th,
+  .steps td {
+    padding: 14px 20px;
+    text-align: left;
+    vertical-align: top;
+    border-top: 1px solid var(--line);
+  }
+
+  .steps thead th {
+    border-top: 0;
+    background: var(--surface);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .steps thead .c {
+    color: var(--orange);
+  }
+
+  .steps tbody th {
+    color: var(--text-strong);
+    font-weight: 600;
+    width: 18%;
+  }
+
+  .hand {
+    color: var(--faint);
+    width: 37%;
+  }
+
+  .clank {
+    color: var(--text);
+  }
+
+  .journeys {
+    margin-top: 24px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  .journey {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: clamp(20px, 2.4vw, 28px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .journey .k {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+
+  .dot {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .local {
+    --accent: var(--teal);
+  }
+
+  .cloud {
+    --accent: var(--blue);
+  }
+
+  .journey ol {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .journey li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 9.5rem minmax(0, 1fr);
+    gap: 12px;
+    align-items: baseline;
+    padding: 6px 0 6px 18px;
+  }
+
+  .journey li::before {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 0;
+    bottom: 0;
+    border-left: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  }
+
+  .journey li:first-child::before {
+    top: 50%;
+  }
+
+  .journey li:last-child::before {
+    bottom: 50%;
+  }
+
+  .journey li::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: calc(50% - 3.5px);
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .journey code {
+    justify-self: start;
+    padding: 2px 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    background: var(--well);
+    font-size: 0.84rem;
+    color: var(--text-strong);
+    white-space: nowrap;
+  }
+
+  .journey span {
+    color: var(--muted);
+    font-size: 0.94rem;
+  }
+
+  .after {
+    margin-top: 16px;
+  }
+
+  .aim-band {
+    margin-top: var(--section-gap);
+    padding-block: 0 var(--section-gap);
+  }
+
+  @media (max-width: 860px) {
+    .journeys {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .steps thead {
+      display: none;
+    }
+
+    .steps tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      border-top: 1px solid var(--line);
+      padding: 12px 16px;
+      gap: 4px;
+    }
+
+    .steps tr:first-child {
+      border-top: 0;
+    }
+
+    .steps th,
+    .steps td {
+      display: block;
+      width: auto !important;
+      padding: 0;
+      border: 0;
+    }
+
+    .journey li {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2px;
+    }
+  }
+</style>

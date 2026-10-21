@@ -1,0 +1,114 @@
+---
+/**
+ * A page's sections, in a bar that stays under the top bar while the page scrolls, the section
+ * being read marked. It scrolls sideways on a narrow screen; it never wraps under the content.
+ */
+interface Props {
+  items: { id: string; label: string }[];
+  label: string;
+}
+const { items, label } = Astro.props;
+---
+
+<nav class="subnav" aria-label={label} data-subnav>
+  <div class="container">
+    <ul>
+      {
+        items.map((item) => (
+          <li>
+            <a href={`#${item.id}`} data-section={item.id}>
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</nav>
+
+<script>
+  for (const nav of document.querySelectorAll<HTMLElement>('[data-subnav]')) {
+    const links = Array.from(nav.querySelectorAll<HTMLAnchorElement>('[data-section]'));
+    const sections = links
+      .map((a) => document.getElementById(a.dataset.section ?? ''))
+      .filter((el): el is HTMLElement => !!el);
+    const mark = (id: string) => {
+      for (const a of links) {
+        const on = a.dataset.section === id;
+        if (on) {
+          a.setAttribute('aria-current', 'location');
+          const list = a.closest('ul');
+          if (list && list.scrollWidth > list.clientWidth) {
+            const left = a.offsetLeft - list.clientWidth / 2 + a.clientWidth / 2;
+            list.scrollTo({ left, behavior: 'auto' });
+          }
+        } else a.removeAttribute('aria-current');
+      }
+    };
+    const pick = () => {
+      const line = 150;
+      let current = sections[0]?.id ?? '';
+      for (const s of sections) if (s.getBoundingClientRect().top - line <= 0) current = s.id;
+      mark(current);
+    };
+    window.addEventListener('scroll', pick, { passive: true });
+    window.addEventListener('resize', pick);
+    pick();
+  }
+</script>
+
+<style>
+  .subnav {
+    position: sticky;
+    top: 64px;
+    z-index: 40;
+    background: rgba(18, 18, 26, 0.86);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+
+  ul {
+    display: flex;
+    gap: 2px;
+    list-style: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  ul::-webkit-scrollbar {
+    display: none;
+  }
+
+  a {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-height: 46px;
+    padding: 0 12px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  a:hover {
+    color: var(--text-strong);
+  }
+
+  a[aria-current] {
+    color: var(--text-strong);
+  }
+
+  a[aria-current]::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: -1px;
+    height: 2px;
+    background: var(--orange);
+  }
+</style>

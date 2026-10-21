@@ -1,0 +1,50 @@
+---
+/**
+ * Home sells, and points onward: what Clank is in one screen, the real workflow in the demo, why it
+ * exists in brief, what it is, everything it puts in one place, and where to read more.
+ */
+import Base from '../layouts/Base.astro';
+import Hero from '../components/Hero.astro';
+import SplitDemo from '../components/demo/SplitDemo.astro';
+import Purpose from '../components/home/Purpose.astro';
+import HowItWorks from '../components/HowItWorks.astro';
+import OnePlace from '../components/home/OnePlace.astro';
+import OpenSourceBand from '../components/home/OpenSourceBand.astro';
+import FinalCta from '../components/FinalCta.astro';
+---
+
+<Base>
+  <Hero />
+  <section class="demo-stage" aria-label="Demo">
+    <div class="stage-light" aria-hidden="true"></div>
+    <div class="container">
+      <SplitDemo />
+    </div>
+  </section>
+  <Purpose />
+  <HowItWorks />
+  <OnePlace />
+  <OpenSourceBand />
+  <FinalCta />
+</Base>
+
+<style>
+  .demo-stage {
+    position: relative;
+    isolation: isolate;
+    padding-bottom: 24px;
+  }
+
+  .stage-light {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 12%;
+    height: 70%;
+    z-index: -1;
+    background:
+      radial-gradient(45% 55% at 50% 40%, rgba(122, 162, 247, 0.12), transparent 70%),
+      radial-gradient(30% 40% at 78% 60%, rgba(255, 158, 100, 0.06), transparent 70%);
+    pointer-events: none;
+  }
+</style>

@@ -1,0 +1,386 @@
+---
+/** Flows explained: why one long session fails long work, what a flow does instead, its kinds of box, and how one is built. */
+const kinds = [
+  { kind: 'YOU', by: 'you', does: 'write the brief, BRIEF.md: the goal and the limits. Every flow starts here.', c: 'var(--purple)' },
+  { kind: 'PLAN', by: 'a model', does: 'writes PLAN.md, as a planner, and runs nothing.', c: 'var(--blue)' },
+  { kind: 'VERIFY', by: 'a fresh model', does: 'checks one deliverable: pass, or fail with numbered findings.', c: 'var(--green)' },
+  { kind: 'GATE', by: 'you', does: 'approve, edit then approve, send back with a note, or stop.', c: 'var(--yellow)' },
+  { kind: 'DECOMPOSE', by: 'a model', does: 'proposes tasks, each with a deliverable and a drafted prompt.', c: 'var(--orange)' },
+  { kind: 'TASK', by: 'a model', does: 'makes its deliverable: the files it names.', c: 'var(--teal)' },
+  { kind: 'INTEGRATE', by: 'a fresh model', does: "sums up what came before, and writes the next flow's brief.", c: 'var(--red)' },
+];
+
+const longSession = [
+  { label: '1', w: 9 },
+  { label: '2', w: 14 },
+  { label: '3', w: 11 },
+  { label: '4', w: 19 },
+  { label: '5', w: 16 },
+  { label: '6', w: 24 },
+];
+
+const flowBoxes = [
+  { kind: 'PLAN', fill: 34 },
+  { kind: 'VERIFY', fill: 22 },
+  { kind: 'TASK T1', fill: 41 },
+  { kind: 'TASK T2', fill: 38 },
+  { kind: 'INTEGRATE', fill: 30 },
+];
+---
+
+<section class="section" id="flows" aria-labelledby="flows-title">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Flows</p>
+      <h2 id="flows-title">Long work as a program of boxes.</h2>
+      <p class="lead">
+        In one long session, every step adds to the same window until it is summed up and detail is lost. A flow gives
+        each step a fresh session that starts with exactly the context it needs.
+      </p>
+    </div>
+
+    <div class="compare">
+      <figure class="cmp cmp-long">
+        <figcaption>
+          <b>One long session</b>
+          <span>Steps 1 to 6 share one window: what each read, ran and thought stays in it. A step whose results overflow it fails.</span>
+        </figcaption>
+        <div class="window" aria-hidden="true">
+          <div class="win-bar">
+            {longSession.map((s) => <span style={`flex: ${s.w}`}>{s.label}</span>)}
+          </div>
+          <div class="win-limit"><span>the window</span></div>
+        </div>
+      </figure>
+
+      <figure class="cmp cmp-flow">
+        <figcaption>
+          <b>A flow</b>
+          <span>Each box starts afresh, with only what it needs. None inherits the history of the boxes before it.</span>
+        </figcaption>
+        <ol class="mini" aria-hidden="true">
+          {
+            flowBoxes.map((b) => (
+              <li>
+                <span class="mini-k">{b.kind}</span>
+                <span class="mini-w">
+                  <span style={`width: ${b.fill}%`} />
+                </span>
+              </li>
+            ))
+          }
+        </ol>
+      </figure>
+    </div>
+
+    <div class="detail">
+      <div class="kinds">
+        <h3>The kinds of box</h3>
+        <ul>
+          {
+            kinds.map((k) => (
+              <li style={`--c: ${k.c}`}>
+                <span class="k">{k.kind}</span>
+                <span class="by">{k.by}</span>
+                <span class="does">{k.does}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <div class="points">
+        <div class="point">
+          <h3>Each box, prepared</h3>
+          <p>
+            A box's first message holds Clank's instructions for its kind, a map of the flow, the brief, its prompt, the
+            notes handed on, the files it sees, and on a later try what went wrong.
+            <code class="inline">clank flow prepare</code> shows it before it is sent, with its size in tokens.
+          </p>
+        </div>
+        <div class="point">
+          <h3>Checked on its own</h3>
+          <p>
+            VERIFY sees the brief, the deliverable and what to accept, never the session that made it. A fail goes back
+            with numbered findings, up to the box's tries; then a gate asks you.
+          </p>
+        </div>
+        <div class="point">
+          <h3>A model per box</h3>
+          <p>A planner on one model and the tasks on another, local or cloud. Clank loads each box's preset before it starts.</p>
+        </div>
+        <div class="point">
+          <h3>Built by talking it through</h3>
+          <p>
+            Press <kbd class="key">f</kbd> in a folder. The model reads it, asks what it needs, writes the brief with you and
+            drafts the flow; Clank checks each draft and tells the model what to fix.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .compare {
+    margin-top: clamp(36px, 4.5vw, 56px);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+
+  .cmp {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    padding: clamp(20px, 2.4vw, 28px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .cmp figcaption {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .cmp figcaption b {
+    color: var(--text-strong);
+    font-size: var(--fs-h3);
+    font-weight: 600;
+  }
+
+  .cmp figcaption span {
+    color: var(--muted);
+  }
+
+  .window {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+  }
+
+  .win-bar {
+    display: flex;
+    gap: 2px;
+    width: 118%;
+    height: 40px;
+    -webkit-mask-image: linear-gradient(to right, #000 78%, transparent 100%);
+    mask-image: linear-gradient(to right, #000 78%, transparent 100%);
+  }
+
+  .cmp-long {
+    overflow: hidden;
+  }
+
+  .win-bar span {
+    display: flex;
+    align-items: center;
+    padding: 0 6px;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    border-radius: 3px;
+    background: rgba(122, 162, 247, 0.22);
+    color: var(--text-strong);
+  }
+
+  .win-bar span:nth-child(n + 4) {
+    background: rgba(122, 162, 247, 0.32);
+  }
+
+  .win-bar span:last-child {
+    background: rgba(247, 118, 142, 0.38);
+  }
+
+  .win-limit {
+    position: relative;
+    height: 18px;
+    border-top: 1px dashed var(--red);
+    width: 84.7%;
+  }
+
+  .win-limit::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: -46px;
+    height: 46px;
+    border-right: 1px dashed var(--red);
+  }
+
+  .win-limit span {
+    position: absolute;
+    right: 0;
+    top: 2px;
+    color: var(--red);
+  }
+
+  .mini {
+    margin-top: auto;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+  }
+
+  .mini li {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid var(--green);
+    border-radius: 4px;
+  }
+
+  .mini-k {
+    color: var(--text-strong);
+    overflow-wrap: anywhere;
+  }
+
+  .mini-w {
+    position: relative;
+    height: 8px;
+    border-radius: 2px;
+    background: #2a2f45;
+    overflow: hidden;
+  }
+
+  .mini-w span {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: var(--teal);
+  }
+
+  .detail {
+    margin-top: 24px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(24px, 4vw, 56px);
+    padding: clamp(22px, 3vw, 36px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  .kinds {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .kinds h3,
+  .point h3 {
+    font-size: var(--fs-h3);
+    line-height: 1.3;
+  }
+
+  .kinds ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .kinds li {
+    display: grid;
+    grid-template-columns: 10.5ch 7.5rem minmax(0, 1fr);
+    gap: 4px 14px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+    font-size: 0.95rem;
+  }
+
+  .kinds li:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .k {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: var(--c);
+    padding-top: 0.15em;
+  }
+
+  .by {
+    color: var(--faint);
+    font-size: 0.9rem;
+  }
+
+  .does {
+    color: var(--text);
+  }
+
+  .points {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    align-content: start;
+  }
+
+  .point {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .point p {
+    color: var(--muted);
+  }
+
+  @media (max-width: 980px) {
+    .detail {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .points {
+      grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    }
+  }
+
+  @media (max-width: 760px) {
+    .compare {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 520px) {
+    .kinds li {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .does {
+      grid-column: 1 / -1;
+    }
+
+    .by {
+      text-align: right;
+    }
+
+    .mini {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .mini li {
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mini-k {
+      flex: none;
+      width: 10ch;
+    }
+
+    .mini-w {
+      flex: 1;
+    }
+  }
+</style>

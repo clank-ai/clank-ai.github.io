@@ -1,0 +1,75 @@
+---
+/** The last call to action: install, or read the code first. */
+import InstallCommand from './InstallCommand.astro';
+import Icon from './Icon.astro';
+import { LINKS, RELEASED } from '../config';
+---
+
+<section class="section" aria-labelledby="cta-title">
+  <div class="container">
+    <div class="cta">
+      <div class="cta-text">
+        <h2 id="cta-title">Get started with Clank.</h2>
+        <p>One line installs it. Then add a cloud key, a model on your GPU, or both.</p>
+      </div>
+      <div class="cta-act">
+        <InstallCommand id="end" />
+        {RELEASED && (
+        <a class="btn btn-ghost" href={LINKS.github}>
+          <Icon name="github" size={18} />
+          View on GitHub
+        </a>
+        )}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cta {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 32px clamp(32px, 5vw, 64px);
+    align-items: center;
+    padding: clamp(28px, 4.5vw, 56px);
+    border: 1px solid var(--line-strong);
+    border-radius: 18px;
+    background:
+      linear-gradient(to right, rgba(122, 162, 247, 0.06) 1px, transparent 1px) 0 0 / 36px 72px,
+      linear-gradient(to bottom, rgba(122, 162, 247, 0.06) 1px, transparent 1px) 0 0 / 36px 72px,
+      var(--surface);
+    overflow: hidden;
+  }
+
+  .cta-text {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  h2 {
+    font-size: var(--fs-h2);
+    line-height: 1.08;
+    letter-spacing: -0.022em;
+  }
+
+  .cta-text p {
+    font-size: var(--fs-lead);
+    color: var(--muted);
+  }
+
+  .cta-act {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+    min-width: 0;
+  }
+
+  @media (max-width: 900px) {
+    .cta {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

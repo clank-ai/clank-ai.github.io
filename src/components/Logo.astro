@@ -1,0 +1,36 @@
+---
+/**
+ * Clank's logo: the mark and the wordmark, drawn as one SVG so they always line up.
+ * The text color draws the bracket and the word; the diamond is orange (--mark-accent).
+ */
+import { LOCKUP, MARK_INNER, MARK_OUTER, MARK_STROKE, WORDMARK } from '../brand/logo';
+
+interface Props {
+  height?: number;
+  label?: string;
+}
+const { height = 26, label = 'Clank' } = Astro.props;
+const width = (height * LOCKUP.width) / LOCKUP.height;
+---
+
+<svg
+  class="logo"
+  width={width.toFixed(1)}
+  height={height}
+  viewBox={`0 0 ${LOCKUP.width} ${LOCKUP.height}`}
+  role="img"
+  aria-label={label}
+  focusable="false"
+>
+  <path d={MARK_OUTER} fill="none" stroke="currentColor" stroke-width={MARK_STROKE} stroke-linejoin="miter"></path>
+  <path d={MARK_INNER} fill="var(--mark-accent, #ff9e64)"></path>
+  <path d={WORDMARK.d} fill="currentColor" transform={`translate(${LOCKUP.x.toFixed(2)} ${LOCKUP.baseline}) scale(${LOCKUP.scale.toFixed(5)})`}></path>
+</svg>
+
+<style>
+  .logo {
+    display: block;
+    color: var(--text-strong);
+    overflow: visible;
+  }
+</style>

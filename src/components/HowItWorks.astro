@@ -1,0 +1,281 @@
+---
+/** How it works: one request's path drawn as nested boxes (you, Clank, the gateway, the models), with three notes. */
+---
+
+<section class="section" id="how" aria-labelledby="how-title">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">How it works</p>
+      <h2 id="how-title">One gateway between your agents and every model.</h2>
+      <p class="lead">
+        Clank runs OpenCode, an open-source coding agent, in a Docker workspace per folder. Each request it makes passes
+        through Clank's gateway, to your GPU or to a cloud provider with your key.
+      </p>
+    </div>
+
+    <div class="how">
+      <figure class="nest" aria-label="Clank's layers, nested: you, Clank, its gateway, and the models behind it">
+        <div class="n n-you">
+          <p class="n-head"><b>You</b><span>the console · VS Code · iPhone, coming</span></p>
+          <div class="n n-clank">
+            <p class="n-head"><b>Clank</b><span>the Monitor · the Guide · Flows · records</span></p>
+            <div class="n n-agent">
+              <p class="n-head"><b>The agent</b><span>OpenCode, in a Docker workspace per folder</span></p>
+              <p class="n-body">Sees one folder. Reaches only Clank; git or the web only if you grant it.</p>
+            </div>
+            <p class="n-pass" aria-hidden="true"><span class="n-line"></span><span>every request</span><span class="n-down"></span><span class="n-line"></span></p>
+            <div class="n n-gw">
+              <p class="n-head"><b>The gateway</b><span>records, guards and meters every request</span></p>
+              <ul class="chips" aria-label="What the gateway does">
+                <li>records</li>
+                <li>loop guard</li>
+                <li>context margin</li>
+                <li>census</li>
+                <li>consent</li>
+                <li>cost</li>
+                <li>hold</li>
+              </ul>
+              <div class="targets">
+                <div class="n n-gpu">
+                  <b>Your GPU</b>
+                  <span>any open model, on llama.cpp or KVMem</span>
+                </div>
+                <p class="or">and/or</p>
+                <div class="n n-cloud">
+                  <b>A cloud API key</b>
+                  <span>OpenRouter, after your yes</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </figure>
+
+      <ol class="notes">
+        <li>
+          <h3>One service, three ways in</h3>
+          <p>The console, Clank's VS Code window and, soon, the iPhone app. A question waits in each, and an answer in one shows in all.</p>
+        </li>
+        <li>
+          <h3>A sandbox per folder</h3>
+          <p>Each folder gets its own workspace. The agent sees that folder and reaches only Clank.</p>
+        </li>
+        <li>
+          <h3>Swap the model, keep the rest</h3>
+          <p>Local or cloud, the model sits behind the same gateway. Switching is one key; the agent and its folder stay as they are.</p>
+        </li>
+        <li class="go"><a class="more" href="/features#gateway">One request, end to end</a></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<style>
+  .how {
+    margin-top: clamp(40px, 5vw, 64px);
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+    gap: clamp(32px, 4vw, 64px);
+    align-items: center;
+  }
+
+  .nest {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+    line-height: 1.5;
+  }
+
+  .n {
+    position: relative;
+    min-width: 0;
+    border: 1.5px solid var(--c);
+    border-radius: 12px;
+    padding: clamp(12px, 1.6vw, 18px);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: var(--bg-n, transparent);
+  }
+
+  .n-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 14px;
+    margin: 0;
+  }
+
+  .n-head b {
+    color: var(--c);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+  }
+
+  .n-head span {
+    color: var(--muted);
+  }
+
+  .n-you {
+    --c: var(--purple);
+  }
+
+  .n-clank {
+    --c: var(--orange);
+    --bg-n: rgba(26, 27, 38, 0.6);
+  }
+
+  .n-agent {
+    --c: var(--line-strong);
+    --bg-n: var(--surface);
+    gap: 6px;
+  }
+
+  .n-agent .n-head b {
+    color: var(--text-strong);
+  }
+
+  .n-body {
+    color: var(--text);
+  }
+
+  .n-gw {
+    --c: var(--yellow);
+    --bg-n: var(--surface);
+  }
+
+  .n-pass {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: -4px 0;
+    color: var(--faint);
+    font-size: 0.78rem;
+  }
+
+  .n-line {
+    flex: 1;
+    border-top: 1px dashed var(--line-strong);
+  }
+
+  .n-down {
+    width: 0;
+    height: 0;
+    margin-left: -4px;
+    border-left: 4.5px solid transparent;
+    border-right: 4.5px solid transparent;
+    border-top: 6px solid var(--faint);
+  }
+
+  .chips {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .chips li {
+    padding: 1px 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: 5px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.78rem;
+  }
+
+  .targets {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .n-gpu,
+  .n-cloud {
+    gap: 4px;
+    background: var(--well);
+  }
+
+  .n-gpu {
+    --c: var(--teal);
+  }
+
+  .n-cloud {
+    --c: var(--blue);
+    border-style: dashed;
+  }
+
+  .n-gpu b,
+  .n-cloud b {
+    color: var(--c);
+    font-size: 1rem;
+  }
+
+  .n-gpu span,
+  .n-cloud span {
+    color: var(--text);
+  }
+
+  .or {
+    align-self: center;
+    color: var(--text-strong);
+    font-weight: 700;
+  }
+
+  .notes {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .notes li {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-left: 18px;
+    border-left: 1px solid var(--line-strong);
+  }
+
+  .notes h3 {
+    font-size: var(--fs-h3);
+    line-height: 1.3;
+  }
+
+  .notes p {
+    color: var(--muted);
+  }
+
+  .notes li.go {
+    border-left: 0;
+    padding-left: 18px;
+  }
+
+  @media (max-width: 980px) {
+    .how {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .notes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+      gap: 24px;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .targets {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    .or {
+      justify-self: center;
+    }
+
+    .nest {
+      font-size: 0.8rem;
+    }
+  }
+</style>

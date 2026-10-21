@@ -1,0 +1,114 @@
+---
+/** One feature on the features page: what it is on one side, a framed screen of it on the other. */
+interface Props {
+  id: string;
+  eyebrow: string;
+  title: string;
+  lead: string;
+  band?: boolean;
+  wide?: boolean;
+}
+const { id, eyebrow, title, lead, band = false, wide = false } = Astro.props;
+---
+
+<section class:list={[band ? 'band' : 'section', 'fb']} id={id} aria-labelledby={`${id}-title`}>
+  <div class:list={['container', 'grid', wide && 'wide']}>
+    <div class="text">
+      <p class="eyebrow">{eyebrow}</p>
+      <h2 id={`${id}-title`}>{title}</h2>
+      <p class="lead">{lead}</p>
+      <slot />
+    </div>
+    <div class="art">
+      <slot name="art" />
+    </div>
+  </div>
+  <slot name="after" />
+</section>
+
+<style>
+  .fb {
+    scroll-margin-top: 110px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 40px clamp(32px, 5vw, 72px);
+    align-items: start;
+  }
+
+  .grid.wide {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .text {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: sticky;
+    top: 140px;
+  }
+
+  .wide .text {
+    position: static;
+    max-width: 46rem;
+  }
+
+  h2 {
+    font-size: var(--fs-h2);
+    line-height: 1.08;
+    letter-spacing: -0.022em;
+  }
+
+  .lead {
+    font-size: var(--fs-lead);
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  .text :global(ul.points) {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .text :global(ul.points li) {
+    display: grid;
+    grid-template-columns: 14px minmax(0, 1fr);
+    gap: 12px;
+    color: var(--text);
+  }
+
+  .text :global(ul.points li)::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    margin-top: 0.6em;
+    transform: rotate(45deg);
+    background: var(--orange);
+  }
+
+  .text :global(ul.points b) {
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+
+  .art {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  @media (max-width: 960px) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .text {
+      position: static;
+    }
+  }
+</style>

@@ -1,0 +1,27 @@
+---
+/** Clank's mark alone. It takes the text color for the bracket; the diamond stays orange. */
+import { MARK_INNER, MARK_OUTER, MARK_STROKE } from '../../brand/logo';
+
+interface Props {
+  size?: number;
+  label?: string;
+  /** One color for both shapes, for places that cannot show the orange. */
+  mono?: boolean;
+  class?: string;
+}
+const { size = 32, label, mono = false, class: cls } = Astro.props;
+---
+
+<svg
+  class={cls}
+  width={size}
+  height={size}
+  viewBox="0 0 32 32"
+  role={label ? 'img' : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : 'true'}
+  focusable="false"
+>
+  <path d={MARK_OUTER} fill="none" stroke="currentColor" stroke-width={MARK_STROKE} stroke-linejoin="miter"></path>
+  <path d={MARK_INNER} fill={mono ? 'currentColor' : 'var(--mark-accent, #ff9e64)'}></path>
+</svg>

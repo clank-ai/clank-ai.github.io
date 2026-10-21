@@ -1,0 +1,393 @@
+---
+/**
+ * The demo: one terminal window split in two, OpenCode on the left and Clank's console on the right,
+ * as Clank opens them (the planning session beside the console). The panes are drawn by
+ * src/scripts/demo/ as monospace cells; this file holds the frame, the controls, the caption and
+ * the walkthrough a screen reader reads (the cells themselves are hidden from it).
+ */
+import Icon from '../Icon.astro';
+import { CAPTIONS, CHAPTERS } from '../../scripts/demo/captions';
+---
+
+<figure class="split-demo" data-split-demo data-layout="split" aria-labelledby="demo-title">
+  <h2 id="demo-title" class="sr-only">Clank and OpenCode, building a flow and running it</h2>
+  <div class="frame" data-frame>
+    <div class="bar" aria-hidden="true">
+      <span class="lights"><i></i><i></i><i></i></span>
+      <span class="bar-title">~/my-api</span>
+      <span class="lights ghost"><i></i><i></i><i></i></span>
+    </div>
+    <div class="panes">
+      <section class="pane-wrap oc" aria-label="OpenCode">
+        <p class="pane-label"><b>OpenCode</b><span>the agent · planning session</span></p>
+        <div class="pane" data-pane="opencode" aria-hidden="true"></div>
+      </section>
+      <section class="pane-wrap ck" aria-label="Clank">
+        <p class="pane-label"><b>Clank</b><span>the console · Monitor <kbd>F10</kbd> · Flow view</span></p>
+        <div class="pane" data-pane="clank" aria-hidden="true"></div>
+      </section>
+    </div>
+  </div>
+
+  <figcaption class="under">
+    <div class="now">
+      <button type="button" class="toggle" data-toggle aria-label="Pause the demo">
+        <span class="i-pause"><Icon name="pause" size={16} /></span>
+        <span class="i-play"><Icon name="play" size={16} /></span>
+        <span data-toggle-label>Pause</span>
+      </button>
+      <p class="caption" data-caption>{CAPTIONS[0]}</p>
+    </div>
+    <ol class="chapters" aria-label="Chapters">
+      {
+        CHAPTERS.map((c, i) => (
+          <li>
+            <button type="button" data-chapter={i} aria-current={i === 0 ? 'step' : undefined}>
+              <span class="n">{i + 1}</span>
+              {c.name}
+            </button>
+          </li>
+        ))
+      }
+    </ol>
+    <details class="transcript">
+      <summary>Read the walkthrough</summary>
+      <ol>
+        {CAPTIONS.map((c) => <li>{c}</li>)}
+      </ol>
+      <p class="credit">
+        OpenCode, the open-source coding agent Clank runs, is shown here as it appears in a terminal. The folder,
+        the flow and the model are examples.
+      </p>
+    </details>
+  </figcaption>
+</figure>
+
+<script>
+  import '../../scripts/demo/demo';
+</script>
+
+<style>
+  .split-demo {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .frame {
+    position: relative;
+    border-radius: 14px;
+    border: 1px solid #343a55;
+    background: #16161e;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 0 0 1px rgba(0, 0, 0, 0.4),
+      0 50px 120px -40px rgba(0, 0, 0, 0.85),
+      0 0 160px -60px rgba(122, 162, 247, 0.35);
+    overflow: hidden;
+    transition: opacity 0.4s ease;
+  }
+
+  .frame.restarting {
+    opacity: 0.3;
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 14px;
+    border-bottom: 1px solid #272b3f;
+    background: #111118;
+  }
+
+  .lights {
+    display: flex;
+    gap: 7px;
+  }
+
+  .lights i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #33384f;
+  }
+
+  .lights.ghost {
+    visibility: hidden;
+  }
+
+  .bar-title {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--faint);
+  }
+
+  .panes {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-layout='split'] .panes {
+    grid-template-columns: minmax(0, 38fr) minmax(0, 62fr);
+  }
+
+  .pane-wrap {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  [data-layout='split'] .pane-wrap.oc {
+    border-right: 1px solid #272b3f;
+  }
+
+  [data-layout='stack'] .pane-wrap.oc {
+    border-bottom: 1px solid #272b3f;
+  }
+
+  .pane-wrap.oc {
+    background: #13131a;
+  }
+
+  .pane-wrap.ck {
+    background: #1a1b26;
+  }
+
+  .pane-label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 10px;
+    padding: 7px 12px;
+    border-bottom: 1px solid #22263a;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--faint);
+  }
+
+  .pane-label b {
+    color: var(--text-strong);
+    letter-spacing: 0.04em;
+  }
+
+  .oc .pane-label b {
+    color: var(--purple);
+  }
+
+  .ck .pane-label b {
+    color: var(--orange);
+  }
+
+  .pane-label kbd {
+    font: inherit;
+    color: var(--blue);
+  }
+
+  .pane {
+    min-width: 0;
+    padding: 8px 6px 8px 8px;
+    overflow: hidden;
+  }
+
+  /* The cells: every character one cell, the console's colors */
+  .pane :global(.cells),
+  .pane :global(.probe) {
+    font-family: 'Clank Cells', 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    font-variant-ligatures: none;
+    font-feature-settings: 'calt' 0, 'liga' 0;
+  }
+
+  .pane :global(.probe) {
+    position: absolute;
+    visibility: hidden;
+    white-space: pre;
+  }
+
+  .pane :global(.cells) {
+    margin: 0;
+    color: #c0caf5;
+    white-space: pre;
+    overflow: hidden;
+  }
+
+  [data-layout='stack'] .pane :global(.cells),
+  [data-layout='stack'] .pane :global(.probe) {
+    font-size: 12px;
+  }
+
+  .pane :global(.cw) {
+    display: inline-block;
+    width: 1ch;
+    font-style: normal;
+    text-align: center;
+    overflow: visible;
+  }
+
+  .pane :global(.mu) { color: #9aa5ce; }
+  .pane :global(.ln) { color: #414868; }
+  .pane :global(.hb) { color: #c0caf5; font-weight: 700; }
+  .pane :global(.wb) { color: #e0e5ff; font-weight: 700; }
+  .pane :global(.or) { color: #ff9e64; font-weight: 700; }
+  .pane :global(.g) { color: #9ece6a; }
+  .pane :global(.t) { color: #73daca; }
+  .pane :global(.tb) { color: #73daca; font-weight: 700; }
+  .pane :global(.y) { color: #e0af68; }
+  .pane :global(.r) { color: #f7768e; }
+  .pane :global(.b) { color: #7aa2f7; }
+  .pane :global(.p) { color: #bb9af7; }
+  .pane :global(.key) { color: #7aa2f7; font-weight: 700; }
+  .pane :global(.kf) { color: #16161e; background: #e0af68; font-weight: 700; }
+  .pane :global(.sel) { color: #e0e5ff; background: #283457; font-weight: 700; }
+  .pane :global(.ut) { color: #e0e5ff; }
+  .pane :global(.ib) { background: #1f2133; }
+  .pane :global(.pb) { color: #bb9af7; background: #1f2133; }
+  .pane :global(.ibt) { color: #e0e5ff; background: #1f2133; }
+  .pane :global(.ibm) { color: #8a93bc; background: #1f2133; }
+  .pane :global(.ibp) { color: #bb9af7; background: #1f2133; font-weight: 700; }
+  .pane :global(.ibc) { color: #c0caf5; background: #1f2133; }
+  .pane :global(.ibk) { color: #1f2133; background: #c0caf5; }
+
+  /* Under the window */
+  .under {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .now {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .caption {
+    flex: 1;
+    min-width: 0;
+    min-height: 3em;
+    padding-top: 9px;
+    color: var(--text);
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .toggle {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--text-strong);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .toggle:hover {
+    border-color: var(--muted);
+  }
+
+  .toggle .i-play,
+  .toggle[data-paused] .i-pause {
+    display: none;
+  }
+
+  .toggle[data-paused] .i-play,
+  .toggle .i-pause {
+    display: inline-flex;
+  }
+
+  .chapters {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chapters button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 12px 0 6px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.86rem;
+    cursor: pointer;
+  }
+
+  .chapters button:hover {
+    color: var(--text-strong);
+    border-color: var(--line-strong);
+  }
+
+  .chapters .n {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--text);
+  }
+
+  .chapters button[aria-current] {
+    border-color: var(--orange);
+    color: var(--text-strong);
+  }
+
+  .chapters button[aria-current] .n {
+    background: var(--orange);
+    color: var(--on-accent);
+  }
+
+  .transcript {
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+
+  .transcript summary {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    cursor: pointer;
+    color: var(--blue);
+  }
+
+  .transcript ol {
+    margin: 6px 0 0;
+    padding-left: 1.4em;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .credit {
+    margin-top: 10px;
+    color: var(--faint);
+  }
+
+  @media (max-width: 640px) {
+    .pane :global(.cells),
+    .pane :global(.probe) {
+      font-size: 10px !important;
+    }
+
+    .pane {
+      padding: 6px 4px;
+    }
+  }
+</style>

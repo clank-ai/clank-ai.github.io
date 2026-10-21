@@ -1,0 +1,329 @@
+---
+/**
+ * The one-line installer, with a tab per system and a copy button.
+ * The commands come from config.ts; the scripts they fetch are not written yet.
+ * Every instance on the page follows the same system choice.
+ */
+import Icon from './Icon.astro';
+import { INSTALL, INSTALLER_READY } from '../config';
+
+interface Props {
+  id: string;
+  note?: boolean;
+}
+const { id, note = true } = Astro.props;
+
+const systems = [
+  { os: 'unix', label: 'macOS / Linux', prompt: '$', command: INSTALL.unix, aria: 'macOS and Linux' },
+  { os: 'windows', label: 'Windows', prompt: 'PS>', command: INSTALL.windows, aria: 'Windows PowerShell' },
+];
+
+/**
+ * The command cut after each single slash (never inside "//"), so a narrow screen wraps it
+ * there and never inside a word.
+ */
+const pieces = (command: string) => command.replace(/([^/])\/(?!\/)/g, '$1/\n').split('\n');
+---
+
+{!INSTALLER_READY && (
+<div class="install">
+  <div class="panel soon">
+    <p class="line"><span class="prompt" aria-hidden="true">$</span><span class="cmd">clank: the one-line installer is coming soon</span></p>
+  </div>
+  {note && <p class="note">Until then, Get started installs it by hand in a few commands.</p>}
+</div>
+)}
+{INSTALLER_READY && (
+<div class="install" data-install>
+  <div class="install-top">
+    <div class="tabs" role="tablist" aria-label="Your system">
+      {
+        systems.map((s, i) => (
+          <button
+            type="button"
+            role="tab"
+            id={`${id}-tab-${s.os}`}
+            aria-controls={`${id}-panel-${s.os}`}
+            aria-selected={i === 0 ? 'true' : 'false'}
+            tabindex={i === 0 ? 0 : -1}
+            data-os={s.os}
+          >
+            {s.label}
+          </button>
+        ))
+      }
+    </div>
+  </div>
+  {
+    systems.map((s, i) => (
+      <div
+        class="panel"
+        role="tabpanel"
+        id={`${id}-panel-${s.os}`}
+        aria-labelledby={`${id}-tab-${s.os}`}
+        data-os={s.os}
+        hidden={i !== 0}
+      >
+        <code class="line">
+          <span class="prompt" aria-hidden="true">
+            {s.prompt}
+          </span>
+          {/* One line on purpose: any whitespace here would show as a space inside the command. */}
+          <span class="cmd">{pieces(s.command).map((piece) => <>{piece}<wbr /></>)}</span>
+        </code>
+        <button type="button" class="copy" data-copy={s.command} aria-label={`Copy the install command for ${s.aria}`}>
+          <span class="copy-icon">
+            <Icon name="copy" size={17} />
+          </span>
+          <span class="done-icon">
+            <Icon name="check" size={17} />
+          </span>
+          <span class="copy-label">Copy</span>
+        </button>
+      </div>
+    ))
+  }
+  <p class="status sr-only" role="status" aria-live="polite"></p>
+  {
+    note && (
+      <p class="note">
+        Then type <code class="inline">clank</code> in a project folder. Needs Docker.
+      </p>
+    )
+  }
+</div>
+)}
+
+<script>
+  const KEY = 'clank-site-os';
+  type OS = 'unix' | 'windows';
+
+  const roots = Array.from(document.querySelectorAll<HTMLElement>('[data-install]'));
+
+  function setOS(os: OS, remember: boolean) {
+    for (const root of roots) {
+      for (const tab of root.querySelectorAll<HTMLButtonElement>('[role="tab"]')) {
+        const on = tab.dataset.os === os;
+        tab.setAttribute('aria-selected', String(on));
+        tab.tabIndex = on ? 0 : -1;
+      }
+      for (const panel of root.querySelectorAll<HTMLElement>('[role="tabpanel"]')) {
+        panel.hidden = panel.dataset.os !== os;
+      }
+    }
+    if (remember) {
+      try {
+        localStorage.setItem(KEY, os);
+      } catch {
+        /* storage may be blocked: the choice simply is not remembered */
+      }
+    }
+  }
+
+  function initialOS(): OS {
+    try {
+      const saved = localStorage.getItem(KEY);
+      if (saved === 'unix' || saved === 'windows') return saved;
+    } catch {
+      /* fall through to the platform */
+    }
+    const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
+    const platform = nav.userAgentData?.platform || navigator.platform || navigator.userAgent;
+    return /win/i.test(platform) ? 'windows' : 'unix';
+  }
+
+  setOS(initialOS(), false);
+
+  for (const root of roots) {
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => setOS(tab.dataset.os as OS, true));
+      tab.addEventListener('keydown', (event) => {
+        if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+        event.preventDefault();
+        const next = tabs[(index + (event.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        setOS(next.dataset.os as OS, true);
+        next.focus();
+      });
+    });
+
+    const status = root.querySelector<HTMLElement>('.status');
+    for (const button of root.querySelectorAll<HTMLButtonElement>('.copy')) {
+      const label = button.querySelector<HTMLElement>('.copy-label');
+      let timer = 0;
+      button.addEventListener('click', async () => {
+        const text = button.dataset.copy ?? '';
+        let copied = false;
+        try {
+          await navigator.clipboard.writeText(text);
+          copied = true;
+        } catch {
+          // No clipboard access: select the command so it can be copied by hand.
+          const cmd = button.parentElement?.querySelector('.cmd');
+          const selection = window.getSelection();
+          if (cmd && selection) {
+            const range = document.createRange();
+            range.selectNodeContents(cmd);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
+        }
+        button.dataset.state = copied ? 'copied' : 'selected';
+        if (label) label.textContent = copied ? 'Copied' : 'Selected';
+        if (status) status.textContent = copied ? 'Install command copied.' : 'Install command selected: copy it with your keyboard.';
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => {
+          delete button.dataset.state;
+          if (label) label.textContent = 'Copy';
+        }, 2200);
+      });
+    }
+  }
+</script>
+
+<style>
+  .install {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 36rem;
+  }
+
+  .install-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+  }
+
+  .tabs {
+    display: inline-flex;
+    padding: 3px;
+    gap: 2px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--well);
+  }
+
+  .tabs button {
+    min-height: 34px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.86rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .tabs button:hover {
+    color: var(--text-strong);
+  }
+
+  .tabs button[aria-selected='true'] {
+    background: var(--surface-2);
+    color: var(--text-strong);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
+
+  .panel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 8px 8px 16px;
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    background: var(--well);
+  }
+
+  .panel[hidden] {
+    display: none;
+  }
+
+  .line {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-strong);
+  }
+
+  .prompt {
+    flex: none;
+    color: var(--green);
+    user-select: none;
+  }
+
+  .cmd {
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+
+  .copy {
+    flex: none;
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--text-strong);
+    font: inherit;
+    font-size: 0.86rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .copy:hover {
+    border-color: var(--muted);
+  }
+
+  .done-icon {
+    display: none;
+    color: var(--green);
+  }
+
+  .copy-icon,
+  .done-icon {
+    line-height: 0;
+  }
+
+  .copy[data-state='copied'] .copy-icon {
+    display: none;
+  }
+
+  .copy[data-state='copied'] .done-icon {
+    display: inline;
+  }
+
+  .note {
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 480px) {
+    .copy-label {
+      display: none;
+    }
+
+    .copy {
+      width: 40px;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .line {
+      font-size: 0.84rem;
+    }
+  }
+</style>

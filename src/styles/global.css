@@ -1,0 +1,473 @@
+/*
+ * Clank's site: design tokens and the few rules every page shares.
+ * Layout: one centered column up to 1200px; sections stack on a steady vertical rhythm,
+ * and the console demo under the hero is the one bold moment.
+ * Colors come from Clank's console palette (Tokyo Night), refined for reading.
+ */
+:root {
+  color-scheme: dark;
+
+  /* Ground and surfaces */
+  --bg: #16161e;
+  --surface: #1a1b26;
+  --surface-2: #1f2133;
+  --well: #101119;
+  --line: #272b3f;
+  --line-strong: #3b4261;
+  --select: #283457;
+
+  /* Text: every pair below passes WCAG AA on --bg and --surface */
+  --text: #c0caf5;
+  --text-strong: #e6eaff;
+  --muted: #a1abd2;
+  --faint: #8a93bc;
+
+  /* The console's colors, each with one job */
+  --blue: #7aa2f7;
+  --purple: #bb9af7;
+  --green: #9ece6a;
+  --orange: #ff9e64;
+  --teal: #73daca;
+  --yellow: #e0af68;
+  --red: #f7768e;
+  --on-accent: #16161e;
+
+  /* Type: a clean sans for prose, JetBrains Mono for code and the console */
+  --font-sans: 'Instrument Sans Variable', 'Instrument Sans', ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'Cascadia Mono', 'SF Mono', Menlo,
+    Consolas, 'DejaVu Sans Mono', 'Liberation Mono', monospace;
+
+  --fs-xs: 0.8125rem;
+  --fs-sm: 0.9375rem;
+  --fs-body: 1.0625rem;
+  --fs-lead: clamp(1.125rem, 1.04rem + 0.36vw, 1.3125rem);
+  --fs-h3: 1.1875rem;
+  --fs-h2: clamp(1.875rem, 1.3rem + 2.3vw, 2.875rem);
+  --fs-h1: clamp(2.375rem, 1.45rem + 4vw, 4.375rem);
+
+  /* Space and shape */
+  --radius: 14px;
+  --radius-sm: 9px;
+  --container: 1200px;
+  --pad: clamp(16px, 4.2vw, 40px);
+  --section-gap: clamp(88px, 9.5vw, 136px);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: 124px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  font-feature-settings: 'ss01' on;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  color: var(--text-strong);
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+}
+
+p,
+li,
+dd {
+  text-wrap: pretty;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+a {
+  color: var(--blue);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--purple);
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--font-mono);
+}
+
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+::selection {
+  background: var(--select);
+  color: var(--text-strong);
+}
+
+/* Shared pieces */
+
+.container {
+  width: 100%;
+  max-width: calc(var(--container) + 2 * var(--pad));
+  margin-inline: auto;
+  padding-left: max(var(--pad), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--pad), env(safe-area-inset-right, 0px));
+}
+
+.section {
+  padding-block: var(--section-gap) 0;
+}
+
+.section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 46rem;
+}
+
+.section-head h2 {
+  font-size: var(--fs-h2);
+  line-height: 1.08;
+  letter-spacing: -0.022em;
+}
+
+.section-head .lead {
+  font-size: var(--fs-lead);
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 40rem;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--orange);
+}
+
+.eyebrow::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  background: currentColor;
+  transform: rotate(45deg);
+  flex: none;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 0.97rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.btn svg {
+  flex: none;
+}
+
+.btn-primary {
+  background: var(--orange);
+  color: var(--on-accent);
+}
+
+.btn-primary:hover {
+  background: #ffb385;
+  color: var(--on-accent);
+}
+
+.btn-ghost {
+  background: var(--surface);
+  border-color: var(--line-strong);
+  color: var(--text-strong);
+}
+
+.btn-ghost:hover {
+  border-color: var(--muted);
+  color: var(--text-strong);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+code.inline,
+.prose code {
+  font-size: 0.88em;
+  padding: 0.12em 0.4em;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text-strong);
+  white-space: nowrap;
+}
+
+kbd.key {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0.05em 0.45em;
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text-strong);
+  font-size: 0.8em;
+  line-height: 1.5;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -60px;
+  z-index: 100;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--orange);
+  color: var(--on-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---- The console's cells ---------------------------------------------------------------- */
+
+/* JetBrains Mono's box-drawing and symbol glyphs (src/fonts/README.md): they draw the
+   console's frames at exactly one cell each. */
+@font-face {
+  font-family: 'Clank Cells';
+  src: url('../fonts/clank-cells-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+2190-21FF, U+2300-23FF, U+2500-25FF, U+2700-27FF;
+}
+
+@font-face {
+  font-family: 'Clank Cells';
+  src: url('../fonts/clank-cells-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+2190-21FF, U+2300-23FF, U+2500-25FF, U+2700-27FF;
+}
+
+:root {
+  --font-cells: 'Clank Cells', 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Menlo,
+    Consolas, monospace;
+}
+
+/* A still frame of the console, scaled to fit its box: --cols cells across, never wider. */
+.crop {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.cells {
+  margin: 0;
+  font-family: var(--font-cells);
+  font-size: clamp(5px, calc((100cqi - 2px) / (var(--cols, 60) * 0.6)), var(--cell-max, 12.5px));
+  line-height: 1.32;
+  white-space: pre;
+  color: #c0caf5;
+  font-variant-ligatures: none;
+  font-feature-settings: 'calt' 0, 'liga' 0;
+  overflow: hidden;
+}
+
+.cells .cw { display: inline-block; width: 1ch; font-style: normal; text-align: center; }
+.cells .mu { color: #9aa5ce; }
+.cells .ln { color: #414868; }
+.cells .hb { color: #c0caf5; font-weight: 700; }
+.cells .wb { color: #e0e5ff; font-weight: 700; }
+.cells .or { color: #ff9e64; font-weight: 700; }
+.cells .g { color: #9ece6a; }
+.cells .t { color: #73daca; }
+.cells .tb { color: #73daca; font-weight: 700; }
+.cells .y { color: #e0af68; }
+.cells .r { color: #f7768e; }
+.cells .b { color: #7aa2f7; }
+.cells .p { color: #bb9af7; }
+.cells .key { color: #7aa2f7; font-weight: 700; }
+.cells .sel { color: #e0e5ff; background: #283457; font-weight: 700; }
+.cells .bg { background: #1f2133; }
+
+/* ---- Layers ---------------------------------------------------------------------------- */
+
+/* A band: a section set on a slightly lifted ground, lit from above. */
+.band {
+  position: relative;
+  isolation: isolate;
+  margin-top: var(--section-gap);
+  padding-block: var(--section-gap);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(70% 60% at 50% 0%, rgba(122, 162, 247, 0.07), transparent 70%),
+    linear-gradient(to bottom, #191a25, #15151d);
+}
+
+.band + .section {
+  padding-top: var(--section-gap);
+}
+
+.band.flush {
+  margin-top: 0;
+}
+
+/* A window: a framed screen of Clank, VS Code or OpenCode, drawn in HTML. */
+.window {
+  position: relative;
+  min-width: 0;
+  border: 1px solid #343a55;
+  border-radius: 12px;
+  background: #1a1b26;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 30px 70px -30px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+.window-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #272b3f;
+  background: #111118;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--faint);
+}
+
+.window-bar .dots {
+  display: flex;
+  gap: 6px;
+}
+
+.window-bar .dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #33384f;
+}
+
+.window-body {
+  padding: 10px 12px;
+}
+
+.section-head.center {
+  margin-inline: auto;
+  align-items: center;
+  text-align: center;
+}
+
+.section-head.center .lead {
+  margin-inline: auto;
+}
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.more::after {
+  content: '→';
+  transition: transform 0.15s ease;
+}
+
+.more:hover::after {
+  transform: translateX(3px);
+}

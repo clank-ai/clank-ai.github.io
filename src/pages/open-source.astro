@@ -1,0 +1,217 @@
+---
+/** Open source: the license, the principles every part follows, the repository, and what Clank builds on. */
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import OpenSource from '../components/OpenSource.astro';
+import Icon from '../components/Icon.astro';
+import { GITHUB_URL, LICENSE, LINKS, PAGES, RELEASED } from '../config';
+
+const principles = [
+  ['Replace hosted assistants', 'A complete suite, so you can stop depending on hosted agents. Each feature is judged by whether it moves Clank toward that.'],
+  ['Modular, plug and play', 'The model, the engine, the provider, sampling, tools and views each swap behind a small documented interface.'],
+  ['Radical transparency', 'You can see everything Clank does and why, and change any of it, in readable files.'],
+  ['Readable by people and by models', 'Small modules that say what they do and why, a code map, decision records, tests that say what they prove.'],
+  ['Portable', 'Any local model and engine your hardware can run, an API key, or a model on another machine.'],
+  ['The computer stays usable', 'No frozen desktop, no endless redraws, no surprise downloads or background load.'],
+  ['Engineered as a product', 'Design before code, every decision recorded, a test for every behavior, small reviewed steps.'],
+];
+
+const builtOn = [
+  ['OpenCode', 'the open-source coding agent Clank runs in each workspace', LINKS.opencode],
+  ['llama.cpp', 'serves open models on your GPU, and is the base of KVMem', 'https://github.com/ggml-org/llama.cpp'],
+  ['Docker', "the workspace's sandbox, one container per folder", 'https://www.docker.com'],
+  ['Textual', 'the console, a terminal app', 'https://textual.textualize.io'],
+  ['uv', "Python and Clank's dependencies, pinned", 'https://docs.astral.sh/uv/'],
+];
+---
+
+<Base
+  title="Open source · Clank"
+  description={`Clank is open source under the ${LICENSE} license: its code, designs, decisions and plans, written to be read by people and by models.`}
+  path={PAGES.openSource.path}
+>
+  <PageHeader
+    crumb="Open source"
+    eyebrow="Open source"
+    title="Built in the open, to be changed."
+    lead={`Clank is released under the ${LICENSE} license. Its code, its designs, every decision and every plan are in one repository, so you can read what it does and make it do something else.`}
+  >
+    {RELEASED ? (
+    <div class="ctas">
+      <a class="btn btn-primary" href={GITHUB_URL}><Icon name="github" size={18} /> View on GitHub</a>
+      <a class="btn btn-ghost" href={LINKS.docs}>Read the docs</a>
+    </div>
+    ) : (
+    <p class="lead">The repository opens with the first public release, coming soon.</p>
+    )}
+  </PageHeader>
+
+  <section class="section" aria-labelledby="principles-title">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Principles</p>
+        <h2 id="principles-title">The rules every part follows.</h2>
+        <p class="lead">A design or a change that breaks one of them must say so, and why, in a decision record.</p>
+      </div>
+      <ol class="principles">
+        {
+          principles.map(([t, d], i) => (
+            <li>
+              <span class="n">{String(i + 1).padStart(2, '0')}</span>
+              <h3>{t}</h3>
+              <p>{d}</p>
+            </li>
+          ))
+        }
+      </ol>
+      {RELEASED && <p class="src"><a class="more" href={LINKS.principles}>The principles, in full</a></p>}
+    </div>
+  </section>
+
+  <OpenSource />
+
+  <section class="band" aria-labelledby="built-title">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Built on</p>
+        <h2 id="built-title">Open source, standing on open source.</h2>
+        <p class="lead">Clank brings these together and keeps each one swappable.</p>
+      </div>
+      <ul class="built">
+        {
+          builtOn.map(([name, what, href]) => (
+            <li>
+              <a href={href}>
+                <b>{name}</b>
+                <span>{what}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="contrib-title">
+    <div class="container contrib">
+      <div>
+        <h2 id="contrib-title">Working on Clank</h2>
+        <p>
+          Start with AGENTS.md in the repository: where things are, how work is recorded, and the rules every change
+          follows. It is written for people and for language models alike, so your own local model can read it too.
+        </p>
+      </div>
+      {RELEASED && <a class="btn btn-ghost" href={`${GITHUB_URL}/blob/main/AGENTS.md`}>Read AGENTS.md</a>}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .ctas {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .principles {
+    margin-top: clamp(32px, 4vw, 48px);
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+    gap: 1px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--line);
+    overflow: hidden;
+  }
+
+  .principles li {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 24px;
+    background: var(--bg);
+  }
+
+  .n {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--orange);
+  }
+
+  .principles h3 {
+    font-size: 1.1rem;
+  }
+
+  .principles p {
+    color: var(--muted);
+    font-size: 0.96rem;
+  }
+
+  .src {
+    margin-top: 16px;
+  }
+
+  .built {
+    margin-top: clamp(32px, 4vw, 48px);
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+    gap: 16px;
+  }
+
+  .built a {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    height: 100%;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .built a:hover {
+    border-color: var(--line-strong);
+  }
+
+  .built b {
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+
+  .built b::after {
+    content: ' ↗';
+    color: var(--faint);
+    font-weight: 400;
+  }
+
+  .contrib {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px 40px;
+    padding: clamp(24px, 3vw, 36px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  .contrib div {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 44rem;
+  }
+
+  .contrib h2 {
+    font-size: 1.5rem;
+  }
+
+  .contrib p {
+    color: var(--muted);
+  }
+</style>

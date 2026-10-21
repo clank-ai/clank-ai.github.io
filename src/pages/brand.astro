@@ -1,0 +1,513 @@
+---
+/**
+ * The brand page, hidden (not linked, not indexed): the three directions explored for Clank's
+ * mark, the one chosen and why, and how the logo is used.
+ */
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Logo from '../components/Logo.astro';
+import Mark from '../components/brand/Mark.astro';
+import { PAGES } from '../config';
+
+const directions = [
+  {
+    id: 'a',
+    name: 'A · The open gate',
+    chosen: true,
+    text: "The console's ◆, held in an open bracket. The bracket reads as a C and as code's angle bracket; the diamond is the mark Clank already uses for itself and for a flow's gates. Clank around the model, its way out under your control.",
+  },
+  {
+    id: 'b',
+    name: 'B · The cursor',
+    chosen: false,
+    text: 'A square bracket for the C, and a block cursor inside it. Terminal-native and very legible, but close to the prompt marks many command-line tools use.',
+  },
+  {
+    id: 'c',
+    name: 'C · The flow',
+    chosen: false,
+    text: 'Three boxes joined as a C: a flow, done, running and waiting. It tells the most, but at 16 pixels the boxes merge into dots.',
+  },
+];
+const sizes = [16, 24, 32, 48, 96];
+---
+
+<Base title="Brand · Clank" description="Clank's mark and logo: the directions explored, the one chosen, and how to use it." path={PAGES.brand.path} noindex>
+  <PageHeader
+    crumb="Brand"
+    eyebrow="Brand"
+    title="Clank's mark."
+    lead="Three directions, the one chosen and why, and how the logo is used: on dark and light grounds, at every size, with room around it."
+  />
+
+  <section class="section" aria-labelledby="dir-title">
+    <div class="container">
+      <h2 id="dir-title" class="h2">Three directions</h2>
+      <div class="dirs">
+        {
+          directions.map((d) => (
+            <article class:list={['dir', d.chosen && 'chosen']}>
+              <header>
+                <h3>{d.name}</h3>
+                {d.chosen && <span class="badge">Chosen</span>}
+              </header>
+              <div class="pair">
+                <div class="tile dark">
+                  {sizes.map((s) => (
+                    <svg width={s} height={s} viewBox="0 0 32 32" aria-hidden="true">
+                      {d.id === 'a' && (
+                        <>
+                          <path d="M22.4 9.6 16 3.2 3.2 16 16 28.8l6.4-6.4" fill="none" stroke="#e6eaff" stroke-width="3.6" />
+                          <path d="M16 10.2 21.8 16 16 21.8 10.2 16Z" fill="#ff9e64" />
+                        </>
+                      )}
+                      {d.id === 'b' && (
+                        <>
+                          <path d="M23 5.5H8.5v21H23" fill="none" stroke="#e6eaff" stroke-width="4" />
+                          <rect x="14.5" y="12" width="6.5" height="8" fill="#ff9e64" />
+                        </>
+                      )}
+                      {d.id === 'c' && (
+                        <>
+                          <path d="M17 7H9.5v5M9.5 20v5H17" fill="none" stroke="#e6eaff" stroke-width="2" />
+                          <rect x="17" y="3" width="11" height="8" rx="1.5" fill="#e6eaff" />
+                          <rect x="4" y="12" width="11" height="8" rx="1.5" fill="#ff9e64" />
+                          <rect x="18" y="22" width="9" height="6" rx="1.2" fill="none" stroke="#e6eaff" stroke-width="2" />
+                        </>
+                      )}
+                    </svg>
+                  ))}
+                </div>
+                <div class="tile light">
+                  {sizes.map((s) => (
+                    <svg width={s} height={s} viewBox="0 0 32 32" aria-hidden="true">
+                      {d.id === 'a' && (
+                        <>
+                          <path d="M22.4 9.6 16 3.2 3.2 16 16 28.8l6.4-6.4" fill="none" stroke="#1a1b26" stroke-width="3.6" />
+                          <path d="M16 10.2 21.8 16 16 21.8 10.2 16Z" fill="#e2702f" />
+                        </>
+                      )}
+                      {d.id === 'b' && (
+                        <>
+                          <path d="M23 5.5H8.5v21H23" fill="none" stroke="#1a1b26" stroke-width="4" />
+                          <rect x="14.5" y="12" width="6.5" height="8" fill="#e2702f" />
+                        </>
+                      )}
+                      {d.id === 'c' && (
+                        <>
+                          <path d="M17 7H9.5v5M9.5 20v5H17" fill="none" stroke="#1a1b26" stroke-width="2" />
+                          <rect x="17" y="3" width="11" height="8" rx="1.5" fill="#1a1b26" />
+                          <rect x="4" y="12" width="11" height="8" rx="1.5" fill="#e2702f" />
+                          <rect x="18" y="22" width="9" height="6" rx="1.2" fill="none" stroke="#1a1b26" stroke-width="2" />
+                        </>
+                      )}
+                    </svg>
+                  ))}
+                </div>
+              </div>
+              <p>{d.text}</p>
+            </article>
+          ))
+        }
+      </div>
+      <div class="why">
+        <h3>Why A</h3>
+        <p>
+          It carries Clank's own sign: the ◆ that starts every line of the console and marks a flow's gates. The open
+          bracket says what Clank is, a frame around the model with a way out you control, and reads as a C without
+          spelling one. Two shapes, so it holds at 16 pixels; one stroke and one fill, so it works in one color too.
+          It looks like nothing else in the developer-tool shelf, and it is not a robot.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="logo-title">
+    <div class="container">
+      <h2 id="logo-title" class="h2">The logo</h2>
+      <div class="lockups">
+        <div class="lk dark"><Logo height={56} /></div>
+        <div class="lk light"><Logo height={56} /></div>
+        <div class="lk dark mono"><Mark size={72} /><span class="cap">The mark alone: app icons, favicons, avatars.</span></div>
+        <div class="lk light mono"><Mark size={72} mono /><span class="cap">One color, where the orange cannot show.</span></div>
+      </div>
+      <p class="spec">
+        The wordmark is “clank” in Instrument Sans SemiBold, letter-spaced −1.2%, outlined. Its ascenders stand two
+        thirds of the mark's height, its gap from the mark is 9 of the mark's 32 units, and its middle sits on the
+        mark's middle.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="space-title">
+    <div class="container grid2">
+      <div>
+        <h2 id="space-title" class="h2">Clear space</h2>
+        <p class="muted">
+          Keep half the mark's height clear on every side of the logo, and of the mark alone. Nothing else, text or
+          edge, comes inside it.
+        </p>
+      </div>
+      <div class="space">
+        <div class="space-box"><Logo height={64} /></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="fav-title">
+    <div class="container">
+      <h2 id="fav-title" class="h2">Favicon and icons</h2>
+      <div class="favs">
+        {
+          [16, 32, 48].map((s) => (
+            <figure>
+              <div class="tab">
+                <img src="/favicon.svg" width={s} height={s} alt="" />
+                <span>Clank</span>
+              </div>
+              <figcaption>{s} px</figcaption>
+            </figure>
+          ))
+        }
+        <figure>
+          <img class="touch" src="/apple-touch-icon.png" width="90" height="90" alt="The app icon: the mark on a dark tile" />
+          <figcaption>180 px, home screen</figcaption>
+        </figure>
+      </div>
+      <p class="muted">The favicon follows the browser: a light bracket on dark tabs, a dark one on light tabs.</p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="do-title">
+    <div class="container">
+      <h2 id="do-title" class="h2">Do and don't</h2>
+      <div class="dos">
+        <figure class="do">
+          <div class="ex dark"><Logo height={36} /></div>
+          <figcaption><b>Do</b> use the light logo on Clank's dark ground.</figcaption>
+        </figure>
+        <figure class="do">
+          <div class="ex light"><Logo height={36} /></div>
+          <figcaption><b>Do</b> use the dark logo on light grounds.</figcaption>
+        </figure>
+        <figure class="dont">
+          <div class="ex dark"><span class="rot"><Mark size={44} /></span></div>
+          <figcaption><b>Don't</b> turn the mark: its opening faces right.</figcaption>
+        </figure>
+        <figure class="dont">
+          <div class="ex dark"><span class="squash"><Logo height={36} /></span></div>
+          <figcaption><b>Don't</b> stretch or squash it.</figcaption>
+        </figure>
+        <figure class="dont">
+          <div class="ex dark"><span class="recolor"><Mark size={44} /></span></div>
+          <figcaption><b>Don't</b> recolor the diamond; it is orange, or one color with the rest.</figcaption>
+        </figure>
+        <figure class="dont">
+          <div class="ex dark"><span class="glow"><Logo height={36} /></span></div>
+          <figcaption><b>Don't</b> add glows, gradients or shadows.</figcaption>
+        </figure>
+      </div>
+      <p class="muted">In the console itself, Clank keeps its header as it is: “◆ CLANK” in the terminal's own font.</p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .h2 {
+    font-size: clamp(1.75rem, 1.3rem + 1.8vw, 2.5rem);
+    letter-spacing: -0.02em;
+  }
+
+  .muted {
+    color: var(--muted);
+  }
+
+  .dirs {
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  .dir {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .dir.chosen {
+    border-color: var(--orange);
+  }
+
+  .dir header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .dir h3 {
+    font-size: 1.1rem;
+  }
+
+  .badge {
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--orange);
+    color: var(--on-accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .dir p {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .pair {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-around;
+    gap: 12px;
+    padding: 18px 12px;
+    border-radius: 10px;
+  }
+
+  .tile.dark,
+  .lk.dark,
+  .ex.dark {
+    background: #16161e;
+    border: 1px solid var(--line);
+  }
+
+  .tile.light,
+  .lk.light,
+  .ex.light {
+    background: #f6f7fb;
+    --mark-accent: #e2702f;
+  }
+
+  .lk.light :global(.logo),
+  .ex.light :global(.logo),
+  .lk.light :global(svg) {
+    color: #1a1b26;
+  }
+
+  .why {
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 52rem;
+  }
+
+  .why p {
+    color: var(--text);
+  }
+
+  .lockups {
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  .lk {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 200px;
+    padding: 32px;
+    border-radius: var(--radius);
+  }
+
+  .lk :global(.logo) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .lk.dark :global(svg) {
+    color: #e6eaff;
+  }
+
+  .cap {
+    font-size: 0.86rem;
+    color: #8a93bc;
+  }
+
+  .lk.light .cap {
+    color: #4a5070;
+  }
+
+  .spec {
+    margin-top: 18px;
+    max-width: 52rem;
+    color: var(--muted);
+  }
+
+  .grid2 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 32px;
+    align-items: center;
+  }
+
+  .grid2 > div:first-child {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .space {
+    display: flex;
+    justify-content: center;
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #16161e;
+  }
+
+  .space-box {
+    padding: 32px;
+    outline: 1px dashed var(--orange);
+    background: repeating-linear-gradient(135deg, transparent 0 6px, rgba(255, 158, 100, 0.06) 6px 7px);
+    max-width: 100%;
+  }
+
+  .space-box :global(.logo) {
+    max-width: 100%;
+    height: auto;
+    background: #16161e;
+  }
+
+  .favs {
+    margin-top: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 24px;
+  }
+
+  .favs figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 8px 8px 0 0;
+    background: #2a2d3e;
+    color: var(--text);
+    font-size: 0.86rem;
+  }
+
+  .touch {
+    border-radius: 20px;
+  }
+
+  .favs figcaption {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--faint);
+  }
+
+  .favs + .muted {
+    margin-top: 16px;
+  }
+
+  .dos {
+    margin-top: 24px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  .dos figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .ex {
+    display: grid;
+    place-items: center;
+    min-height: 120px;
+    padding: 20px;
+    border-radius: 12px;
+  }
+
+  .ex.dark :global(svg) {
+    color: #e6eaff;
+  }
+
+  .dos figcaption {
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+
+  .do b {
+    color: var(--green);
+  }
+
+  .dont b {
+    color: var(--red);
+  }
+
+  .dont .ex {
+    border-color: color-mix(in srgb, var(--red) 40%, transparent);
+  }
+
+  .rot {
+    display: inline-block;
+    transform: rotate(90deg);
+  }
+
+  .squash {
+    display: inline-block;
+    transform: scale(1.5, 0.7);
+  }
+
+  .recolor {
+    --mark-accent: #7aa2f7;
+  }
+
+  .glow {
+    filter: drop-shadow(0 0 10px rgba(255, 158, 100, 0.9));
+  }
+
+  .dos + .muted {
+    margin-top: 18px;
+  }
+
+  @media (max-width: 900px) {
+    .dirs,
+    .dos {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .grid2,
+    .lockups {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

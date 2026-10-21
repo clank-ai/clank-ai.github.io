@@ -1,0 +1,214 @@
+---
+/**
+ * Home's second point, as weighty as the first: everything it takes to run LLMs on your own PC,
+ * local and cloud, in one place. A short before and after; the Why Clank page walks it step by
+ * step, and Get started has the steps themselves.
+ */
+import { PAGES } from '../../config';
+
+const byHand = [
+  'drivers, CUDA, WSL and Docker, a guide for each',
+  'a container for the agent, and what it may reach',
+  'an inference engine to build for your GPU',
+  'model files to find, download and check',
+  'launch flags for the window, cache and output',
+  'servers to start, stop and switch by hand',
+  'a provider account, a key, the agent pointed at it',
+  'a dashboard to watch what the cloud costs',
+];
+const local = ['clank doctor', 'clank', 'l: a preset', 'engine, model, load', 'This folder', 'a'];
+const cloud = ['clank doctor', 'clank', 'c: OpenRouter', 'your key', 'a model', 'This folder', 'a'];
+---
+
+<section class="band" id="one-place" aria-labelledby="one-place-title">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">One place</p>
+      <h2 id="one-place-title">Everything it takes to run LLMs on your PC.</h2>
+      <p class="lead">
+        Local hardware and cloud providers alike: checking the machine, Docker, engines, model files, presets, keys,
+        costs, and the agent in your folder. One console and one set of commands, where it used to take a dozen tools
+        and guides.
+      </p>
+    </div>
+
+    <div class="ba">
+      <div class="before">
+        <p class="k">By hand</p>
+        <ul>
+          {byHand.map((t) => <li>{t}</li>)}
+        </ul>
+      </div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="after">
+        <p class="k">With Clank</p>
+        <div class="lane">
+          <p class="lane-t"><span class="dot local"></span>Your GPU</p>
+          <ol>
+            {local.map((t) => <li><code>{t}</code></li>)}
+          </ol>
+        </div>
+        <div class="lane">
+          <p class="lane-t"><span class="dot cloud"></span>A cloud key</p>
+          <ol>
+            {cloud.map((t) => <li><code>{t}</code></li>)}
+          </ol>
+        </div>
+        <p class="note">
+          Each step is done for you, asked first, and shown as it goes: the engine installed, the model downloaded and
+          checked, the key kept where only you can read it, the workspace built. Then the agent works in your folder.
+        </p>
+      </div>
+    </div>
+
+    <p class="links">
+      <a class="more" href={`${PAGES.why.path}#one-place`}>Step by step, both paths</a>
+      <a class="more" href={PAGES.start.path}>Get started</a>
+    </p>
+  </div>
+</section>
+
+<style>
+  .ba {
+    margin-top: clamp(32px, 4vw, 48px);
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) auto minmax(0, 1.1fr);
+    gap: 20px;
+    align-items: stretch;
+  }
+
+  .before,
+  .after {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: clamp(20px, 2.4vw, 28px);
+    border-radius: var(--radius);
+  }
+
+  .before {
+    border: 1px dashed var(--line-strong);
+  }
+
+  .after {
+    border: 1px solid #343a55;
+    background: var(--surface);
+    box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.8);
+  }
+
+  .k {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  .after .k {
+    color: var(--orange);
+  }
+
+  .before ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .before li {
+    display: flex;
+    gap: 10px;
+    color: var(--muted);
+  }
+
+  .before li::before {
+    content: '·';
+    color: var(--faint);
+  }
+
+  .arrow {
+    align-self: center;
+    font-size: 1.6rem;
+    color: var(--faint);
+  }
+
+  .lane {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .lane-t {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+
+  .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+  }
+
+  .dot.local {
+    background: var(--teal);
+  }
+
+  .dot.cloud {
+    background: var(--blue);
+  }
+
+  ol {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  ol li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  ol li + li::before {
+    content: '→';
+    color: var(--faint);
+  }
+
+  ol code {
+    padding: 3px 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    background: var(--well);
+    font-size: 0.84rem;
+    color: var(--text-strong);
+    white-space: nowrap;
+  }
+
+  .note {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .links {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+  }
+
+  @media (max-width: 860px) {
+    .ba {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .arrow {
+      justify-self: center;
+      transform: rotate(90deg);
+    }
+  }
+</style>

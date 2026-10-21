@@ -1,0 +1,231 @@
+---
+/** Privacy and control: what stays on your computer, what leaves only with your yes, and the two yeses. */
+const stays = [
+  ['Your folders and files', 'The agent sees one folder, in its own container.'],
+  ['Conversations', 'Every session, its tool calls and their output.'],
+  ['Keys', "In Clank's secrets, readable by you alone; never shown or logged."],
+  ['Records', 'Every event, request and answer Clank kept.'],
+  ['MCP servers marked local', 'Never offered to a cloud model.'],
+  ['Notion pages', 'Never sent to a cloud model.'],
+];
+---
+
+<section class="section" id="privacy" aria-labelledby="privacy-title">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Privacy and control</p>
+      <h2 id="privacy-title">Local by default.</h2>
+      <p class="lead">
+        With a model on your GPU, nothing leaves your computer. With a cloud model, a workspace's requests leave only after
+        two yeses, and you can see every one.
+      </p>
+    </div>
+
+    <div class="cols">
+      <div class="col stays">
+        <h3><span class="dot" aria-hidden="true"></span>Stays on your computer</h3>
+        <dl>
+          {
+            stays.map(([term, text]) => (
+              <div>
+                <dt>{term}</dt>
+                <dd>{text}</dd>
+              </div>
+            ))
+          }
+        </dl>
+        <p class="also">
+          The workspace's container reaches only Clank, never the internet unless you grant it. With a local model,
+          nothing leaves at all.
+        </p>
+      </div>
+
+      <div class="col leaves">
+        <h3><span class="dot" aria-hidden="true"></span>Leaves only with your yes</h3>
+        <p>
+          With a cloud model, the gateway sends a workspace's requests to OpenRouter, then to the model's provider. By
+          default Clank asks only for providers that keep no data.
+        </p>
+        <p class="what">
+          <b>What goes:</b> your messages, what the agent reads of the folder, command output, and its instructions.
+        </p>
+
+        <ol class="yeses">
+          <li>
+            <span class="n">1</span>
+            <p><b>Once for OpenRouter.</b> What goes, where, and what never goes, read and agreed when you add the model.</p>
+          </li>
+          <li>
+            <span class="n">2</span>
+            <p><b>Once for each workspace</b>, before its agent first uses the cloud:</p>
+          </li>
+        </ol>
+
+        <div class="ask" role="img" aria-label="Clank asks: Let my-project's agent use the cloud model? Press y to allow, or n to keep it local.">
+          <p class="ask-q">Let my-project's agent use the cloud model?</p>
+          <p class="ask-d">Its requests go to OpenRouter; Notion pages and local-only servers never do.</p>
+          <p class="ask-k"><span><kbd class="key">y</kbd> allow</span><span><kbd class="key">n</kbd> keep local</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cols {
+    margin-top: clamp(36px, 4.5vw, 56px);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+
+  .col {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: clamp(22px, 2.6vw, 32px);
+    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+
+  .col h3 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.3rem;
+  }
+
+  .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 18%, transparent);
+  }
+
+  .stays {
+    --c: var(--green);
+  }
+
+  .leaves {
+    --c: var(--orange);
+  }
+
+  dl {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  dl div {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr);
+    gap: 4px 18px;
+    padding: 11px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  dt {
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .also {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .leaves > p {
+    color: var(--muted);
+  }
+
+  .leaves b {
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+
+  .what {
+    font-size: 0.95rem;
+  }
+
+  .yeses {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .yeses li {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+  }
+
+  .yeses p {
+    color: var(--muted);
+  }
+
+  .n {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    border: 1px solid var(--orange);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--orange);
+  }
+
+  .ask {
+    margin-left: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px 16px;
+    border: 1px solid var(--yellow);
+    border-radius: 6px;
+    background: var(--well);
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+  }
+
+  .ask-q {
+    color: var(--text-strong);
+    font-weight: 700;
+  }
+
+  .ask-d {
+    color: var(--muted);
+  }
+
+  .ask-k {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    color: var(--text);
+  }
+
+  @media (max-width: 900px) {
+    .cols {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 480px) {
+    dl div {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ask {
+      margin-left: 0;
+    }
+  }
+</style>

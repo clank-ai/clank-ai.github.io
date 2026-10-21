@@ -1,0 +1,250 @@
+---
+/** Features: each part of Clank in turn, with the screen that shows it. */
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import SubNav from '../components/SubNav.astro';
+import FeatureBlock from '../components/FeatureBlock.astro';
+import Window from '../components/Window.astro';
+import Crop from '../components/Crop.astro';
+import GuideTable from '../components/GuideTable.astro';
+import PresetFile from '../components/PresetFile.astro';
+import RequestPath from '../components/RequestPath.astro';
+import Flows from '../components/Flows.astro';
+import Privacy from '../components/Privacy.astro';
+import VSCodeWindow from '../components/surfaces/VSCodeWindow.astro';
+import PhoneFrame from '../components/surfaces/PhoneFrame.astro';
+import { building, context, cost, loopGuard, requests, session, verdict } from '../scripts/crops';
+import { LINKS, PAGES, RELEASED } from '../config';
+
+const sections = [
+  { id: 'monitor', label: 'The Monitor' },
+  { id: 'context', label: 'Context' },
+  { id: 'flows', label: 'Flows' },
+  { id: 'gateway', label: 'The gateway' },
+  { id: 'models', label: 'Models' },
+  { id: 'cloud', label: 'Cloud and cost' },
+  { id: 'privacy', label: 'Privacy' },
+  { id: 'vscode', label: 'VS Code' },
+  { id: 'phone', label: 'iPhone' },
+];
+---
+
+<Base title="Features · Clank" description="The Monitor, flows, the gateway, models and engines, cloud cost, privacy, VS Code and the iPhone app: each part of Clank, with the screen that shows it." path={PAGES.features.path}>
+  <SubNav slot="subnav" items={sections} label="Features, by section" />
+  <PageHeader
+    crumb="Features"
+    eyebrow="Features"
+    title="Every layer between you and the model."
+    lead="Each part of Clank in depth, with the screen that shows it: the Monitor and its Guide, the context window, flows, the gateway, models and engines, cloud cost, privacy, VS Code and the iPhone app."
+  />
+
+  <FeatureBlock
+    id="monitor"
+    eyebrow="The Monitor · F10"
+    title="Watch a session, and steer it."
+    lead="The Monitor follows the folder's newest session: its context window by part, what it does this second, its tool calls, and the Guide to steer it."
+  >
+    <ul class="points">
+      <li><span><b>Live.</b> Its phase, its step, how much it has thought and written, the call it is writing.</span></li>
+      <li><span><b>The Guide.</b> Stop, note, pause, compact, undo or drop, each showing its cost before you confirm.</span></li>
+      <li><span><b>Three views.</b> Flow, Session and Context, one key apart.</span></li>
+    </ul>
+    <Fragment slot="art">
+      <Window title="clank · the Monitor · Session view">
+        <Crop crop={session()} label="The Monitor's Session view: the context window by part, what the session does now, and the Guide's keys." />
+      </Window>
+      <GuideTable />
+    </Fragment>
+  </FeatureBlock>
+
+  <FeatureBlock
+    id="context"
+    band
+    eyebrow="Context"
+    title="Know what fills the window, before it fills."
+    lead="The Context view counts each part of the window: the system prompt, tool definitions, thinking, calls and their results, and any text that repeats. It says what you could free, and what that would cost."
+  >
+    <ul class="points">
+      <li><span><b>A margin.</b> Clank tells the agent the window less a margin, so a session compacts before one step's results overflow it.</span></li>
+      <li><span><b>Beyond the GPU.</b> With KVMem, the exact part is read on the GPU and the rest waits in system memory, so the window can be larger than the GPU holds.</span></li>
+      <li><span><b>Where figures come from.</b> The engine, the model's template, or an estimate, always labeled.</span></li>
+    </ul>
+    <Fragment slot="art">
+      <Window title="clank · the Monitor · Context view">
+        <Crop crop={context()} label="The Context view: each part of the window with its tokens, share and biggest item." />
+      </Window>
+    </Fragment>
+  </FeatureBlock>
+
+  <div class="anchor">
+    <Flows />
+    <div class="container flow-shots">
+      <Window title="Building it with the model">
+        <Crop crop={building()} label="Building a flow with the model: the folder read, BRIEF.md written, a draft refused with its problem, then accepted." />
+      </Window>
+      <Window title="VERIFY's report">
+        <Crop crop={verdict()} label="VERIFY's report: a fail with two numbered findings, sent back to PLAN." />
+      </Window>
+    </div>
+  </div>
+
+  <FeatureBlock
+    id="gateway"
+    band
+    eyebrow="The gateway"
+    title="One request, end to end."
+    lead="Every request the agent makes passes through Clank's gateway, on its way to your GPU or to the cloud. Here is what happens at each hop."
+  >
+    <ul class="points">
+      <li><span><b>Recorded.</b> Each request with its model, its tokens in, cached, out and thinking, and its cost.</span></li>
+      <li><span><b>Guarded.</b> The loop guard stops an answer that repeats itself while it streams.</span></li>
+      <li><span><b>Held.</b> Pause a session at the gateway; at a cost limit, cloud requests wait.</span></li>
+    </ul>
+    <Fragment slot="art">
+      <RequestPath />
+    </Fragment>
+    <div slot="after" class="container gw-shots">
+      <Window title="clank · Requests · F7">
+        <Crop crop={requests()} label="Requests: one line per request, with its model, tokens and cost." />
+      </Window>
+      <Window title="clank · the Monitor · live text">
+        <Crop crop={loopGuard()} label="The live text of an answer that repeats itself, stopped by the loop guard." />
+      </Window>
+    </div>
+  </FeatureBlock>
+
+
+  <FeatureBlock
+    id="models"
+    eyebrow="Models and engines"
+    title="Any open model, on the engine you choose."
+    lead="A preset says how a model runs: its engine, its file, its window, its most output, its thinking budget. Clank installs the engine, downloads the model and checks it, asking first at each step."
+  >
+    <ul class="points">
+      <li><span><b>Local.</b> Any open model as a GGUF file, checked by its SHA-256, served by llama.cpp or KVMem.</span></li>
+      <li><span><b>Cloud.</b> The models OpenRouter offers that take tool calls, with your key.</span></li>
+      <li><span><b>Switch in one key.</b> Presets are small files: change a number, check it, load it.</span></li>
+    </ul>
+    {RELEASED && <p><a class="more" href={LINKS.models}>Model setups in the docs</a></p>}
+    <Fragment slot="art">
+      <PresetFile />
+    </Fragment>
+  </FeatureBlock>
+
+  <FeatureBlock
+    id="cloud"
+    band
+    eyebrow="Cloud and cost"
+    title="Pay per request, and see each one."
+    lead="With a cloud model, each request is paid from your OpenRouter credits. Clank shows what each request, session, flow, day and month cost, and pauses at the limits you set."
+  >
+    <ul class="points">
+      <li><span><b>Limits.</b> A day's and a month's, in US dollars; empty means none.</span></li>
+      <li><span><b>At a limit.</b> One notice at 80%; at 100% cloud requests wait while local work goes on, until you raise it.</span></li>
+      <li><span><b>Estimates labeled.</b> A cost is marked as an estimate until OpenRouter gives the exact figure.</span></li>
+    </ul>
+    <Fragment slot="art">
+      <Window title="clank · cloud spending">
+        <Crop crop={cost()} label="Cloud spending: today's and this month's against their limits, and this session's cost." />
+      </Window>
+    </Fragment>
+  </FeatureBlock>
+
+  <Privacy />
+
+  <FeatureBlock
+    id="vscode"
+    band
+    wide
+    eyebrow="VS Code"
+    title="Clank's own VS Code window."
+    lead="Your files on the left, OpenCode in a terminal at the right edge, and Clank in the status bar. In review mode, each change the agent wants opens beside your file with Accept and Reject."
+  >
+    <ul class="points cols">
+      <li><span><b>Review or auto.</b> Review asks before each change; auto applies it and opens it after.</span></li>
+      <li><span><b>Completion.</b> Gray text as you type, from a small model on the CPU; Tab takes it.</span></li>
+      <li><span><b>Figures.</b> Mark up a PNG or JPEG and send it to the agent, each mark said in words.</span></li>
+      <li><span><b>Gates.</b> A flow's gates and questions, answered from the editor.</span></li>
+    </ul>
+    <Fragment slot="art">
+      <div class="surface"><VSCodeWindow /></div>
+    </Fragment>
+  </FeatureBlock>
+
+  <FeatureBlock
+    id="phone"
+    eyebrow="iPhone · coming"
+    title="What runs, and what waits for you."
+    lead="The iPhone app is coming. It shows the model at work and the machine's load, and the questions waiting for you: a change to allow, a workspace to let use the cloud, a flow's gate."
+  >
+    <Fragment slot="art">
+      <div class="phone-wrap"><PhoneFrame /></div>
+    </Fragment>
+  </FeatureBlock>
+
+  <section class="section next">
+    <div class="container next-inner">
+      <h2>Ready to try it?</h2>
+      <p>Install Clank in one line, then add a cloud key or a model on your GPU.</p>
+      <a class="btn btn-primary" href={PAGES.start.path}>Get started</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .anchor {
+    scroll-margin-top: 110px;
+  }
+
+  .flow-shots,
+  .gw-shots {
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  .surface {
+    container: surface / inline-size;
+  }
+
+  .points.cols {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .phone-wrap {
+    display: flex;
+    justify-content: center;
+  }
+
+  .soon {
+    color: var(--faint);
+    font-size: 0.95rem;
+  }
+
+  .next-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .next h2 {
+    font-size: var(--fs-h2);
+    letter-spacing: -0.02em;
+  }
+
+  .next p {
+    color: var(--muted);
+    font-size: var(--fs-lead);
+  }
+
+  @media (max-width: 860px) {
+    .flow-shots,
+    .gw-shots,
+    .points.cols {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

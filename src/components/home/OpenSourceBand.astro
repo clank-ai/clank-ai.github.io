@@ -1,0 +1,47 @@
+---
+/** Home's word on open source: the license, and where to read how Clank is built. */
+import { LICENSE, PAGES } from '../../config';
+---
+
+<section class="section" aria-labelledby="oss-band-title">
+  <div class="container band-row">
+    <div>
+      <p class="eyebrow">Open source</p>
+      <h2 id="oss-band-title">Open source under <span class="nw">{LICENSE}</span>, and written to be read.</h2>
+      <p class="lead">Its designs, decisions and plans sit beside the code, so you, or your own local model, can read Clank and change it.</p>
+    </div>
+    <a class="more" href={PAGES.openSource.path}>How it is built</a>
+  </div>
+</section>
+
+<style>
+  .band-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px 40px;
+  }
+
+  .band-row > div {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 44rem;
+  }
+
+  h2 {
+    font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.25rem);
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+  }
+
+  .nw {
+    white-space: nowrap;
+  }
+
+  .lead {
+    font-size: var(--fs-lead);
+    color: var(--muted);
+  }
+</style>
