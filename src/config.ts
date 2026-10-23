@@ -64,6 +64,7 @@ export const PAGES = {
   start: { path: '/get-started', label: 'Get started' },
   openSource: { path: '/open-source', label: 'Open source' },
   faq: { path: '/faq', label: 'FAQ' },
+  blog: { path: '/blog', label: 'Blog' },
   brand: { path: '/brand', label: 'Brand' },
 } as const;
 
@@ -75,6 +76,7 @@ export const NAV: { label: string; href: string; external?: boolean }[] = [
   ...(RELEASED ? [{ label: 'Docs', href: LINKS.docs, external: true }] : []),
   { label: PAGES.openSource.label, href: PAGES.openSource.path },
   { label: PAGES.faq.label, href: PAGES.faq.path },
+  { label: PAGES.blog.label, href: PAGES.blog.path },
 ];
 
 export const SITE = {

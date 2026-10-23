@@ -1,0 +1,215 @@
+---
+/** The blog: setup notes and measurements from running Clank on one machine, newest first. */
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import { PAGES, LINKS } from '../config';
+import { POSTS, PLANNED, postPath } from '../data/blog';
+
+const [newest, ...older] = POSTS;
+const machine = [
+  ['GPU', 'RTX 5080, 16 GB'],
+  ['CPU', 'Ryzen 9 9950X3D'],
+  ['RAM', '64 GB DDR5-4800'],
+  ['OS', 'Windows 11, WSL 2 (Ubuntu 22.04)'],
+  ['Driver', 'NVIDIA 591.74'],
+];
+---
+
+<Base title="Blog · Clank" description="Setup notes and measurements from running Clank on my own machine." path={PAGES.blog.path}>
+  <PageHeader crumb="Blog" eyebrow="Blog" title="Blog" lead="Setup notes and measurements from running Clank on my own machine." />
+  <div class="container blog">
+    <div class="posts">
+      <article class="featured">
+        <p class="meta"><span>{newest.tag}</span><span aria-hidden="true">·</span><time datetime={newest.date}>{newest.dateText}</time><span aria-hidden="true">·</span><span>{newest.minutes} min read</span></p>
+        <h2><a href={postPath(newest)}>{newest.title}</a></h2>
+        <p class="dek">{newest.dek}</p>
+        <dl class="stats">
+          {newest.stats.map((s) => (
+            <div>
+              <dt>{s.label}</dt>
+              <dd>{s.value}</dd>
+            </div>
+          ))}
+        </dl>
+        <a class="read" href={postPath(newest)}>Read</a>
+      </article>
+
+      {older.map((post) => (
+        <article class="item">
+          <p class="meta"><span>{post.tag}</span><span aria-hidden="true">·</span><time datetime={post.date}>{post.dateText}</time></p>
+          <h3><a href={postPath(post)}>{post.title}</a></h3>
+          <p>{post.dek}</p>
+        </article>
+      ))}
+
+      <h2 class="label">Planned</h2>
+      {PLANNED.map((p) => (
+        <article class="item">
+          <p class="meta">{p.tag}</p>
+          <h3>{p.title}</h3>
+          <p>{p.text}</p>
+        </article>
+      ))}
+    </div>
+
+    <aside class="side" aria-label="About this blog">
+      <section class="card">
+        <h2 class="label">Hardware</h2>
+        <dl class="machine">
+          {machine.map(([k, v]) => (
+            <>
+              <dt>{k}</dt>
+              <dd>{v}</dd>
+            </>
+          ))}
+        </dl>
+      </section>
+      <section class="card">
+        <h2 class="label">Sources</h2>
+        <p>Numbers in each post link to the measurement they came from in the Clank repository.</p>
+      </section>
+      <p class="links"><a href={LINKS.github}>Clank on GitHub</a></p>
+    </aside>
+  </div>
+</Base>
+
+<style>
+  .blog {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    align-items: flex-start;
+    padding-block: clamp(40px, 5vw, 64px) var(--section-gap);
+  }
+  .posts {
+    flex: 999 1 560px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+  }
+  .side {
+    flex: 1 1 280px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--faint);
+  }
+  .featured {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: clamp(22px, 3vw, 32px);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+  }
+  .featured h2 {
+    font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.1rem);
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+  }
+  .featured h2 a,
+  .item h3 a {
+    color: var(--text-strong);
+    text-decoration: none;
+  }
+  .featured h2 a:hover,
+  .item h3 a:hover {
+    color: var(--blue);
+  }
+  .dek {
+    color: var(--text);
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .stats div {
+    display: flex;
+    flex-direction: column-reverse;
+    padding: 12px 14px;
+    background: var(--well);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+  }
+  .stats dd {
+    font-family: var(--font-mono);
+    font-size: 1.2rem;
+    white-space: nowrap;
+    color: var(--text-strong);
+  }
+  .stats dt {
+    font-size: var(--fs-xs);
+    color: var(--faint);
+  }
+  .read {
+    align-self: flex-start;
+    padding: 11px 18px;
+    border-radius: var(--radius-sm);
+    background: var(--blue);
+    color: var(--on-accent);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .label {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .posts > .label {
+    margin-top: 22px;
+  }
+  .item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+  .item h3 {
+    font-size: 1.35rem;
+    color: var(--text-strong);
+  }
+  .item p:last-child {
+    color: var(--muted);
+  }
+  .card {
+    padding: 22px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: var(--fs-sm);
+    color: var(--muted);
+  }
+  .machine {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px 14px;
+  }
+  .machine dt {
+    color: var(--faint);
+  }
+  .machine dd {
+    color: var(--text-strong);
+  }
+  .links {
+    font-size: var(--fs-sm);
+  }
+</style>
