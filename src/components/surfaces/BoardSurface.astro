@@ -1,0 +1,268 @@
+---
+/**
+ * A board, drawn in HTML: a frame named Figure 1 holding two plots the agent made from the folder's data and
+ * the formula under them as LaTeX, a slot the owner drew for the agent to fill, and a pinned comment. The
+ * figures are placeholder plots; the board editor itself is described in Clank's vscode/README.md.
+ */
+const measured = '4,70 14,66 24,61 34,55 44,48 54,40 64,31 74,21 84,10';
+const simulated = '4,69 14,65 24,60 34,53 44,45 54,36 64,26 74,15 84,6';
+---
+
+<div class="board" role="img" aria-label="A board in VS Code: a frame named Figure 1 with two plots side by side and the period formula under them as LaTeX, an empty slot labeled decay with a Fill button, and a pinned comment on the first plot.">
+  <div class="bar" aria-hidden="true">
+    <span class="tools"><i class="on">↖</i><i>✋</i><i>T</i><i>∑</i><i>▭</i><i>◌</i><i>✎</i><i>↗</i><i>▮</i><i>◉</i></span>
+    <span class="zoom">100 %</span>
+    <span class="status">7 items · saved</span>
+    <span class="export">Export</span>
+  </div>
+  <div class="canvas" aria-hidden="true">
+    <div class="frame">
+      <p class="frame-name">Figure 1 · frame</p>
+      <div class="row">
+        <div class="fig">
+          <svg viewBox="0 0 88 76" preserveAspectRatio="none">
+            <line x1="4" y1="72" x2="86" y2="72" />
+            <line x1="4" y1="4" x2="4" y2="72" />
+            <polyline points={measured} class="m" />
+          </svg>
+          <p>(a) measured</p>
+        </div>
+        <div class="fig">
+          <svg viewBox="0 0 88 76" preserveAspectRatio="none">
+            <line x1="4" y1="72" x2="86" y2="72" />
+            <line x1="4" y1="4" x2="4" y2="72" />
+            <polyline points={simulated} class="s" />
+          </svg>
+          <p>(b) simulated</p>
+        </div>
+        <div class="pin"><b>!</b><span>label both axes with units</span></div>
+      </div>
+      <div class="row low">
+        <div class="latex"><span class="tex">T₀ = 2π √(L / g)</span><i>math</i></div>
+        <div class="slot"><span>decay on a log scale</span><b>Fill</b></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .board {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border: 1px solid #343a55;
+    border-radius: 12px;
+    background: #1a1b26;
+    overflow: hidden;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 30px 70px -30px rgba(0, 0, 0, 0.8);
+    font-family: var(--font-mono);
+    font-size: clamp(7px, calc(100cqi / 78), 11px);
+    line-height: 1.6;
+    color: #a9b1d6;
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 1.2em;
+    padding: 0.6em 1em;
+    border-bottom: 1px solid #343a55;
+    background: #1f2030;
+  }
+
+  .tools {
+    display: flex;
+    gap: 0.35em;
+  }
+
+  .tools i {
+    display: inline-flex;
+    width: 1.9em;
+    height: 1.9em;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.4em;
+    font-style: normal;
+    color: #8a93bc;
+  }
+
+  .tools i.on {
+    background: #343a55;
+    color: #c0caf5;
+  }
+
+  .zoom,
+  .status {
+    color: #8a93bc;
+  }
+
+  .status {
+    margin-left: auto;
+  }
+
+  .export {
+    padding: 0.2em 0.9em;
+    border: 1px solid #3b4261;
+    border-radius: 0.4em;
+    color: #c0caf5;
+  }
+
+  .canvas {
+    padding: 1.6em 2em 2em;
+    background-color: #1a1b26;
+    background-image: radial-gradient(#2a2f45 1px, transparent 1px);
+    background-size: 1.6em 1.6em;
+  }
+
+  .frame {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2em;
+    padding: 2.4em 1.4em 1.4em;
+    border: 1px dashed #4a5280;
+    border-radius: 0.6em;
+  }
+
+  .frame-name {
+    position: absolute;
+    top: 0.6em;
+    left: 1.2em;
+    margin: 0;
+    color: #8a93bc;
+  }
+
+  .row {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.4em;
+  }
+
+  .fig {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+    padding: 0.7em;
+    border-radius: 0.4em;
+    background: #f5f6fa;
+    color: #333a56;
+  }
+
+  .fig svg {
+    width: 100%;
+    aspect-ratio: 88 / 76;
+    fill: none;
+    stroke: #333a56;
+    stroke-width: 1.2;
+  }
+
+  .fig line,
+  .fig polyline {
+    vector-effect: non-scaling-stroke;
+  }
+
+  .fig polyline {
+    stroke-width: 2.2;
+    stroke-linejoin: round;
+  }
+
+  .fig .m {
+    stroke: #2b64c8;
+  }
+
+  .fig .s {
+    stroke: #c8402b;
+  }
+
+  .fig p {
+    margin: 0;
+    text-align: center;
+  }
+
+  .pin {
+    position: absolute;
+    left: 14%;
+    top: 12%;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.2em 0.6em 0.2em 0.3em;
+    border-radius: 1em;
+    background: #e0af68;
+    color: #1a1b26;
+    white-space: nowrap;
+  }
+
+  .pin b {
+    display: inline-flex;
+    width: 1.5em;
+    height: 1.5em;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #1a1b26;
+    color: #e0af68;
+  }
+
+  .latex {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 4.5em;
+    border-radius: 0.4em;
+    background: #f5f6fa;
+    color: #1f2335;
+  }
+
+  .tex {
+    font-family: 'Cambria Math', 'STIX Two Math', 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 1.5em;
+  }
+
+  .latex i,
+  .slot b {
+    position: absolute;
+    right: 0.6em;
+    top: 0.3em;
+    font-style: normal;
+    font-size: 0.85em;
+    color: #8a93bc;
+  }
+
+  .slot {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 4.5em;
+    border: 1px dashed #7aa2f7;
+    border-radius: 0.4em;
+    color: #7aa2f7;
+  }
+
+  .slot b {
+    top: auto;
+    bottom: 0.4em;
+    right: 0.6em;
+    padding: 0.1em 0.7em;
+    border-radius: 0.3em;
+    background: #7aa2f7;
+    color: #1a1b26;
+    font-weight: 600;
+  }
+
+  @container surface (max-width: 520px) {
+    .board {
+      font-size: clamp(9px, calc(100cqi / 42), 11px);
+    }
+
+    .pin span {
+      display: none;
+    }
+  }
+</style>

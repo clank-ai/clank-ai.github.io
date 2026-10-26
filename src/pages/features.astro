@@ -12,6 +12,7 @@ import RequestPath from '../components/RequestPath.astro';
 import Flows from '../components/Flows.astro';
 import Privacy from '../components/Privacy.astro';
 import VSCodeWindow from '../components/surfaces/VSCodeWindow.astro';
+import BoardSurface from '../components/surfaces/BoardSurface.astro';
 import PhoneFrame from '../components/surfaces/PhoneFrame.astro';
 import { building, context, cost, loopGuard, requests, session, verdict } from '../scripts/crops';
 import { LINKS, PAGES, RELEASED } from '../config';
@@ -25,17 +26,18 @@ const sections = [
   { id: 'cloud', label: 'Cloud and cost' },
   { id: 'privacy', label: 'Privacy' },
   { id: 'vscode', label: 'VS Code' },
+  { id: 'boards', label: 'Boards' },
   { id: 'phone', label: 'iPhone' },
 ];
 ---
 
-<Base title="Features · Clank" description="The Monitor, flows, the gateway, models and engines, cloud cost, privacy, VS Code and the iPhone app: each part of Clank, with the screen that shows it." path={PAGES.features.path}>
+<Base title="Features · Clank" description="The Monitor, flows, the gateway, models and engines, cloud cost, privacy, VS Code, boards and the iPhone app: each part of Clank, with the screen that shows it." path={PAGES.features.path}>
   <SubNav slot="subnav" items={sections} label="Features, by section" />
   <PageHeader
     crumb="Features"
     eyebrow="Features"
     title="Every layer between you and the model."
-    lead="Each part of Clank in depth, with the screen that shows it: the Monitor and its Guide, the context window, flows, the gateway, models and engines, cloud cost, privacy, VS Code and the iPhone app."
+    lead="Each part of Clank in depth, with the screen that shows it: the Monitor and its Guide, the context window, flows, the gateway, models and engines, cloud cost, privacy, VS Code, boards and the iPhone app."
   />
 
   <FeatureBlock
@@ -158,16 +160,38 @@ const sections = [
     wide
     eyebrow="VS Code"
     title="Clank's own VS Code window."
-    lead="Your files on the left, OpenCode in a terminal at the right edge, and Clank in the status bar. In review mode, each change the agent wants opens beside your file with Accept and Reject."
+    lead="Your files on the left, OpenCode in a terminal at the right edge, Clank's own view of the conversation beside it, and Clank in the status bar. In review mode, each change the agent wants opens beside your file with Accept and Reject."
   >
     <ul class="points cols">
       <li><span><b>Review or auto.</b> Review asks before each change; auto applies it and opens it after.</span></li>
+      <li><span><b>The agent panel.</b> The conversation drawn Clank's way, with the model's readout under it: speed, context used, what it does now.</span></li>
       <li><span><b>Completion.</b> Gray text as you type, from a small model on the CPU; Tab takes it.</span></li>
       <li><span><b>Figures.</b> Mark up a PNG or JPEG and send it to the agent, each mark said in words.</span></li>
+      <li><span><b>LaTeX.</b> Every change the agent makes to a document is built first; a marked-up PDF shows what changed.</span></li>
+      <li><span><b>Artifacts and jobs.</b> Pages the agent makes from the folder's files, shown and commented on in the editor; long work runs as a job and reports back.</span></li>
       <li><span><b>Gates.</b> A flow's gates and questions, answered from the editor.</span></li>
+      <li><span><b>Elsewhere too.</b> From another computer over SSH, the folder opens in that computer's VS Code, connected to yours.</span></li>
     </ul>
     <Fragment slot="art">
       <div class="surface"><VSCodeWindow /></div>
+    </Fragment>
+  </FeatureBlock>
+
+  <FeatureBlock
+    id="boards"
+    wide
+    eyebrow="Boards · VS Code"
+    title="Lay out a figure with the agent."
+    lead="A board is a canvas you and the agent share: a file in the folder. The agent places figures, LaTeX and notes by where they go; you move them, draw on them, pin comments and ask about what you select."
+  >
+    <ul class="points cols">
+      <li><span><b>Figures from the folder.</b> The agent plots the data and places the image; when a script writes it again, the board shows the new one.</span></li>
+      <li><span><b>LaTeX on the board.</b> Math drawn at once; TikZ, pgfplots and tables compiled with the folder's TeX, the error shown under the last drawing.</span></li>
+      <li><span><b>Slots and pins.</b> Draw a slot and press Fill for the agent to make that figure; pin a comment and send the pins. It answers and closes each.</span></li>
+      <li><span><b>Export.</b> A frame becomes one figure for a paper: PDF for <code>\includegraphics</code>, PNG or SVG. Kept, it is made again each time the frame changes.</span></li>
+    </ul>
+    <Fragment slot="art">
+      <div class="surface board-art"><BoardSurface /></div>
     </Fragment>
   </FeatureBlock>
 
@@ -206,6 +230,11 @@ const sections = [
 
   .surface {
     container: surface / inline-size;
+  }
+
+  .board-art {
+    max-width: 880px;
+    margin-inline: auto;
   }
 
   .points.cols {
