@@ -86,7 +86,7 @@ const independence = [
 
 const steps = [
   ['Check the machine', 'Look up drivers, CUDA, WSL 2, Docker and disk, a guide for each.', 'clank doctor checks it all, says what is missing, and changes nothing.'],
-  ['A sandbox for the agent', 'Write a container for it, mount the folder, decide what it may reach.', 'One workspace per folder, built on first use after asking. It reaches only Clank.'],
+  ['A sandbox for the agent', 'Write a container for it, mount the folder, decide what it may reach.', 'One workspace per folder, built on first use after asking. It reaches only Clank, and the hosts you allow it, through Clank's proxy.'],
   ['An engine', 'Build llama.cpp or another engine with the right options for your GPU.', 'Clank installs KVMem or llama.cpp by its recipe, or adopts a build you made.'],
   ['A model file', 'Find a model, pick a quantization, download it, check it.', 'A preset names the file and its SHA-256; Clank downloads it, resumes it, checks it.'],
   ['Its settings', 'Work out the flags: the window, the cache, the most output, the thinking budget.', 'A preset holds them in one small file, and says whether it fits your GPU now.'],
