@@ -6,15 +6,18 @@
 #   1. uv: uses the one on PATH, or installs it with Astral's official installer (https://astral.sh/uv/install.ps1).
 #   2. Git: needed to download Clank. If it is missing, offers `winget install --id Git.Git -e` (asking first).
 #   3. Docker Desktop: needed for the agent's workspaces. If it is missing, says how to get it and offers
-#      `winget install --id Docker.DockerDesktop -e` (asking first; it never installs Docker without a yes).
+#      `winget install --id Docker.DockerDesktop -e` (asking first; it never installs Docker without a yes). Then,
+#      while its engine does not answer, offers to start it and waits for its first start (its terms are accepted
+#      in its own window).
 #   4. Clank: `uv tool install` from https://github.com/clank-ai/clank at its latest release tag, then
 #      `uv tool update-shell` so `clank` is on PATH.
-#   5. `clank doctor`, which checks this computer and changes nothing.
+#   5. `clank setup --check` (or `clank doctor` in an older Clank): what is set up and what is next.
 # Run it again to update Clank to the latest release. It never asks for, reads or stores any key.
 #
 # Settings, from the environment:
 #   CLANK_VERSION=v0.3.0b1    install this tag (or branch, e.g. main) instead of the latest release
 #   CLANK_NO_MODIFY_PATH=1    change no PATH: neither uv's installer nor `uv tool update-shell` touch it
+#   CLANK_YES=1               answer yes to every question (for a script); the commands are still shown
 #   UV_TOOL_DIR, UV_TOOL_BIN_DIR, UV_INSTALL_DIR    uv's own settings: where Clank and uv are put
 #
 # Its source: https://github.com/clank-ai/clank-ai.github.io/blob/main/public/install.ps1
@@ -43,9 +46,20 @@
         return [bool](Get-Command $Name -CommandType Application -ErrorAction SilentlyContinue)
     }
 
+    # Whether Docker's engine answers (Docker Desktop started, its terms accepted).
+    function Test-DockerEngine {
+        if (-not (Test-Command 'docker')) { return $false }
+        $null = & docker info --format '{{.ServerVersion}}' 2>$null
+        return ($LASTEXITCODE -eq 0)
+    }
+
     # Asks a yes-or-no question; the answer is no unless the person types y. Without a terminal to answer in
     # (a script, a pipe), it does not ask and the answer is no.
     function Confirm-Step([string]$Question) {
+        if ($env:CLANK_YES -eq '1') {
+            Say "  $Question [y/N] y (CLANK_YES)"
+            return $true
+        }
         $canAsk = [Environment]::UserInteractive -and -not [Console]::IsInputRedirected
         if ($canAsk) {
             foreach ($arg in [Environment]::GetCommandLineArgs()) {
@@ -194,9 +208,30 @@
             if ($hasWinget -and (Confirm-Step 'Install Docker Desktop now with winget?')) {
                 if (Install-WithWinget 'Docker.DockerDesktop') {
                     Update-SessionPath
-                    Say '  Docker Desktop is installed: open it once, accept its terms and let it finish starting.' Green
+                    Say '  Docker Desktop is installed.' Green
                 } else {
                     Say '  winget did not install Docker Desktop; install it later as above. Going on with Clank.' Yellow
+                }
+            }
+        }
+        # Docker Desktop's first start: its terms are accepted in its own window, and its engine starts after them.
+        $desktop = @(
+            (Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'),
+            (Join-Path $env:LOCALAPPDATA 'Programs\DockerDesktop\Docker Desktop.exe')
+        ) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+        if ($desktop) {
+            if (Test-DockerEngine) {
+                Say '  ready: Docker Desktop is running.' Green
+            } elseif (Confirm-Step 'Start Docker Desktop now? The first time, accept its terms in its window.') {
+                Start-Process -FilePath $desktop
+                Say '  Waiting for Docker Desktop to start (up to five minutes)...'
+                $deadline = (Get-Date).AddMinutes(5)
+                while ((Get-Date) -lt $deadline -and -not (Test-DockerEngine)) { Start-Sleep -Seconds 5 }
+                if (Test-DockerEngine) {
+                    Say '  ready: Docker Desktop is running.' Green
+                } else {
+                    Say '  Docker Desktop has not started yet: finish its first start in its window (a restart may be' Yellow
+                    Say '  needed the first time, for WSL 2); clank setup checks it again.' Yellow
                 }
             }
         }
@@ -249,11 +284,20 @@
             Add-SessionPath $bin
         }
 
-        # 5. clank doctor
-        Step '[5/5] clank doctor (checks this computer; changes nothing)'
-        & $exe doctor
-        if ($LASTEXITCODE -ne 0) {
-            Say '  clank doctor found something to fix (the lines above say what). Clank is installed.' Yellow
+        # 5. The checklist: clank setup --check where this Clank has it, else clank doctor; both change nothing.
+        $null = & $exe setup --help 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Step '[5/5] clank setup --check (what is set up, and what is next; changes nothing)'
+            & $exe setup --check
+            if ($LASTEXITCODE -ne 0) {
+                Say '  Something is still to do (the lines above say what). Clank is installed.' Yellow
+            }
+        } else {
+            Step '[5/5] clank doctor (checks this computer; changes nothing)'
+            & $exe doctor
+            if ($LASTEXITCODE -ne 0) {
+                Say '  clank doctor found something to fix (the lines above say what). Clank is installed.' Yellow
+            }
         }
 
         Step 'Next'
