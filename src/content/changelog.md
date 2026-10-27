@@ -3,9 +3,12 @@ installer installs the latest release; from the release after 0.3.0b1, `clank up
 a clone). Problems known now are in
 [docs/ISSUES.md](https://github.com/clank-ai/clank/blob/main/docs/ISSUES.md), open and fixed.
 
-## Unreleased: since 0.3.0b1
+## 0.3.0b2: the installer, updates, and the agent beside VS Code (2026-10-27)
 
-The next release. Its version is set when it is tagged; until then, a clone has it (`git pull`, or `clank update`).
+The second public beta: the one-line installer and `clank update`; the agent beside VS Code; Clank for iPhone over
+your tailnet; network access through Clank's proxy; flows that steer themselves; a new chat's first word in about a
+second on frontier 262K; and the fixes of the owner's first full days of use and of a code review. From 0.3.0b1, run
+the installer again; from this release on, `clank update` updates Clank.
 
 ### Added
 
@@ -53,17 +56,40 @@ From the owner's first full day of use and an end-to-end test of a new user's fi
 - A closed OpenCode window's sessions were read again forever (half a CPU core), and requests waited 10 s on a dead
   OpenCode: fixed.
 - The phone: its tab bar sat higher on short tabs; its first screen took 12 s: fixed.
+- The phone: the word "null" stood at the top of every tab, the header's "● live" was a green block, and the page
+  you add the app from ran its lines down the whole screen and offered iOS an icon it does not take: fixed
+  (2026-10-27).
 - Removing a workspace while OpenCode was open in it gave no warning and left tracebacks in the service's log:
   the question now says that what runs in its container ends, and the service lets the workspace go quietly.
 - Words a new user did not understand: the clients connected, the models not loaded, the doctor's line, the tool
   server's path, a refused request's fields, a waiting call's raw input, UTC times among local ones, log lines without
   times.
+- The runtime's `fallback_preset` setting did nothing: with no model that had worked yet, `clank work`, `clank code`
+  and This folder loaded the first preset that could load, or `daily-262k`. They now load the one it names (2026-10-27).
+- A new chat waited 10 to 37 s for its first word on the local model, while it read OpenCode's system prompt and
+  tools again. Frontier 262K's KVMem build now carries a patch that keeps a snapshot of the model's state at the
+  system prompt's end ([decision 0146](https://github.com/clank-ai/clank/blob/main/docs/decisions/0146-kvmem-keeps-a-snapshot-at-the-end-of-the-system-prompt.md)):
+  a new chat's first word comes in 0.5 to 1 s. The same patch keeps KVMem from resuming a conversation from
+  another one's snapshot. Clank does not build KVMem: [frontier 262K's page](https://github.com/clank-ai/clank/blob/main/docs/models/frontier-262k.md) says
+  how to build it with the patch (2026-10-27).
+- One workspace's agent could, through the gateway, start a job in another workspace's container, read its flow or
+  open its files, and a web page could send the gateway requests: each agent's call now carries its workspace's key
+  and acts for that workspace only, and the gateway answers only Clank's own programs. Close and start again any
+  agent's window opened before this update, so its tools get the key (2026-10-27).
 
 ### Changed
 
 - Scientific Python in the sandbox image; Clank's programs mounted read-only into each container instead of copied.
 - The agent is told to ask one short question with options when a request could mean different things, and to show a
   figure it made.
+- The phone app looks as its design drew it (and as the website shows it): rounded cards and buttons, the first answer
+  filled, the tab on screen in blue, its quieter words readable on every ground (WCAG AA), and its buttons' words
+  capitalized like every other client's.
+- The console's menu stands on the page's ground, as its design and the website draw it, so the page you are on shows
+  clearly in it (Textual drew it on a lighter ground, where the highlight barely showed).
+- VS Code (extension 0.10.4): Clank Night, the console's colors, now reaches the model's readout under the agent panel,
+  and the readout colors each part of the context as the console does (by what it is, not by its place in the bar);
+  every page takes its colors from one sheet; an artifact's bar is drawn in the window's theme.
 
 ## 0.3.0b1: the first public beta (2026-10-21)
 
