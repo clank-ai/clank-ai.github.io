@@ -6,16 +6,20 @@
 # What it does, in order, saying each step:
 #   1. uv: uses the one on PATH, or installs it with Astral's official installer (https://astral.sh/uv/install.sh).
 #   2. Git: needed to download Clank. If it is missing, says how to get it and offers to run that (asking first).
-#   3. Docker: needed for the agent's workspaces (Docker Desktop on macOS, Docker Engine on Linux). If it is
-#      missing, says where to get it; it never installs Docker itself.
+#   3. Docker: needed for the agent's workspaces. Linux: Docker Engine from Docker's own packages (apt on Ubuntu,
+#      Debian and their kin, dnf on Fedora and the RHEL family, pacman on Arch), shown and asked first, then started
+#      now and at each boot and this account added to the docker group, each asked first. macOS: Docker Desktop with
+#      Homebrew, asked first, then opened once for its terms.
 #   4. Clank: `uv tool install` from https://github.com/clank-ai/clank at its latest release tag, then
 #      `uv tool update-shell` so `clank` is on PATH.
-#   5. `clank doctor`, which checks this computer and changes nothing.
+#   5. `clank setup --check` (or `clank doctor` in an older Clank): what is set up and what is next.
 # Run it again to update Clank to the latest release. It never asks for, reads or stores any key.
 #
 # Settings, from the environment:
 #   CLANK_VERSION=v0.3.0b1    install this tag (or branch, e.g. main) instead of the latest release
 #   CLANK_NO_MODIFY_PATH=1    change no PATH: neither uv's installer nor `uv tool update-shell` touch it
+#   CLANK_YES=1               answer yes to every question (for a script); the commands are still shown
+#   CLANK_DRY_RUN=1           show every command that would change this computer, and run none of them
 #   UV_TOOL_DIR, UV_TOOL_BIN_DIR, UV_INSTALL_DIR    uv's own settings: where Clank and uv are put
 #
 # Its source: https://github.com/clank-ai/clank-ai.github.io/blob/main/public/install.sh
@@ -34,8 +38,13 @@ stop() {
 has() { command -v "$1" >/dev/null 2>&1; }
 
 # A yes-or-no question, answered on the terminal (stdin is this script when it comes through a pipe). The answer is
-# no unless the person types y; without a terminal to answer in, it does not ask and the answer is no.
+# no unless the person types y; without a terminal to answer in, it does not ask and the answer is no. CLANK_YES=1
+# answers yes, for a script; so does CLANK_DRY_RUN=1, which then runs nothing.
 confirm() {
+    if [ "${CLANK_YES:-}" = 1 ] || [ "${CLANK_DRY_RUN:-}" = 1 ]; then
+        say "  $1 [y/N] y (CLANK_YES or CLANK_DRY_RUN)"
+        return 0
+    fi
     if ! (: </dev/tty) 2>/dev/null; then
         say "  $1 [y/N] (not asked: no terminal to answer in)"
         return 1
@@ -48,15 +57,28 @@ confirm() {
     esac
 }
 
-# Runs a command as root: directly when this is root, else through sudo.
+# Runs a command as root: directly when this is root, else through sudo. With CLANK_DRY_RUN=1 it says the command and
+# runs nothing.
 as_root() {
+    if [ "${CLANK_DRY_RUN:-}" = 1 ]; then
+        say "  (dry run) as root: $*"
+        return 0
+    fi
     if [ "$(id -u)" = 0 ]; then
         "$@"
     elif has sudo; then
         sudo "$@"
     else
+        say "  This needs root, and sudo is not installed: run it as root yourself: $*"
         return 1
     fi
+}
+
+# Runs a command as this account, saying it first; with CLANK_DRY_RUN=1 it says the command and runs nothing.
+run() {
+    say "  > $*"
+    [ "${CLANK_DRY_RUN:-}" = 1 ] && return 0
+    "$@"
 }
 
 # Where Astral's installer puts uv, in the order it chooses.
@@ -123,6 +145,216 @@ clank_version() {
     [ -x "$1" ] && "$1" --version 2>/dev/null
 }
 
+# Linux: which of Docker's packages fit this distribution (https://docs.docker.com/engine/install/), from
+# /etc/os-release. Sets DOCKER_FAMILY (apt, dnf or pacman), DOCKER_REPO (Docker's folder for it) and DOCKER_CODENAME
+# (apt's release); false when Docker packages no Linux of this kind.
+docker_family() {
+    [ -r /etc/os-release ] || return 1
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    DISTRO="${PRETTY_NAME:-${ID:-this Linux}}"
+    DOCKER_SOURCE="Docker's own packages"
+    kind=" ${ID:-} ${ID_LIKE:-} "
+    case "${ID:-}" in
+        fedora) DOCKER_FAMILY=dnf DOCKER_REPO=fedora ;;
+        rhel) DOCKER_FAMILY=dnf DOCKER_REPO=rhel ;;
+        centos | rocky | almalinux) DOCKER_FAMILY=dnf DOCKER_REPO=centos ;;
+        arch) DOCKER_FAMILY=pacman DOCKER_REPO='' DOCKER_SOURCE="Arch's own docker package" ;;
+        *)
+            case "$kind" in
+                *" ubuntu "*) DOCKER_FAMILY=apt DOCKER_REPO=ubuntu DOCKER_CODENAME=${UBUNTU_CODENAME:-${VERSION_CODENAME:-}} ;;
+                *" debian "*) DOCKER_FAMILY=apt DOCKER_REPO=debian DOCKER_CODENAME=${DEBIAN_CODENAME:-${VERSION_CODENAME:-}} ;;
+                *" rhel "* | *" centos "*) DOCKER_FAMILY=dnf DOCKER_REPO=centos ;;
+                *" arch "*) DOCKER_FAMILY=pacman DOCKER_REPO='' DOCKER_SOURCE="Arch's own docker package" ;;
+                *) return 1 ;;
+            esac
+            ;;
+    esac
+    if [ "$DOCKER_FAMILY" = apt ] && [ -z "$DOCKER_CODENAME" ]; then
+        return 1
+    fi
+    return 0
+}
+
+# The commands that install Docker Engine from Docker's own packages on this Linux, one a line, each run as root, as
+# Docker's installation pages give them. A repository already set up is not set up again.
+docker_install_commands() {
+    case "$DOCKER_FAMILY" in
+        apt)
+            say "apt-get update"
+            say "apt-get install -y ca-certificates curl"
+            if [ ! -e /etc/apt/sources.list.d/docker.list ] && [ ! -e /etc/apt/sources.list.d/docker.sources ]; then
+                say "install -m 0755 -d /etc/apt/keyrings"
+                say "curl -fsSL https://download.docker.com/linux/$DOCKER_REPO/gpg -o /etc/apt/keyrings/docker.asc"
+                say "chmod a+r /etc/apt/keyrings/docker.asc"
+                say "echo \"deb [arch=$(dpkg --print-architecture 2>/dev/null || echo amd64) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/$DOCKER_REPO $DOCKER_CODENAME stable\" > /etc/apt/sources.list.d/docker.list"
+                say "apt-get update"
+            fi
+            say "apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+            ;;
+        dnf)
+            if [ ! -e /etc/yum.repos.d/docker-ce.repo ]; then
+                say "dnf -y install dnf-plugins-core"
+                if has dnf5; then
+                    say "dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/$DOCKER_REPO/docker-ce.repo"
+                else
+                    say "dnf config-manager --add-repo https://download.docker.com/linux/$DOCKER_REPO/docker-ce.repo"
+                fi
+            fi
+            say "dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+            ;;
+        pacman)
+            say "pacman -Syu --needed --noconfirm docker docker-buildx"
+            ;;
+    esac
+}
+
+# Whether Docker Engine, the system's own service, is installed (not the snap's, not rootless).
+docker_engine_installed() {
+    if [ -d /run/systemd/system ] && systemctl cat docker.service >/dev/null 2>&1; then
+        return 0
+    fi
+    [ -x /usr/bin/dockerd ] || [ -x /usr/sbin/dockerd ]
+}
+
+# How the docker command found is not Docker Engine from Docker's packages, in words; nothing when it is.
+docker_unsupported() {
+    case "$(command -v docker 2>/dev/null)" in
+        /snap/*)
+            say "Docker from the snap, which cannot reach the hidden folders of your home folder Clank needs"
+            return 0
+            ;;
+    esac
+    if [ "$(docker context show 2>/dev/null)" = rootless ] || case "${DOCKER_HOST:-}" in *"/run/user/"*) true ;; *) false ;; esac; then
+        say "rootless Docker, which maps the agent's user to another one on your folders"
+        return 0
+    fi
+    return 1
+}
+
+# Whether Docker answers this account, through the docker group when it was just joined (the group takes effect in
+# this session only through sg).
+docker_answers() {
+    docker version --format '{{.Server.Version}}' >/dev/null 2>&1 && return 0
+    has sg && sg docker -c "docker version --format '{{.Server.Version}}'" >/dev/null 2>&1
+}
+
+# Linux: Docker Engine started now and at each boot, and this account in the docker group, each asked first.
+docker_configure() {
+    if [ -d /run/systemd/system ]; then
+        if ! systemctl is-active --quiet docker 2>/dev/null || ! systemctl is-enabled --quiet docker 2>/dev/null; then
+            say "  Docker Engine is not running, or would not start when the computer does. Clank needs it running."
+            if confirm "Start it now and at every boot (systemctl enable --now docker)?"; then
+                as_root systemctl enable --now docker || say "  That did not work (its words are above)."
+            fi
+        fi
+    else
+        say "  This system does not run systemd: start Docker Engine your system's way before you use Clank."
+    fi
+    me=$(id -un)
+    if [ "$(id -u)" != 0 ] && ! id -nG "$me" 2>/dev/null | tr ' ' '\n' | grep -qx docker; then
+        say "  Your account, $me, is not in the docker group, so it cannot use Docker without sudo. Docker says"
+        say "  the group gives root's rights on this computer: https://docs.docker.com/engine/install/linux-postinstall/"
+        if confirm "Add $me to the docker group (usermod -aG docker $me)?"; then
+            as_root usermod -aG docker "$me" && JOINED_DOCKER=1
+        fi
+    fi
+}
+
+# Linux: Docker Engine found, or installed from Docker's own packages on a yes, then configured and checked.
+docker_linux() {
+    if docker_engine_installed; then
+        say "  found: $(docker --version 2>/dev/null || echo 'Docker Engine')"
+    else
+        if has docker && why=$(docker_unsupported); then
+            say "  found: $why. Clank does not support it; Docker Engine from Docker's own packages can be"
+            say "  installed beside it, and Clank then uses that one."
+        else
+            say "  Docker Engine is not installed. Clank runs the agent in a Docker container, one per folder, so"
+            say "  that the agent sees only that folder; it is needed before you work in a folder."
+        fi
+        if ! docker_family; then
+            say "  Docker does not package ${DISTRO:-this Linux} (or its release could not be read): install Docker"
+            say "  Engine as https://docs.docker.com/engine/install/ says, then run this again."
+            return 0
+        fi
+        say "  On ${DISTRO}, Docker Engine comes from ${DOCKER_SOURCE}, installed with these commands, as root:"
+        commands=$(docker_install_commands)
+        say "$commands" | sed 's/^/    /'
+        if ! confirm "Install Docker Engine now (the commands above, as root)?"; then
+            say "  Not installed. Run this again, or install it as above, before you work in a folder."
+            return 0
+        fi
+        failed=
+        say "$commands" | while IFS= read -r line; do
+            say "  # $line"
+            as_root sh -c "$line" </dev/null || { say "  That did not work (its words are above). Stopped here."; exit 1; }
+        done || failed=1
+        if [ -n "$failed" ]; then
+            say "  Docker Engine was not installed. Clank goes on; install Docker as above, then run this again."
+            return 0
+        fi
+        [ "${CLANK_DRY_RUN:-}" = 1 ] || docker_engine_installed || {
+            say "  The packages went in, but Docker Engine's service is not found. Run this again after a restart."
+            return 0
+        }
+        if [ "${CLANK_DRY_RUN:-}" = 1 ]; then
+            say "  (dry run) Docker Engine would be installed from ${DOCKER_SOURCE}."
+        else
+            say "  installed: Docker Engine, from ${DOCKER_SOURCE}"
+        fi
+    fi
+    docker_configure
+    if [ "${CLANK_DRY_RUN:-}" = 1 ]; then
+        say "  (dry run) then checked: docker version, as your account (through the docker group if just joined)."
+    elif docker_answers; then
+        say "  ready: Docker Engine answers your account."
+        if [ -n "${JOINED_DOCKER:-}" ]; then
+            say "  You joined the docker group just now: log out and in once (or restart) before you type clank,"
+            say "  so every program you start can use Docker."
+        fi
+    else
+        say "  Docker does not answer your account yet: clank doctor, below, says why and what to do."
+    fi
+}
+
+# macOS: Docker Desktop found, or installed with Homebrew on a yes; then started once and waited for, since its terms
+# are accepted in its own window the first time.
+docker_macos() {
+    if has docker || [ -d /Applications/Docker.app ]; then
+        say "  found: $(docker --version 2>/dev/null || echo 'Docker Desktop')"
+    else
+        say "  Docker Desktop is not installed. Clank runs the agent in a Docker container, one per folder, so"
+        say "  that the agent sees only that folder; it is needed before you work in a folder."
+        if has brew && confirm "Install Docker Desktop now with Homebrew (brew install --cask docker)?"; then
+            run brew install --cask docker || say "  Homebrew did not install it (its words are above)."
+        fi
+        if [ ! -d /Applications/Docker.app ] && [ "${CLANK_DRY_RUN:-}" != 1 ]; then
+            say "  Get it from https://www.docker.com/products/docker-desktop/ , then run this again."
+            return 0
+        fi
+    fi
+    if [ "${CLANK_DRY_RUN:-}" != 1 ] && docker info >/dev/null 2>&1; then
+        say "  ready: Docker Desktop is running."
+        return 0
+    fi
+    if confirm "Open Docker Desktop now? The first time, accept its terms in its window."; then
+        run open -a Docker || return 0
+        [ "${CLANK_DRY_RUN:-}" = 1 ] && return 0
+        say "  Waiting for Docker Desktop to start (up to five minutes)..."
+        waited=0
+        while [ "$waited" -lt 300 ]; do
+            if docker info >/dev/null 2>&1; then
+                say "  ready: Docker Desktop is running."
+                return 0
+            fi
+            sleep 5
+            waited=$((waited + 5))
+        done
+        say "  Docker Desktop has not started yet: finish its first start in its window; clank doctor checks it."
+    fi
+}
+
 main() {
     ORIGINAL_PATH=$PATH
     OS=$(uname -s)
@@ -140,7 +372,10 @@ main() {
 
     # 1. uv
     step "[1/5] uv (installs Clank and the Python it runs on)"
-    if ! uv=$(find_uv); then
+    if ! uv=$(find_uv) && [ "${CLANK_DRY_RUN:-}" = 1 ]; then
+        say "  (dry run) uv is not installed: Astral's installer would install it (curl -LsSf https://astral.sh/uv/install.sh | sh)."
+        uv=
+    elif [ -z "$uv" ]; then
         say "  uv is not installed: installing it with Astral's installer (https://docs.astral.sh/uv/)."
         if has curl; then
             fetch="curl -LsSf"
@@ -156,9 +391,11 @@ main() {
         fi
         uv=$(find_uv) || stop "uv could not be installed. Install it yourself (https://docs.astral.sh/uv/getting-started/installation/) and run this again."
     fi
-    PATH="$(dirname "$uv"):$PATH"
-    export PATH
-    say "  found: $("$uv" --version) ($uv)"
+    if [ -n "$uv" ]; then
+        PATH="$(dirname "$uv"):$PATH"
+        export PATH
+        say "  found: $("$uv" --version) ($uv)"
+    fi
 
     # 2. Git
     step "[2/5] Git (downloads Clank)"
@@ -167,37 +404,35 @@ main() {
         say "  Git is not installed. Clank is downloaded with it, so it is needed."
         if [ -n "$how" ] && [ "$how" != "xcode-select --install" ] && confirm "Install Git now ($how)?"; then
             case "$how" in
-                brew*) sh -c "$how" ;;
+                brew*) run sh -c "$how" ;;
                 *) as_root sh -c "$how" || say "  That did not work (it needs root or sudo)." ;;
             esac
         fi
-        if ! git --version >/dev/null 2>&1; then
-            stop "Git is needed. Install it (${how:-with your system's package manager}) and run this again."
+        if [ "${CLANK_DRY_RUN:-}" = 1 ]; then
+            say "  (dry run) Git would be installed: ${how:-with the package manager of your system}"
+        elif ! git --version >/dev/null 2>&1; then
+            stop "Git is needed. Install it (${how:-with the package manager of your system}) and run this again."
         fi
     fi
-    say "  found: $(git --version)"
+    git --version >/dev/null 2>&1 && say "  found: $(git --version)"
 
     # 3. Docker
     if [ "$OS" = Darwin ]; then
         step "[3/5] Docker Desktop (the agent's workspaces)"
+        docker_macos
     else
         step "[3/5] Docker Engine (the agent's workspaces)"
-    fi
-    if has docker; then
-        say "  found: $(docker --version 2>/dev/null) (clank doctor says whether it is running)"
-    else
-        say "  Docker is not installed. Clank runs the agent in a Docker container, one per folder, so it is"
-        say "  needed before you work in a folder (Clank itself installs without it). Get it:"
-        if [ "$OS" = Darwin ]; then
-            say "  Docker Desktop: https://www.docker.com/products/docker-desktop/ ; open it once and accept its terms."
-        else
-            say "  Docker Engine: https://docs.docker.com/engine/install/ , then let your user run it:"
-            say "  https://docs.docker.com/engine/install/linux-postinstall/"
-        fi
+        docker_linux
     fi
 
     # 4. Clank
     step "[4/5] Clank"
+    if [ "${CLANK_DRY_RUN:-}" = 1 ]; then
+        say "  (dry run) would run: uv tool install --force --reinstall-package clank --python 3.12 git+$REPO@<${CLANK_VERSION:-the latest release}>"
+        say "  (dry run) then: uv tool update-shell, and clank setup --check"
+        step "Dry run: nothing was changed."
+        return 0
+    fi
     bin=$("$uv" tool dir --bin) || stop "uv did not say where it puts tools (uv tool dir --bin)."
     exe="$bin/clank"
     before=$(clank_version "$exe") || before=
@@ -228,10 +463,15 @@ main() {
         fi
     fi
 
-    # 5. clank doctor
-    step "[5/5] clank doctor (checks this computer; changes nothing)"
-    if ! "$exe" doctor; then
-        say "  clank doctor found something to fix (the lines above say what). Clank is installed."
+    # 5. The checklist: clank setup --check where this Clank has it, else clank doctor; both change nothing.
+    if "$exe" setup --help >/dev/null 2>&1; then
+        step "[5/5] clank setup --check (what is set up, and what is next; changes nothing)"
+        "$exe" setup --check || say "  Something is still to do (the lines above say what). Clank is installed."
+    else
+        step "[5/5] clank doctor (checks this computer; changes nothing)"
+        if ! "$exe" doctor; then
+            say "  clank doctor found something to fix (the lines above say what). Clank is installed."
+        fi
     fi
 
     step "Next"

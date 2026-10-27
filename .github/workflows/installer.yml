@@ -1,0 +1,67 @@
+# The installer's checks (Clank's design 0028 §8): shellcheck; on each Linux distribution the Docker step knows, its
+# commands run for real as root in a throwaway container, then a dry run as an ordinary account; and on GitHub's Ubuntu
+# runner, with its Docker removed first, the whole installer for real, answering yes, then Docker running, started at
+# boot, and usable by the account through the docker group.
+name: installer
+
+on:
+  push:
+    branches: [main]
+    paths: ["public/install.sh", ".github/workflows/installer.yml"]
+  pull_request:
+    paths: ["public/install.sh", ".github/workflows/installer.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: shellcheck -s sh public/install.sh
+
+  distributions:
+    name: Docker's commands on ${{ matrix.image }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["ubuntu:24.04", "ubuntu:22.04", "debian:12", "fedora:41", "rockylinux:9", "archlinux:latest"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: The Docker step, for real, as root, in a throwaway container
+        run: |
+          sed 's/^main "\$@"$/OS=Linux; docker_linux; docker --version/' public/install.sh > "$RUNNER_TEMP/docker-step.sh"
+          docker run --rm -v "$RUNNER_TEMP:/mnt:ro" "${{ matrix.image }}" sh -c 'CLANK_YES=1 sh /mnt/docker-step.sh'
+      - name: A dry run of the whole installer, as an ordinary account where the image has su
+        run: |
+          docker run --rm -v "$PWD/public:/mnt:ro" "${{ matrix.image }}" sh -c '
+            if useradd -m tester >/dev/null 2>&1 && command -v su >/dev/null; then
+              su tester -c "CLANK_DRY_RUN=1 sh /mnt/install.sh"
+            else
+              CLANK_DRY_RUN=1 sh /mnt/install.sh
+            fi'
+
+  runner:
+    name: The whole installer on a real Ubuntu, Docker removed first
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove Docker, its repository, and this account from its group
+        run: |
+          sudo systemctl stop docker.socket docker.service containerd.service || true
+          sudo apt-get purge -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
+            moby-engine moby-cli moby-buildx moby-compose moby-containerd moby-runc || true
+          sudo rm -f /etc/apt/sources.list.d/docker.list /etc/apt/sources.list.d/docker.sources
+          sudo gpasswd -d "$USER" docker || true
+          if command -v dockerd; then echo "Docker is still installed"; exit 1; fi
+      - name: The installer, answering yes, installing Clank's main branch
+        run: CLANK_YES=1 CLANK_VERSION=main sh public/install.sh
+      - name: Docker runs, starts at boot, and this account may use it
+        run: |
+          systemctl is-active docker
+          systemctl is-enabled docker
+          id -nG "$USER" | tr ' ' '\n' | grep -qx docker
+          sg docker -c "docker run --rm hello-world"
