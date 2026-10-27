@@ -339,8 +339,10 @@ const sources: [string, string, string][] = [
       </details>
     </figure>
     <p>
-      A new chat gets no such head start. Its first step reads OpenCode’s whole prompt, about 20,000 tokens: 12 seconds
-      here, and up to 37 on a busy desktop.
+      A new chat after a longer session gets no such head start. Its first step reads OpenCode’s whole prompt again,
+      about 20,000 tokens: 10 to 37 seconds here, once 62. KVMem keeps only four snapshots of
+      the model’s state, all near the end of the last conversation. A <a href={`${repo}/blob/main/docs/measurements/2026-10-27-a-new-sessions-first-answer.md`}>patch
+      that keeps one at the end of the system prompt</a> brought it to under a second; I have not switched to it yet.
     </p>
 
     <figure class="fig">
