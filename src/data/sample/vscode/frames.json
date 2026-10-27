@@ -1,4 +1,0 @@
-[
-  { "file": "01-panel.png", "t": 0, "caption": "The agent placed Figure 2 on the board; its panel shows the steps folded and the answer with its math." },
-  { "file": "02-asks.png", "t": 8, "caption": "The agent asks to edit figures/energy.py: Allow once, Always or Reject, from the panel." }
-]

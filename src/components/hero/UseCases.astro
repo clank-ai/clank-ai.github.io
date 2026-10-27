@@ -733,10 +733,11 @@ const compact = JSON.stringify({
       display: none;
     }
 
-    /* A window this narrow shows the right half of VS Code: the terminal and the agent panel, large enough to read. */
+    /* A window this narrow shows half of VS Code, large enough to read: the agent panel and the terminal's edge
+       (the recording's panel spans about a fifth to three fifths of its width). */
     .uc-shot img.uc-frame {
       object-fit: cover;
-      object-position: right top;
+      object-position: 40% top;
     }
 
     .uc-tabs button {

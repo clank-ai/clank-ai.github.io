@@ -1,0 +1,32 @@
+[
+ {
+  "file": "01-prompt.png",
+  "t": 61.0,
+  "caption": "The benchmark’s prompt, sent from the agent panel: frontier 262K reads AIME 2026 problem 14 and thinks, the readout under it showing its speed and its context."
+ },
+ {
+  "file": "02-python.png",
+  "t": 183.0,
+  "caption": "It runs Python in the folder’s container to compute and check; each step folds into one line of the panel."
+ },
+ {
+  "file": "03-change.png",
+  "t": 243.0,
+  "caption": "In auto mode, each file the agent writes opens beside you as a change: here its first check script."
+ },
+ {
+  "file": "04-ninth.png",
+  "t": 1216.0,
+  "caption": "Twenty minutes in, its ninth script: 62K of the 262K context used, 57K attended on the GPU, the rest retrieved from RAM."
+ },
+ {
+  "file": "05-answer.png",
+  "t": 1459.0,
+  "caption": "After 24 minutes it writes the answer, 681, which is right."
+ },
+ {
+  "file": "06-session.png",
+  "t": 1615.0,
+  "caption": "The same session in the panel, its math drawn, and in OpenCode’s terminal: 74K of context, 24 minutes."
+ }
+]
