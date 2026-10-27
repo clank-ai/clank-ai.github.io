@@ -15,7 +15,7 @@ import VSCodeWindow from '../components/surfaces/VSCodeWindow.astro';
 import BoardSurface from '../components/surfaces/BoardSurface.astro';
 import PhoneFrame from '../components/surfaces/PhoneFrame.astro';
 import { building, context, cost, loopGuard, requests, session, verdict } from '../scripts/crops';
-import { LINKS, PAGES, RELEASED } from '../config';
+import { LINKS, PAGES, RELEASE, RELEASED } from '../config';
 
 const sections = [
   { id: 'monitor', label: 'The Monitor' },
@@ -39,6 +39,15 @@ const sections = [
     title="Every layer between you and the model."
     lead="Each part of Clank in depth, with the screen that shows it: the Monitor and its Guide, the context window, flows, the gateway, models and engines, cloud cost, privacy, VS Code, boards and the iPhone app."
   />
+  {
+    RELEASE.pending && (
+      <p class="container pending">
+        The installer installs Clank {RELEASE.latest} today. The live agent panel, boards, artifacts, LaTeX, the agent's
+        internet by your allowance and the iPhone app are on Clank's main branch and come with the next release: the{' '}
+        <a href={PAGES.changelog.path}>changelog</a> says what each version has.
+      </p>
+    )
+  }
 
   <FeatureBlock
     id="monitor"
@@ -275,5 +284,22 @@ const sections = [
     .points.cols {
       grid-template-columns: minmax(0, 1fr);
     }
+  }
+</style>
+
+<style>
+  .pending {
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.85rem 1.1rem;
+    max-width: calc(52rem + 2 * var(--pad));
+    font-size: var(--fs-sm);
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+  }
+  .pending a {
+    color: var(--blue);
   }
 </style>

@@ -725,9 +725,15 @@ const trouble = [
         <p class="num">6</p>
         <h2 id="updating-title" class="h2">Updating</h2>
         <p class="para">
-          Installed with the one-line installer: run it again; it installs the latest release in place of yours. Installed
-          from a clone: <code>git pull</code> in the <code>clank</code> folder. Then restart Clank's service, so it runs the
-          new version.
+          <b>Clank 0.3.0b1</b>, the release the installer installs today: run the installer again (it installs the latest
+          release in place of yours), or <code>git pull</code> in a clone; then restart Clank's service, so it runs the new
+          version.
+        </p>
+        <p class="para">
+          <b>From the next release</b>: <code>clank update --check</code> says how Clank was installed and what is newer,
+          asking only GitHub (or your clone's own remote); <code>clank update</code> updates it the way it was installed,
+          stops and starts its service itself, and writes each step to <code>~/.clank/logs/update.log</code>. The
+          <a href={PAGES.changelog.path}>changelog</a> says what each version brings.
         </p>
         <p class="para mu">
           Run these at the computer itself, not over SSH. If Clank then says a workspace's container uses an older sandbox
@@ -737,10 +743,12 @@ const trouble = [
       </div>
       <div class="ss">
         <div data-for="windows">
-          <CommandBlock label="update Clank" lines={[INSTALL.windows, 'clank stop', 'clank serve --background', 'clank gateway restart']} />
+          <CommandBlock label="update Clank 0.3.0b1" lines={[INSTALL.windows, 'clank stop', 'clank serve --background', 'clank gateway restart']} />
+          <CommandBlock label="from the next release" lines={['clank update --check', 'clank update']} />
         </div>
         <div data-for="macos linux">
-          <CommandBlock shell="Terminal" label="update Clank" lines={[INSTALL.unix, 'clank stop', 'clank serve --background', 'clank gateway restart']} />
+          <CommandBlock shell="Terminal" label="update Clank 0.3.0b1" lines={[INSTALL.unix, 'clank stop', 'clank serve --background', 'clank gateway restart']} />
+          <CommandBlock shell="Terminal" label="from the next release" lines={['clank update --check', 'clank update']} />
         </div>
       </div>
     </div>

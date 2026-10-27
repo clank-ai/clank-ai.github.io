@@ -1,0 +1,85 @@
+---
+/**
+ * Changelog: every version of Clank, newest first, as the repository's CHANGELOG.md says it. The text is a copy kept
+ * in src/content/changelog.md: run `python scripts/sync-changelog.py ../clank-public` after the changelog changes.
+ */
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import { Content } from '../content/changelog.md';
+import { PAGES, repo } from '../config';
+---
+
+<Base
+  title="Changelog · Clank"
+  description="Every version of Clank, newest first: what it adds, what it fixes and what it changes, in plain words."
+  path={PAGES.changelog.path}
+>
+  <PageHeader
+    crumb="Changelog"
+    eyebrow="Changelog"
+    title="What changed, version by version."
+    lead="Every version of Clank, newest first. The one-line installer installs the latest release; what is listed under Unreleased is on the main branch and comes with the next release."
+  />
+  <article class="container prose">
+    <Content />
+    <p class="source">
+      The same text, in the repository: <a href={repo('CHANGELOG.md')}>CHANGELOG.md</a>. Problems known now, open and
+      fixed: <a href={repo('docs/ISSUES.md')}>docs/ISSUES.md</a>.
+    </p>
+  </article>
+</Base>
+
+<style>
+  .prose {
+    max-width: calc(42rem + 2 * var(--pad));
+    padding-block: 8px var(--section-gap);
+    font-size: 1.125rem;
+    line-height: 1.75;
+  }
+  .prose :global(h2) {
+    margin-top: 3.25rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--line);
+    font-size: 1.65rem;
+    line-height: 1.25;
+    color: var(--text-strong);
+  }
+  .prose :global(h3) {
+    margin-top: 2rem;
+    font-size: 1.2rem;
+    color: var(--text-strong);
+  }
+  .prose :global(p),
+  .prose :global(ul) {
+    margin-top: 1rem;
+  }
+  .prose :global(ul) {
+    padding-left: 1.25rem;
+  }
+  .prose :global(li) {
+    margin-top: 0.7rem;
+  }
+  .prose :global(li::marker) {
+    color: var(--faint);
+  }
+  .prose :global(strong) {
+    color: var(--text-strong);
+  }
+  .prose :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    color: var(--yellow);
+    overflow-wrap: anywhere;
+  }
+  .prose :global(a) {
+    color: var(--blue);
+    text-underline-offset: 3px;
+  }
+  .source {
+    margin-top: 3rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--line);
+    font-size: var(--fs-sm);
+    color: var(--muted);
+  }
+</style>

@@ -15,6 +15,8 @@ export interface Post {
   minutes: number;
   author: string;
   stats: { value: string; label: string }[];
+  /** The post in three plain sentences, on the index. */
+  points: string[];
 }
 
 export const POSTS: Post[] = [
@@ -32,6 +34,11 @@ export const POSTS: Post[] = [
       { value: '14,453 MiB', label: 'on a 16 GB card' },
       { value: '74–79', label: 'tokens/s, short context' },
       { value: '~99%', label: 'of each prompt cached' },
+    ],
+    points: [
+      'A 27B model reads up to 262,144 tokens on one 16 GB card: KVMem keeps the conversation in main memory and only what matters on the GPU.',
+      'It writes 74–79 tokens a second on an idle desktop, and 57 deep into a 245K-token agent session.',
+      'The steps to set it up, with Clank or without, and what broke along the way.',
     ],
   },
 ];

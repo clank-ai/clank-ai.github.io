@@ -16,6 +16,12 @@ export const RELEASED = true;
 /** False until the one-line installer is written: the install boxes say it is coming and point to Get started. */
 export const INSTALLER_READY = true;
 
+/**
+ * The release the installer installs, and whether the main branch holds work it does not have yet. While it does, the
+ * features page says which parts come with the next release: set PENDING to false when the next release is tagged.
+ */
+export const RELEASE = { latest: '0.3.0b1', pending: true } as const;
+
 /** The license Clank is released under (SPDX: AGPL-3.0-only). Every page names it from here, and only here. */
 export const LICENSE = 'AGPL-3.0';
 
@@ -65,6 +71,8 @@ export const PAGES = {
   openSource: { path: '/open-source', label: 'Open source' },
   faq: { path: '/faq', label: 'FAQ' },
   blog: { path: '/blog', label: 'Blog' },
+  changelog: { path: '/changelog', label: 'Changelog' },
+  setup: { path: '/what-runs', label: 'What runs on your PC' },
   brand: { path: '/brand', label: 'Brand' },
 } as const;
 
