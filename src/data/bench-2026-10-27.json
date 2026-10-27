@@ -1,0 +1,199 @@
+{
+ "date": "2026-10-27",
+ "conditions": {
+  "name": "loaded",
+  "said_by_owner": "all of these benchmarks ran while the CPU was under a full load (2026-10-27); they will be repeated with no CPU load, the monitors off and the BIOS settings changed",
+  "measured_at_02_40": "CPU 99-100% busy (the owner's own Python work), about 3.7 GB of 64 GB of RAM free",
+  "desktop": "two 1440p monitors and a virtual one on the RTX 5080, desktop apps open",
+  "bios": "EXPO off (RAM at 4800 MT/s); hardware GPU scheduling off; Balanced power plan",
+  "telemetry": "results/telemetry/gpu.csv (nvidia-smi, every 5 s) and results/telemetry/cpu.csv (typeperf, every 15 s, from 02:40)"
+ },
+ "rows": [
+  {
+   "config": "swift-xhigh",
+   "label": "Swift 1.5, effort xhigh",
+   "note": "frontier 262K as it ships: the template's default effort",
+   "bench": "aime2026",
+   "benchLabel": "AIME 2026",
+   "n": 15,
+   "right": 12,
+   "low": 54.8,
+   "high": 93.0,
+   "tokens": 9670,
+   "seconds": 256.2,
+   "calls": 0.0,
+   "cut": 1,
+   "errors": 0
+  },
+  {
+   "config": "swift-xhigh-python",
+   "label": "Swift 1.5, xhigh, with Python",
+   "note": "may run Python in Clank's sandbox while it thinks",
+   "bench": "aime2026",
+   "benchLabel": "AIME 2026",
+   "n": 3,
+   "right": 2,
+   "low": 20.8,
+   "high": 93.9,
+   "tokens": 3468,
+   "seconds": 63.0,
+   "calls": 1.67,
+   "cut": 0,
+   "errors": 0
+  }
+ ],
+ "problems": {
+  "swift-xhigh": {
+   "aime2026": [
+    {
+     "n": 1,
+     "correct": true,
+     "tokens": 1479,
+     "seconds": 25.0,
+     "calls": 0,
+     "cut": false
+    },
+    {
+     "n": 2,
+     "correct": true,
+     "tokens": 2147,
+     "seconds": 48.3,
+     "calls": 0,
+     "cut": false
+    },
+    {
+     "n": 3,
+     "correct": true,
+     "tokens": 2748,
+     "seconds": 59.5,
+     "calls": 0,
+     "cut": false
+    },
+    {
+     "n": 4,
+     "correct": true,
+     "tokens": 7422,
+     "seconds": 167.3,
+     "calls": 0,
+     "cut": false
+    },
+    {
+     "n": 5,
+     "correct": true,
+     "tokens": 1576,
+     "seconds": 41.7,
+     "calls": 0,
+     "cut": false
+    },
+    {
+     "n": 6,
+     "correct": true,
+     "tokens": 2553,
+     "seconds": 61.7,
+     "calls": 0,
+     "cut": false
+    },
+    {
+     "n": 7,
+     "correct": false,
+     "tokens": 1498,
+     "seconds": 42.3,
+     "calls": 0,
+     "cut": false
+    },
+    {
+     "n": 8,
+     "correct": true,
+     "tokens": 1977,
+     "seconds": 46.6,
+     "calls": 0,
+     "cut": false
+    },
+    {
+     "n": 9,
+     "correct": false,
+     "tokens": 6160,
+     "seconds": 161.9,
+     "calls": 0,
+     "cut": false
+    },
+    {
+     "n": 10,
+     "correct": true,
+     "tokens": 16136,
+     "seconds": 314.1,
+     "calls": 0,
+     "cut": false
+    },
+    {
+     "n": 11,
+     "correct": true,
+     "tokens": 24161,
+     "seconds": 533.7,
+     "calls": 0,
+     "cut": false
+    },
+    {
+     "n": 12,
+     "correct": true,
+     "tokens": 18011,
+     "seconds": 490.7,
+     "calls": 0,
+     "cut": false
+    },
+    {
+     "n": 13,
+     "correct": true,
+     "tokens": 10525,
+     "seconds": 245.6,
+     "calls": 0,
+     "cut": false
+    },
+    {
+     "n": 14,
+     "correct": true,
+     "tokens": 15889,
+     "seconds": 379.4,
+     "calls": 0,
+     "cut": false
+    },
+    {
+     "n": 15,
+     "correct": false,
+     "tokens": 32768,
+     "seconds": 1224.5,
+     "calls": 0,
+     "cut": true
+    }
+   ]
+  },
+  "swift-xhigh-python": {
+   "aime2026": [
+    {
+     "n": 1,
+     "correct": true,
+     "tokens": 1164,
+     "seconds": 19.6,
+     "calls": 0,
+     "cut": false
+    },
+    {
+     "n": 7,
+     "correct": false,
+     "tokens": 788,
+     "seconds": 13.2,
+     "calls": 0,
+     "cut": false
+    },
+    {
+     "n": 9,
+     "correct": true,
+     "tokens": 8452,
+     "seconds": 156.2,
+     "calls": 5,
+     "cut": false
+    }
+   ]
+  }
+ }
+}

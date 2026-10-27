@@ -2,9 +2,11 @@
 /**
  * Post: Swift 1.5 (Qwen3.8-27B) with its whole 262K context on a 16 GB GPU, with KVMem and Clank. What each piece is
  * and where it comes from, why it fits, what it did in a real session, what broke, and how to set it up. Every number
- * comes from Clank's repository (docs/models/frontier-262k.md and the measurements it links) or from the gateway's own
- * record of the session plotted (src/data/session-2026-10-20.json). Figures are HTML and CSS; the session's chart is
- * inline SVG. Colors in charts are the validated categorical slots below, not the site's accents.
+ * comes from Clank's repository (docs/models/frontier-262k.md and the measurements it links), from the gateway's own
+ * record of the session plotted (src/data/session-2026-10-20.json), or from the benchmark night's results
+ * (src/data/bench-2026-10-27.json, exported by clank-bench's export.py; OpenCode alone against a flow is the site's
+ * capture, src/data/captures/flows-vs-opencode.json). Figures are HTML and CSS; the session's chart is inline SVG.
+ * Colors in charts are the validated categorical slots below, not the site's accents.
  */
 import Base from '../../layouts/Base.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
@@ -12,6 +14,8 @@ import CommandBlock from '../../components/CommandBlock.astro';
 import { PAGES, LINKS, INSTALL } from '../../config';
 import { POSTS, postPath } from '../../data/blog';
 import session from '../../data/session-2026-10-20.json';
+import overnight from '../../data/bench-2026-10-27.json';
+import { comparison } from '../../data/captures';
 
 const post = POSTS.find((p) => p.slug === '27b-262k-on-a-16gb-gpu')!;
 const repo = LINKS.github;
@@ -91,6 +95,19 @@ const charts = [
   px: (v: number) => c.M.l + (v / X_MAX) * (c.W - c.M.l - c.M.r),
   py: (v: number) => c.H - c.M.b - (v / Y_MAX) * (c.H - c.M.t - c.M.b),
 }));
+
+/* The benchmark night (src/data/bench-2026-10-27.json, exported from the harness's results): AIME 2026's first 15
+   problems with frontier 262K as it ships, each answer's tokens against the cap, and the problems run so far with
+   Python at hand. Then OpenCode alone against a flow on the problems both have done (the site's real capture). */
+const CAP = 32768;
+const aime = overnight.problems['swift-xhigh'].aime2026;
+const withPython = new Map(overnight.problems['swift-xhigh-python'].aime2026.map((p) => [p.n, p]));
+const aimeRight = aime.filter((p) => p.correct).length;
+const aimeRow = overnight.rows.find((r) => r.config === 'swift-xhigh' && r.bench === 'aime2026')!;
+const aimeMinutes = Math.round(aime.reduce((sum, p) => sum + p.seconds, 0) / 60);
+const vs = comparison.sample ? null : comparison.data;
+const vsMax = vs ? Math.max(...vs.rows.flatMap((r) => [r.opencode.minutes, r.flow.minutes])) : 1;
+const problemOf = (id: string) => id.split('-').pop() ?? id;
 
 const settings: [string, string, string][] = [
   ['-c', '262144', 'The model’s whole context.'],
@@ -363,6 +380,109 @@ const sources: [string, string, string][] = [
         about 1,500 tokens a second on a quiet desktop.
       </figcaption>
     </figure>
+
+    <h2 id="benchmarks">How capable it is</h2>
+    <p>
+      I gave it the first 15 problems of this year’s AIME, once each, with frontier 262K exactly as it ships. No tools;
+      the answer is the last <code>\boxed{'{}'}</code> it writes.
+    </p>
+
+    <figure class="fig aime">
+      <p class="fig-title">AIME 2026, problems 1 to 15: {aimeRight} right</p>
+      <div class="aime-chart">
+        <div class="aime-plot" role="img" aria-label={`Tokens each of the 15 answers took, against the ${fmt(CAP)}-token cap: ${aimeRight} right; wrong: ${aime.filter((p) => !p.correct).map((p) => p.n).join(', ')}; problem 15 reached the cap without an answer.`}>
+          <span class="aime-cap" aria-hidden="true"><span>{fmt(CAP)}-token cap</span></span>
+          {aime.map((p) => (
+            <span class:list={['aime-col', p.correct ? 'right' : 'wrong']} title={`Problem ${p.n}: ${p.correct ? 'right' : p.cut ? 'no answer before the cap' : 'wrong'}, ${fmt(p.tokens)} tokens, ${(p.seconds / 60).toFixed(1)} minutes`}>
+              {!p.correct && <span class="aime-x" aria-hidden="true">✗</span>}
+              <span class="aime-bar" style={`height: ${(100 * p.tokens) / CAP}%`} />
+            </span>
+          ))}
+        </div>
+        <div class="aime-row aime-axis" aria-hidden="true">
+          <span class="aime-key">problem</span>
+          {aime.map((p) => <span>{p.n}</span>)}
+        </div>
+        <div class="aime-row aime-py" aria-hidden="true">
+          <span class="aime-key">Python</span>
+          {aime.map((p) => {
+            const q = withPython.get(p.n);
+            return <span class:list={[q && (q.correct ? 'ok' : 'no')]}>{q ? (q.correct ? '✓' : '✗') : ''}</span>;
+          })}
+        </div>
+      </div>
+      <ul class="legend">
+        <li><span class="sw s1" />right</li>
+        <li><span class="sw miss" />wrong <span class="aime-x-key">✗</span></li>
+        <li><span class="sw cap" />the cap on an answer</li>
+      </ul>
+      <figcaption>
+        Each bar is one answer: the tokens the model wrote, its thinking included. Problem 15 reached the cap before it
+        answered. {(aimeRow.seconds / 60).toFixed(1)} minutes a problem, {aimeMinutes} in all. With only 15 problems,
+        {' '}{aimeRight} right puts its real rate anywhere from {Math.round(aimeRow.low)}% to {Math.round(aimeRow.high)}%
+        (a 95% interval). The row under it is the same model with Python at hand, run so far on problems 1, 7 and 9: it
+        solved 9 after five runs of Python, and answered 7 wrong again without running any.
+      </figcaption>
+      <details class="data">
+        <summary>The 15 answers</summary>
+        <div class="table">
+          <table>
+            <thead><tr><th scope="col">Problem</th><th scope="col">Answer</th><th scope="col">Tokens</th><th scope="col">Minutes</th><th scope="col">With Python</th></tr></thead>
+            <tbody>
+              {aime.map((p) => {
+                const q = withPython.get(p.n);
+                return (
+                  <tr>
+                    <td>{p.n}</td>
+                    <td>{p.correct ? 'right' : p.cut ? 'none (cap)' : 'wrong'}</td>
+                    <td>{fmt(p.tokens)}</td>
+                    <td>{(p.seconds / 60).toFixed(1)}</td>
+                    <td>{q ? `${q.correct ? 'right' : 'wrong'}, ${q.calls} Python ${q.calls === 1 ? 'run' : 'runs'}` : 'not run yet'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </figure>
+
+    {vs && (
+      <figure class="fig vs">
+        <p class="fig-title">A flow, or OpenCode alone: problems {vs.rows.map((r) => problemOf(r.id)).join(', ')}, all right</p>
+        {vs.rows.map((r) => (
+          <div class="vs-row">
+            <span class="vs-id">Problem {problemOf(r.id)}</span>
+            <span class="vs-bars">
+              <span class="vs-line" title={`A flow: ${r.flow.correct ? 'right' : 'wrong'}, ${r.flow.minutes} minutes, ${fmt(r.flow.tokens)} tokens written, the check passed on try ${r.flow.tries}`}>
+                <span class="vs-bar s1" style={`width: ${(100 * r.flow.minutes) / vsMax}%`} />
+                <b>{r.flow.minutes}</b>
+              </span>
+              <span class="vs-line" title={`OpenCode alone: ${r.opencode.correct ? 'right' : 'wrong'}, ${r.opencode.minutes} minutes, ${fmt(r.opencode.tokens)} tokens written`}>
+                <span class="vs-bar s2" style={`width: ${(100 * r.opencode.minutes) / vsMax}%`} />
+                <b>{r.opencode.minutes}</b>
+              </span>
+            </span>
+          </div>
+        ))}
+        <ul class="legend">
+          <li><span class="sw s1" />A flow: solve, check independently, answer</li>
+          <li><span class="sw s2" />OpenCode alone: one session</li>
+        </ul>
+        <figcaption>
+          Minutes each took, both through Clank, in the same container. A flow was steadier, 12 to 17 minutes, since every
+          problem gets the same three sessions; OpenCode alone took 5 to 41. Each check passed the first time. The check
+          matters on problems the model gets wrong, and those come next. <a href={`${PAGES.features.path}#flows-vs-opencode`}>Flows
+          against OpenCode, with a run played back</a>.
+        </figcaption>
+      </figure>
+    )}
+
+    <p>
+      All of it ran while my CPU was fully loaded by other work, with little RAM free, the monitors on and the RAM’s
+      EXPO profile off, so the times are slower than an idle PC’s. Still to run: OpenCode and flows on the problems it
+      missed, Python on all 15, and the same tests with the CPU idle, the monitors off and the BIOS tuned.
+    </p>
 
     <h2 id="problems">What broke</h2>
     <ul class="problems">
@@ -894,6 +1014,148 @@ const sources: [string, string, string][] = [
     }
     .slabel {
       grid-column: 1 / -1;
+    }
+  }
+
+  /* The benchmarks: AIME's 15 answers as bars of tokens under the cap, the Python row under them, and OpenCode alone
+     against a flow. Right is the first categorical slot; wrong is hatched and marked ✗, never color alone. */
+  .fig-title {
+    margin: 0 0 14px;
+    font-weight: 600;
+    color: var(--text-strong);
+  }
+  .aime-chart {
+    --key: 3.6rem;
+    font-size: var(--fs-xs);
+  }
+  .aime-plot {
+    position: relative;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: repeat(15, 1fr);
+    gap: 2px;
+    height: 200px;
+    padding-top: 24px;
+    margin-left: calc(var(--key) + 2px);
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .aime-cap {
+    position: absolute;
+    top: 24px;
+    left: 0;
+    right: 0;
+    border-top: 1px dashed var(--faint);
+  }
+  .aime-cap span {
+    position: absolute;
+    left: 0;
+    bottom: 4px;
+    color: var(--faint);
+    white-space: nowrap;
+  }
+  .aime-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    min-width: 0;
+  }
+  .aime-bar {
+    flex: none;
+    width: min(100%, 26px);
+    min-height: 2px;
+    border-radius: 4px 4px 0 0;
+    background: var(--s1);
+  }
+  .aime-col.wrong .aime-bar {
+    background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--red) 55%, transparent) 0 3px, transparent 3px 6px);
+    box-shadow: inset 0 0 0 1px var(--red);
+  }
+  .aime-x,
+  .aime-x-key {
+    flex: none;
+    margin-bottom: 2px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--red);
+  }
+  .aime-row {
+    display: grid;
+    grid-template-columns: var(--key) repeat(15, 1fr);
+    gap: 2px;
+    margin-top: 6px;
+    text-align: center;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .aime-key {
+    text-align: left;
+    color: var(--faint);
+  }
+  .aime-py {
+    margin-top: 2px;
+  }
+  .aime-py .ok {
+    font-weight: 700;
+    color: var(--green);
+  }
+  .aime-py .no {
+    font-weight: 700;
+    color: var(--red);
+  }
+  .sw.miss {
+    background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--red) 55%, transparent) 0 3px, transparent 3px 6px);
+    box-shadow: inset 0 0 0 1px var(--red);
+  }
+  .sw.cap {
+    height: 0;
+    border-top: 1px dashed var(--faint);
+    border-radius: 0;
+  }
+  .vs-row {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr;
+    gap: 14px;
+    align-items: center;
+    padding: 9px 0;
+    border-top: 1px solid var(--line);
+    font-size: var(--fs-sm);
+  }
+  .vs-row:first-of-type {
+    border-top: 0;
+  }
+  .vs-id {
+    color: var(--text);
+  }
+  .vs-bars {
+    display: grid;
+    gap: 4px;
+  }
+  .vs-line {
+    display: grid;
+    grid-template-columns: 1fr 2.8rem;
+    gap: 8px;
+    align-items: center;
+  }
+  .vs-bar {
+    height: 12px;
+    min-width: 2px;
+    border-radius: 0 4px 4px 0;
+  }
+  .vs-line b {
+    text-align: right;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-strong);
+  }
+  @media (max-width: 640px) {
+    .aime-chart {
+      --key: 2.9rem;
+      font-size: 0.72rem;
+    }
+    .vs-row {
+      grid-template-columns: 1fr;
+      gap: 6px;
     }
   }
 

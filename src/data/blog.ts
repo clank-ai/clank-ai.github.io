@@ -38,6 +38,7 @@ export const POSTS: Post[] = [
     points: [
       'Only one layer in four keeps a cache, and KVMem keeps most of that cache in RAM: that is how 262,144 tokens fit beside 16 GB.',
       'In a 141-step agent session that grew to 245K tokens, the median step started answering in 1.4 seconds.',
+      'On the first 15 problems of AIME 2026 it got 12 right, one try each; OpenCode alone and a flow each solved the three compared.',
       'The setup, with Clank or without, and the fix for each thing that broke.',
     ],
   },
