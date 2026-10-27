@@ -1,0 +1,46 @@
+---
+/**
+ * Says "Sample" on a part of a page that shows sample data, naming the capture that replaces it
+ * (scripts/sync-captures.py copies it from clank-bench). Sample data never ships: while this tag shows, the part is
+ * not done.
+ */
+interface Props {
+  /** The capture that replaces the sample, as clank-bench names it: captures/flow-trace.json. */
+  source: string;
+  class?: string;
+}
+const { source, class: cls } = Astro.props;
+---
+
+<p class:list={['sample-tag', cls]}>
+  <b>Sample</b>
+  <span>stands in until {source} is copied</span>
+</p>
+
+<style>
+  .sample-tag {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 8px;
+    max-width: 100%;
+    padding: 4px 10px;
+    border: 1px dashed var(--yellow);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--yellow) 12%, var(--bg));
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    line-height: 1.4;
+  }
+
+  .sample-tag b {
+    color: var(--yellow);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .sample-tag span {
+    overflow-wrap: anywhere;
+  }
+</style>

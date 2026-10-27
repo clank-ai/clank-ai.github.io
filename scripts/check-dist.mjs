@@ -58,6 +58,16 @@ for await (const file of files(dist)) {
   for (const m of text.matchAll(/url\((["']?)(\.{1,2}\/[^)"']+)\1\)/g)) {
     if (!(await exists(join(dirname(file), m[2])))) problems.push(`${rel}: missing file ${m[2]}`);
   }
+  // An image's srcset: each address on this host, relative, and there.
+  for (const m of text.matchAll(/srcset="([^"]*)"/g)) {
+    for (const entry of m[1].split(',')) {
+      const address = entry.trim().split(/\s+/)[0];
+      if (!address) continue;
+      if (/^(https?:)?\/\//.test(address)) problems.push(`${rel}: srcset fetches from another host: ${address}`);
+      else if (address.startsWith('/')) problems.push(`${rel}: root path in srcset ${address}`);
+      else if (!(await exists(join(dirname(file), address.split(/[?#]/)[0])))) problems.push(`${rel}: missing file ${address}`);
+    }
+  }
   for (const m of text.matchAll(/href="#([^"]+)"/g)) {
     if (!text.includes(`id="${m[1]}"`)) problems.push(`${rel}: no element with id "${m[1]}"`);
   }

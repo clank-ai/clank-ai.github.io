@@ -1,0 +1,684 @@
+---
+/**
+ * Home: a recorded flow, played back. One benchmark problem as a flow ran it (clank-bench's captures/flow-trace.json,
+ * copied by scripts/sync-captures.py): the boxes and lines as a small diagram, a timeline of what each box did and
+ * when, each event with its short excerpt (what the session wrote, a tool it ran, a check's verdict), and the final
+ * answer beside the answer key. All of it is in the page as the run ended, so it reads without scripts and in a
+ * screen reader; src/scripts/flow-viewer.ts plays it from the start when it comes into view (not with reduced motion),
+ * with controls to pause, step and scrub.
+ */
+import FlowDiagram from './FlowDiagram.astro';
+import SampleTag from '../SampleTag.astro';
+import Icon from '../Icon.astro';
+import { flowTrace } from '../../data/captures';
+import { clock } from '../../scripts/flow-play';
+import { problemNumber } from '../../scripts/compare';
+import { texToHtml, texToText } from '../../scripts/texlite';
+
+const { data: trace, sample, source } = flowTrace;
+const { problem, flow, events, result } = trace;
+const end = Math.max(events[events.length - 1]?.t ?? 0, 1);
+const LABEL: Record<string, string> = { you: 'YOU', task: 'TASK', verify: 'VERIFY', integrate: 'INTEGRATE' };
+const label = (type: string) => LABEL[type] ?? type.toUpperCase();
+const titleOf = (id: string) => flow.boxes.find((box) => box.id === id)?.title ?? id;
+const typeOf = (id: string) => flow.boxes.find((box) => box.id === id)?.type ?? '';
+const pct = (t: number) => `${((100 * t) / end).toFixed(2)}%`;
+
+// The timeline: for each box, each try as a bar from its start to its end, and the verdicts and tool calls as marks.
+interface Bar { i0: number; i1: number; t0: number; t1: number; try: number }
+const rows = flow.boxes.map((box) => {
+  const bars: Bar[] = [];
+  events.forEach((event, i) => {
+    if (event.box !== box.id) return;
+    if (event.kind === 'start') bars.push({ i0: i, i1: events.length, t0: event.t, t1: end, try: event.try });
+    else if (event.kind === 'end' && bars.length) Object.assign(bars[bars.length - 1], { i1: i, t1: event.t });
+  });
+  const marks = events
+    .map((event, i) => ({ ...event, i }))
+    .filter((event) => event.box === box.id && (event.kind === 'verdict' || event.kind === 'tool'));
+  return { box, bars, marks };
+});
+const ticks = (() => {
+  const minutes = end / 60;
+  const step = [0.5, 1, 2, 5, 10, 15, 30, 60, 120].find((each) => minutes / each <= 6) ?? 240;
+  const list: number[] = [];
+  for (let m = 0; m <= minutes + 1e-9; m += step) list.push(m * 60);
+  return list;
+})();
+
+const KIND: Record<string, string> = { start: 'starts', end: 'ends', verdict: 'verdict', tool: 'runs a tool', text: 'writes' };
+const compact = events.map((event) => ({ t: event.t, box: event.box, try: event.try, kind: event.kind, verdict: event.verdict }));
+const player = JSON.stringify({ end, boxes: flow.boxes.map((box) => box.id), lines: flow.lines, events: compact });
+const fmt = new Intl.NumberFormat('en-US');
+const verdicts = events.filter((event) => event.kind === 'verdict');
+const tries = Math.max(...events.map((event) => event.try ?? 1));
+---
+
+<div class="viewer" data-flow-viewer data-player={player}>
+  <div class="v-head">
+    <div class="problem">
+      <p class="p-k">
+        <span>{problem.bench}</span><span class="dot" aria-hidden="true">·</span><span>problem {problemNumber(problem.id)}</span>
+        {!flow.title.includes(problem.bench) && (
+          <>
+            <span class="dot" aria-hidden="true">·</span><span>{flow.title}</span>
+          </>
+        )}
+      </p>
+      <p class="p-text" set:html={texToHtml(problem.text)} />
+    </div>
+    {sample && <SampleTag source={source} class="v-sample" />}
+  </div>
+
+  <FlowDiagram flow={flow} events={events} id="viewer" class="v-diagram" />
+
+  <div class="controls" role="group" aria-label="Play the recorded run">
+    <button type="button" class="c-btn" data-act="restart" aria-label="From the start" title="From the start">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3v10M13 3 6 8l7 5z" /></svg>
+    </button>
+    <button type="button" class="c-btn" data-act="back" aria-label="The event before" title="The event before">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3 4 8l7 5z" /></svg>
+    </button>
+    <button type="button" class="c-btn c-play" data-act="play" aria-label="Play">
+      <span class="i-play"><Icon name="play" size={16} /></span>
+      <span class="i-pause"><Icon name="pause" size={16} /></span>
+      <span class="c-word" data-play-word>Play</span>
+    </button>
+    <button type="button" class="c-btn" data-act="next" aria-label="The event after" title="The event after">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m5 3 7 5-7 5z" /></svg>
+    </button>
+    <label class="c-range">
+      <span class="sr-only">Event</span>
+      <input type="range" min="0" max={events.length} value={events.length} step="1" data-range />
+    </label>
+    <p class="c-time" aria-live="off"><span data-time>{clock(end)}</span> of {clock(end)}</p>
+  </div>
+
+  <div class="timeline" aria-hidden="true" style={`--rows: ${rows.length}`}>
+    {
+      rows.map(({ box, bars, marks }) => (
+        <div class="tl-row" data-type={box.type}>
+          <span class="tl-name">
+            <b>{label(box.type)}</b>
+            <span>{box.title}</span>
+          </span>
+          <span class="tl-track">
+            {bars.map((bar) => (
+              <i
+                class="tl-bar"
+                data-i0={bar.i0}
+                data-i1={bar.i1}
+                data-t0={bar.t0}
+                data-t1={bar.t1}
+                style={`left: ${pct(bar.t0)}; width: max(3px, ${pct(bar.t1 - bar.t0)})`}
+              >
+                {bars.length > 1 && <em>{bar.try}</em>}
+              </i>
+            ))}
+            {marks.map((mark) => (
+              <i
+                class:list={['tl-mark', mark.kind, mark.verdict && `v-${mark.verdict}`]}
+                data-i={mark.i}
+                style={`left: ${pct(mark.t)}`}
+              />
+            ))}
+          </span>
+        </div>
+      ))
+    }
+    <div class="tl-axis">
+      <span class="tl-name" />
+      <span class="tl-track">
+        {ticks.map((t) => <span class="tl-tick" style={`left: ${pct(t)}`}>{t === 0 ? '0' : `${+(t / 60).toFixed(1)} min`}</span>)}
+        <i class="tl-head" data-head style="left: 100%" />
+      </span>
+    </div>
+  </div>
+
+  <div class="v-body">
+    <div class="log-wrap">
+      <p class="log-k">What each box did</p>
+      <ol class="log" data-log>
+        {
+          events.map((event, i) => (
+            <li class:list={['ev', `k-${event.kind}`, event.verdict && `v-${event.verdict}`]} data-i={i} data-type={typeOf(event.box)}>
+              <span class="ev-t">{clock(event.t)}</span>
+              <span class="ev-who">
+                <b>{titleOf(event.box)}</b>
+                <span>
+                  {event.try > 1 ? `try ${event.try} · ` : ''}
+                  {event.kind === 'verdict' ? (event.verdict === 'pass' ? '✓ pass' : event.verdict === 'fail' ? '✗ fail' : 'verdict') : KIND[event.kind] ?? event.kind}
+                </span>
+              </span>
+              <span class="ev-text" set:html={texToHtml(event.text)} />
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+
+    <div class:list={['result', result.correct ? 'right' : 'wrong']} data-result>
+      <p class="r-k">The answer</p>
+      <p class="r-answer">
+        <span class="r-num" set:html={texToHtml(result.answer)} />
+        <span class="r-mark">{result.correct ? '✓ right' : '✗ wrong'}</span>
+      </p>
+      <p class="r-key">The answer key says <b set:html={texToHtml(problem.answer)} />.</p>
+      <dl class="r-facts">
+        <div><dt>Time</dt><dd>{fmt.format(result.minutes)} min</dd></div>
+        <div><dt>Tokens</dt><dd>{fmt.format(result.tokens)}</dd></div>
+        <div><dt>Sessions</dt><dd>{result.sessions}</dd></div>
+        <div><dt>Verdicts</dt><dd>{verdicts.map((v) => (v.verdict === 'pass' ? '✓' : '✗')).join(' ') || 'none'}</dd></div>
+      </dl>
+      <p class="r-note">
+        Each box was a fresh session{tries > 1 ? `; the check sent the work back ${verdicts.filter((v) => v.verdict === 'fail').length === 1 ? 'once' : `${verdicts.filter((v) => v.verdict === 'fail').length} times`}` : ''}.
+      </p>
+    </div>
+  </div>
+  <p class="sr-only">
+    {`The run, in words: ${events.map((event) => `${clock(event.t)}, ${titleOf(event.box)}, ${KIND[event.kind] ?? event.kind}: ${texToText(event.text)}`).join('. ')}. The answer: ${result.answer}, ${result.correct ? 'right' : 'wrong'}.`}
+  </p>
+</div>
+
+<script>
+  import '../../scripts/flow-viewer';
+</script>
+
+<style>
+  .viewer {
+    display: grid;
+    gap: 18px;
+    padding: clamp(16px, 2.4vw, 28px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background:
+      radial-gradient(80% 50% at 0% 0%, rgba(122, 162, 247, 0.06), transparent 70%),
+      var(--surface);
+    min-width: 0;
+  }
+
+  .v-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px 24px;
+  }
+
+  .problem {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    flex: 1 1 32rem;
+  }
+
+  .p-k {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 8px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: var(--faint);
+  }
+
+  .p-k .dot {
+    color: var(--line-strong);
+  }
+
+  .p-text {
+    max-width: 52rem;
+    color: var(--text-strong);
+    font-size: 1.05rem;
+    line-height: 1.55;
+  }
+
+  /* ---- controls ---- */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+  }
+
+  .c-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: 9px;
+    background: var(--surface-2);
+    color: var(--text-strong);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .c-btn:hover {
+    border-color: var(--muted);
+  }
+
+  .c-btn svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+  }
+
+  .c-play {
+    padding: 0 14px;
+  }
+
+  .c-play .i-pause,
+  .viewer.playing .c-play .i-play {
+    display: none;
+  }
+
+  .viewer.playing .c-play .i-pause,
+  .c-play .i-play {
+    display: inline-flex;
+  }
+
+  .c-range {
+    flex: 1 1 10rem;
+    display: flex;
+    min-width: 8rem;
+  }
+
+  .c-range input {
+    width: 100%;
+    accent-color: var(--orange);
+  }
+
+  .c-time {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* ---- the timeline ---- */
+  .timeline {
+    position: relative;
+    display: grid;
+    gap: 6px;
+    padding: 12px 14px 8px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--well);
+  }
+
+  .tl-row,
+  .tl-axis {
+    display: grid;
+    grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+  }
+
+  .tl-name {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    font-size: 0.82rem;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .tl-name b {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    color: var(--c, var(--muted));
+  }
+
+  .tl-name span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tl-row[data-type='you'] { --c: var(--purple); }
+  .tl-row[data-type='task'] { --c: var(--teal); }
+  .tl-row[data-type='verify'] { --c: var(--green); }
+  .tl-row[data-type='integrate'] { --c: var(--blue); }
+
+  .tl-track {
+    position: relative;
+    height: 22px;
+    border-radius: 4px;
+    background: linear-gradient(to right, var(--line) 1px, transparent 1px) 0 0 / 25% 100%;
+  }
+
+  .tl-bar {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--c, var(--muted)) 55%, transparent);
+    font-style: normal;
+  }
+
+  .tl-bar em {
+    position: absolute;
+    left: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-style: normal;
+    font-weight: 700;
+    color: var(--bg);
+  }
+
+  .tl-mark {
+    position: absolute;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    transform: translateY(-50%) rotate(45deg);
+    background: var(--muted);
+    box-shadow: 0 0 0 2px var(--well);
+  }
+
+  .tl-mark.tool {
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
+    background: var(--text);
+  }
+
+  .tl-mark.v-pass {
+    background: var(--green);
+  }
+
+  .tl-mark.v-fail {
+    background: var(--red);
+  }
+
+  .tl-axis .tl-track {
+    height: 18px;
+    background: none;
+  }
+
+  .tl-tick {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--faint);
+    white-space: nowrap;
+  }
+
+  .tl-tick:first-child {
+    transform: none;
+  }
+
+  .tl-head {
+    position: absolute;
+    bottom: 18px;
+    height: calc(var(--rows) * 28px + 4px);
+    width: 2px;
+    margin-left: -1px;
+    background: var(--orange);
+    opacity: 0;
+  }
+
+  .viewer.started .tl-head {
+    opacity: 1;
+  }
+
+  .tl-bar.later,
+  .tl-mark.later {
+    visibility: hidden;
+  }
+
+  /* ---- what each box did, and the answer ---- */
+  .v-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(16rem, 1fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  .log-k,
+  .r-k {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  .log-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .log {
+    list-style: none;
+    max-height: 23rem;
+    overflow: auto;
+    padding-right: 4px;
+    border-top: 1px solid var(--line);
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+
+  .ev {
+    display: grid;
+    grid-template-columns: 3.4rem minmax(0, 11rem) minmax(0, 1fr);
+    gap: 4px 12px;
+    padding: 9px 6px;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .ev-t {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--faint);
+    padding-top: 0.12em;
+  }
+
+  .ev-who {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .ev-who b {
+    color: var(--c, var(--text-strong));
+    font-weight: 600;
+    font-size: 0.86rem;
+  }
+
+  .ev-who span {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--faint);
+  }
+
+  .ev[data-type='you'] { --c: var(--purple); }
+  .ev[data-type='task'] { --c: var(--teal); }
+  .ev[data-type='verify'] { --c: var(--green); }
+  .ev[data-type='integrate'] { --c: var(--blue); }
+
+  .ev-text {
+    color: var(--text);
+    overflow-wrap: anywhere;
+  }
+
+  .ev.k-tool .ev-text,
+  .ev.k-text .ev-text,
+  .ev.k-verdict .ev-text {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-strong);
+  }
+
+  .ev.k-verdict.v-pass .ev-who span {
+    color: var(--green);
+  }
+
+  .ev.k-verdict.v-fail .ev-who span {
+    color: var(--red);
+  }
+
+  .ev.later {
+    display: none;
+  }
+
+  .ev.now {
+    background: color-mix(in srgb, var(--orange) 8%, transparent);
+    box-shadow: inset 3px 0 0 var(--orange);
+  }
+
+  .result {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 18px;
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    background: var(--well);
+  }
+
+  .result.later {
+    opacity: 0.35;
+  }
+
+  .r-answer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 14px;
+  }
+
+  .r-num {
+    font-size: 2.6rem;
+    line-height: 1.1;
+    font-weight: 600;
+    color: var(--text-strong);
+  }
+
+  .r-mark {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  .right .r-mark {
+    color: var(--green);
+  }
+
+  .wrong .r-mark {
+    color: var(--red);
+  }
+
+  .r-key {
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+
+  .r-key b {
+    color: var(--text-strong);
+  }
+
+  .r-facts {
+    margin: 4px 0 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 14px;
+  }
+
+  .r-facts div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .r-facts dt {
+    font-size: 0.78rem;
+    color: var(--faint);
+  }
+
+  .r-facts dd {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    color: var(--text-strong);
+  }
+
+  .r-note {
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+
+  .viewer :global(.tex-boxed) {
+    padding: 0 0.25em;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+  }
+
+  .viewer :global(.tex) {
+    font-style: normal;
+    white-space: normal;
+  }
+
+  .viewer :global(.tex sub),
+  .viewer :global(.tex sup) {
+    font-size: 0.72em;
+    line-height: 0;
+  }
+
+  @media (max-width: 900px) {
+    .v-body {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 620px) {
+    .tl-row,
+    .tl-axis {
+      grid-template-columns: 4.6rem minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    .tl-name span {
+      display: none;
+    }
+
+    .ev {
+      grid-template-columns: 3rem minmax(0, 1fr);
+    }
+
+    .ev-text {
+      grid-column: 2;
+    }
+
+    .log {
+      max-height: 20rem;
+    }
+
+    .c-range {
+      order: 9;
+      flex-basis: 100%;
+    }
+  }
+</style>

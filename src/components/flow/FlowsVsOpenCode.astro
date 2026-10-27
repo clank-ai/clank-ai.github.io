@@ -1,0 +1,560 @@
+---
+/**
+ * Features: Flows against OpenCode alone, on the same benchmark problems with the same model (clank-bench's
+ * captures/flows-vs-opencode.json, copied by scripts/sync-captures.py). The totals first (right answers, and the time
+ * each took in all), then every problem: right or wrong, minutes and tokens each way, and the flow's tries; the
+ * problems where the two disagree are marked. A table on a wide screen; on a phone each problem is a small card.
+ * Colors are the validated categorical slots for the dark surface (the dataviz palette): blue for the flow, orange
+ * for OpenCode alone; right and wrong carry a mark and a word, never a color alone.
+ */
+import SampleTag from '../SampleTag.astro';
+import { comparison, flowTrace } from '../../data/captures';
+import { differences, listed, minutes, problemNumber, spread, timeOf, tokens } from '../../scripts/compare';
+
+const { data, sample, source } = comparison;
+const s = data.summary;
+const time = { flow: timeOf(data, 'flow'), opencode: timeOf(data, 'opencode') };
+const longest = Math.max(...data.rows.flatMap((row) => [row.flow.minutes, row.opencode.minutes]), 0.001);
+const most = Math.max(time.flow.total, time.opencode.total, 0.001);
+const diff = differences(data);
+const pct = (x: number, of: number) => `${Math.max(0, Math.min(100, (100 * x) / of)).toFixed(1)}%`;
+const sum = (side: 'flow' | 'opencode', key: 'tokens') => data.rows.reduce((a, row) => a + row[side][key], 0);
+const sides = [
+  { key: 'flow' as const, name: 'Flow', right: s.flow.right, n: s.flow.n, time: time.flow },
+  { key: 'opencode' as const, name: 'OpenCode alone', right: s.opencode.right, n: s.opencode.n, time: time.opencode },
+];
+const mark = (correct: boolean) => (correct ? '✓ right' : '✗ wrong');
+const checks = flowTrace.data.flow.boxes.some((box) => box.type === 'verify');
+---
+
+<section class="section vs" id="flows-vs-opencode" aria-labelledby="vs-title">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Flows against OpenCode alone</p>
+      <h2 id="vs-title">The same problems, with a flow and without.</h2>
+      <p class="lead">
+        {data.bench} problems {listed(data.rows.map((row) => problemNumber(row.id)))}, with the same model both ways:
+        {' '}{data.model}, through Clank{data.conditions ? `, ${data.conditions}` : ''}. OpenCode alone works each problem in
+        one session; the flow gives it boxes of fresh sessions{checks ? ', with a check that can send the work back' : ''}.
+      </p>
+    </div>
+    {sample && <SampleTag source={source} class="vs-sample" />}
+
+    <div class="totals">
+      <figure class="tot">
+        <figcaption>Right answers</figcaption>
+        <ul class="bars">
+          {
+            sides.map((side) => (
+              <li class={side.key}>
+                <span class="who"><i aria-hidden="true" />{side.name}</span>
+                <span class="track" aria-hidden="true"><span style={`width: ${pct(side.right, side.n)}`} /></span>
+                <span class="val"><b>{side.right}</b> of {side.n}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </figure>
+      <figure class="tot">
+        <figcaption>Time, all problems</figcaption>
+        <ul class="bars">
+          {
+            sides.map((side) => (
+              <li class={side.key}>
+                <span class="who"><i aria-hidden="true" />{side.name}</span>
+                <span class="track" aria-hidden="true"><span style={`width: ${pct(side.time.total, most)}`} /></span>
+                <span class="val"><b>{minutes(side.time.total)}</b> min</span>
+              </li>
+            ))
+          }
+        </ul>
+      </figure>
+      <div class="said">
+        <p>
+          {diff.flowOnly.length > 0 && <>The flow got <b>{diff.flowOnly.length}</b> right that OpenCode alone got wrong{diff.opencodeOnly.length ? <>, and missed <b>{diff.opencodeOnly.length}</b> that it got right</> : ''}. </>}
+          {diff.flowOnly.length === 0 && diff.opencodeOnly.length > 0 && <>OpenCode alone got <b>{diff.opencodeOnly.length}</b> right that the flow missed. </>}
+          {diff.flowOnly.length === 0 && diff.opencodeOnly.length === 0 && <>Both got the same problems right. </>}
+          The flow took <b>{spread(data, 'flow')}</b> minutes a problem; OpenCode alone <b>{spread(data, 'opencode')}</b>.
+        </p>
+        <p class="tok">Tokens: {tokens(sum('flow', 'tokens'))} with the flow, {tokens(sum('opencode', 'tokens'))} alone.</p>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <caption class="sr-only">
+          Each problem of {data.bench}: right or wrong, minutes and tokens, with OpenCode alone and with the flow, and the
+          flow's tries.
+        </caption>
+        <thead>
+          <tr class="groups">
+            <th scope="col" rowspan="2">Problem</th>
+            <th scope="colgroup" colspan="3" class="g-oc"><i aria-hidden="true" />OpenCode alone</th>
+            <th scope="colgroup" colspan="4" class="g-flow"><i aria-hidden="true" />Flow</th>
+          </tr>
+          <tr>
+            <th scope="col">Answer</th>
+            <th scope="col">Minutes</th>
+            <th scope="col">Tokens</th>
+            <th scope="col">Answer</th>
+            <th scope="col">Minutes</th>
+            <th scope="col">Tokens</th>
+            <th scope="col">Tries</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            data.rows.map((row) => {
+              const fixed = row.flow.correct && !row.opencode.correct;
+              const missed = !row.flow.correct && row.opencode.correct;
+              return (
+                <tr class:list={[fixed && 'fixed', missed && 'missed']}>
+                  <th scope="row">
+                    <span class="pid">{problemNumber(row.id)}</span>
+                    {fixed && <span class="tag good">only the flow</span>}
+                    {missed && <span class="tag bad">only OpenCode</span>}
+                  </th>
+                  <td class:list={['ans', row.opencode.correct ? 'right' : 'wrong']}>{mark(row.opencode.correct)}</td>
+                  <td class="min oc">
+                    <span class="mbar" aria-hidden="true"><span style={`width: ${pct(row.opencode.minutes, longest)}`} /></span>
+                    {minutes(row.opencode.minutes)}
+                  </td>
+                  <td class="tok">{tokens(row.opencode.tokens)}</td>
+                  <td class:list={['ans', row.flow.correct ? 'right' : 'wrong']}>{mark(row.flow.correct)}</td>
+                  <td class="min fl">
+                    <span class="mbar" aria-hidden="true"><span style={`width: ${pct(row.flow.minutes, longest)}`} /></span>
+                    {minutes(row.flow.minutes)}
+                  </td>
+                  <td class="tok">{tokens(row.flow.tokens)}</td>
+                  <td class="tries">{row.flow.tries}</td>
+                </tr>
+              );
+            })
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <th scope="row">All {data.rows.length}</th>
+            <td class="ans">{s.opencode.right} right</td>
+            <td class="min">{minutes(time.opencode.total)}</td>
+            <td class="tok">{tokens(sum('opencode', 'tokens'))}</td>
+            <td class="ans">{s.flow.right} right</td>
+            <td class="min">{minutes(time.flow.total)}</td>
+            <td class="tok">{tokens(sum('flow', 'tokens'))}</td>
+            <td class="tries">{data.rows.reduce((a, row) => a + row.flow.tries, 0)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <ol class="cards" aria-label={`Each problem of ${data.bench}`}>
+      {
+        data.rows.map((row) => {
+          const fixed = row.flow.correct && !row.opencode.correct;
+          const missed = !row.flow.correct && row.opencode.correct;
+          return (
+            <li class:list={[fixed && 'fixed', missed && 'missed']}>
+              <p class="c-id">
+                <span class="pid">Problem {problemNumber(row.id)}</span>
+                {fixed && <span class="tag good">only the flow</span>}
+                {missed && <span class="tag bad">only OpenCode</span>}
+              </p>
+              <p class="c-side">
+                <span class="c-who"><i class="sw opencode" aria-hidden="true" />OpenCode</span>
+                <span class:list={['c-ans', row.opencode.correct ? 'right' : 'wrong']}>{mark(row.opencode.correct)}</span>
+                <span>{minutes(row.opencode.minutes)} min</span>
+                <span class="c-dim">{tokens(row.opencode.tokens)} tokens</span>
+              </p>
+              <p class="c-side">
+                <span class="c-who"><i class="sw flow" aria-hidden="true" />Flow</span>
+                <span class:list={['c-ans', row.flow.correct ? 'right' : 'wrong']}>{mark(row.flow.correct)}</span>
+                <span>{minutes(row.flow.minutes)} min</span>
+                <span class="c-dim">{tokens(row.flow.tokens)} tokens</span>
+                <span class="c-dim">{row.flow.tries} {row.flow.tries === 1 ? 'try' : 'tries'}</span>
+              </p>
+            </li>
+          );
+        })
+      }
+    </ol>
+  </div>
+</section>
+
+<style>
+  .vs {
+    --s-flow: #3987e5;
+    --s-oc: #d95926;
+    scroll-margin-top: 110px;
+  }
+
+  .vs :global(.vs-sample) {
+    margin-top: 20px;
+  }
+
+  .totals {
+    margin-top: clamp(28px, 3.5vw, 40px);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, 0.9fr);
+    gap: 18px;
+  }
+
+  .tot {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px 20px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .tot figcaption {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  .bars {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .bars li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'who val'
+      'track track';
+    gap: 6px 12px;
+    align-items: baseline;
+  }
+
+  .who {
+    grid-area: who;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+    font-size: 0.92rem;
+  }
+
+  .who i,
+  .groups i {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    background: var(--sw);
+    flex: none;
+  }
+
+  .flow { --sw: var(--s-flow); }
+  .opencode { --sw: var(--s-oc); }
+  .g-flow { --sw: var(--s-flow); }
+  .g-oc { --sw: var(--s-oc); }
+
+  .val {
+    grid-area: val;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .val b {
+    font-size: 1.35rem;
+    color: var(--text-strong);
+    font-family: var(--font-sans);
+  }
+
+  .track {
+    grid-area: track;
+    height: 12px;
+    border-radius: 4px;
+    background: var(--surface-2);
+    overflow: hidden;
+  }
+
+  .track span {
+    display: block;
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+    background: var(--sw);
+  }
+
+  .said {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    padding: 18px 20px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--text);
+    line-height: 1.55;
+  }
+
+  .said b {
+    color: var(--text-strong);
+  }
+
+  .said .tok {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  /* ---- every problem ---- */
+  .table-wrap {
+    margin-top: 18px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  th,
+  td {
+    padding: 9px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+  }
+
+  thead th {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--faint);
+    background: var(--well);
+    white-space: nowrap;
+  }
+
+  thead .groups th {
+    font-size: 0.85rem;
+    color: var(--text-strong);
+  }
+
+  .groups th[colspan] {
+    border-left: 1px solid var(--line);
+  }
+
+  .groups th i {
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: -1px;
+  }
+
+  tbody th {
+    font-weight: 500;
+  }
+
+  .pid {
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    color: var(--text-strong);
+  }
+
+  .tag {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+
+  .tag.good {
+    background: color-mix(in srgb, var(--green) 15%, transparent);
+    color: var(--green);
+  }
+
+  .tag.bad {
+    background: color-mix(in srgb, var(--red) 15%, transparent);
+    color: var(--red);
+  }
+
+  td {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  td.ans {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+
+  td:nth-child(2),
+  td:nth-child(5) {
+    border-left: 1px solid var(--line);
+  }
+
+  td.right {
+    color: var(--green);
+  }
+
+  td.wrong {
+    color: var(--red);
+  }
+
+  td.min {
+    white-space: nowrap;
+    min-width: 7.5rem;
+  }
+
+  .mbar {
+    display: inline-block;
+    width: 3.6rem;
+    height: 6px;
+    margin-right: 8px;
+    border-radius: 3px;
+    background: var(--surface-2);
+    vertical-align: 1px;
+    overflow: hidden;
+  }
+
+  .mbar span {
+    display: block;
+    height: 100%;
+    border-radius: 0 3px 3px 0;
+  }
+
+  .oc .mbar span {
+    background: var(--s-oc);
+  }
+
+  .fl .mbar span {
+    background: var(--s-flow);
+  }
+
+  td.tok,
+  td.tries {
+    color: var(--muted);
+  }
+
+  tr.fixed {
+    background: color-mix(in srgb, var(--green) 5%, transparent);
+  }
+
+  tr.missed {
+    background: color-mix(in srgb, var(--red) 5%, transparent);
+  }
+
+  tfoot th,
+  tfoot td {
+    border-bottom: 0;
+    background: var(--well);
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+
+  @media (max-width: 1000px) {
+    .totals {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .said {
+      grid-column: 1 / -1;
+    }
+  }
+
+  /* ---- a phone: each problem a card, OpenCode alone on one line, the flow on the next ---- */
+  .cards {
+    display: none;
+    list-style: none;
+    margin-top: 18px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    overflow: hidden;
+  }
+
+  .cards li {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .cards li:last-child {
+    border-bottom: 0;
+  }
+
+  .cards li.fixed {
+    background: color-mix(in srgb, var(--green) 5%, transparent);
+  }
+
+  .cards li.missed {
+    background: color-mix(in srgb, var(--red) 5%, transparent);
+  }
+
+  .c-id {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 0;
+  }
+
+  .c-side {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 12px;
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+
+  .c-who {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 6.4rem;
+    color: var(--muted);
+  }
+
+  .sw {
+    width: 9px;
+    height: 9px;
+    border-radius: 3px;
+    background: var(--sw);
+  }
+
+  .c-ans {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+  }
+
+  .c-ans.right {
+    color: var(--green);
+  }
+
+  .c-ans.wrong {
+    color: var(--red);
+  }
+
+  .c-dim {
+    color: var(--muted);
+  }
+
+  @media (max-width: 720px) {
+    .totals {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .table-wrap {
+      display: none;
+    }
+
+    .cards {
+      display: block;
+    }
+  }
+</style>

@@ -10,17 +10,20 @@ import GuideTable from '../components/GuideTable.astro';
 import PresetFile from '../components/PresetFile.astro';
 import RequestPath from '../components/RequestPath.astro';
 import Flows from '../components/Flows.astro';
+import FlowsVsOpenCode from '../components/flow/FlowsVsOpenCode.astro';
 import Privacy from '../components/Privacy.astro';
 import VSCodeWindow from '../components/surfaces/VSCodeWindow.astro';
-import BoardSurface from '../components/surfaces/BoardSurface.astro';
-import PhoneFrame from '../components/surfaces/PhoneFrame.astro';
+import BoardShot from '../components/surfaces/BoardShot.astro';
+import PhoneShots from '../components/surfaces/PhoneShots.astro';
 import { building, context, cost, loopGuard, requests, session, verdict } from '../scripts/crops';
 import { LINKS, PAGES, RELEASE, RELEASED } from '../config';
+import { phoneFrames, shipped } from '../data/captures';
 
 const sections = [
   { id: 'monitor', label: 'The Monitor' },
   { id: 'context', label: 'Context' },
   { id: 'flows', label: 'Flows' },
+  { id: 'flows-vs-opencode', label: 'Flows vs OpenCode' },
   { id: 'gateway', label: 'The gateway' },
   { id: 'models', label: 'Models' },
   { id: 'cloud', label: 'Cloud and cost' },
@@ -98,6 +101,8 @@ const sections = [
       </Window>
     </div>
   </div>
+
+  <FlowsVsOpenCode />
 
   <FeatureBlock
     id="gateway"
@@ -200,18 +205,19 @@ const sections = [
       <li><span><b>Export.</b> A frame becomes one figure for a paper: PDF for <code>\includegraphics</code>, PNG or SVG. Kept, it is made again each time the frame changes.</span></li>
     </ul>
     <Fragment slot="art">
-      <div class="surface board-art"><BoardSurface /></div>
+      <BoardShot />
     </Fragment>
   </FeatureBlock>
 
   <FeatureBlock
     id="phone"
-    eyebrow="iPhone · first step built"
+    wide={!shipped(phoneFrames)}
+    eyebrow="iPhone · over your tailnet"
     title="What runs, and what waits for you."
-    lead="The iPhone app installs once from a QR code on the console, runs full screen from its own icon, and stays live on one stream from your PC, through your tailnet only. It shows the model at work and the machine's load, and the questions waiting for you: a change to allow, a question from the agent, a flow's gate. Flows, the session, notifications and settings come next."
+    lead="The iPhone app installs once from a QR code on the console, runs full screen from its own icon, and stays live on one stream from your PC, through your tailnet only: Clank publishes it on your tailnet with Tailscale, never on the internet. It shows the model at work and the machine's load, what waits for you (a change to allow, a question from the agent, a flow's gate), each flow box by box, and a session as the model writes it. Chat, files, notifications and settings come next."
   >
     <Fragment slot="art">
-      <div class="phone-wrap"><PhoneFrame /></div>
+      <PhoneShots />
     </Fragment>
   </FeatureBlock>
 
@@ -241,19 +247,9 @@ const sections = [
     container: surface / inline-size;
   }
 
-  .board-art {
-    max-width: 880px;
-    margin-inline: auto;
-  }
-
   .points.cols {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .phone-wrap {
-    display: flex;
-    justify-content: center;
   }
 
   .soon {

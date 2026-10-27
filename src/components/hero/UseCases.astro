@@ -1,0 +1,779 @@
+---
+/**
+ * The top of Home: Clank in use, four ways, each a recording played back with a one-line caption. VS Code with
+ * OpenCode in its terminal and Clank's agent panel beside it; the console in a terminal; the iPhone app over Tailscale,
+ * in a phone's frame, with how it reaches the PC; and a flow running on a benchmark problem. The recordings are
+ * clank-bench's captures, copied by scripts/sync-captures.py (src/data/captures.ts); until one is there, its sample
+ * stands in and says "Sample" in development, and a build leaves that tab out (samples never ship).
+ *
+ * The tabs are a tab list (arrow keys, Home and End move between them). src/scripts/usecases.ts plays each recording
+ * at its pace, then the next tab, until you pick one; it pauses out of view, and with prefers-reduced-motion nothing
+ * moves by itself: each tab shows its first frame and the arrows step. Every panel has the same height, so nothing
+ * below it moves when the tab changes.
+ */
+import { Image } from 'astro:assets';
+import FlowDiagram from '../flow/FlowDiagram.astro';
+import SampleTag from '../SampleTag.astro';
+import Icon from '../Icon.astro';
+import { consoleFrames, flowTrace, phoneFrames, shipped, vscodeFrames } from '../../data/captures';
+import { consoleFrame } from '../../scripts/console-frame';
+import { clock } from '../../scripts/flow-play';
+import { problemNumber } from '../../scripts/compare';
+import { texToHtml } from '../../scripts/texlite';
+import { PAGES, RELEASE } from '../../config';
+
+const term = consoleFrames.data.map((frame) => ({ ...frame, ...consoleFrame(frame.text) }));
+const cols = Math.max(...term.map((frame) => frame.cols));
+const rows = Math.max(...term.map((frame) => frame.rows));
+const trace = flowTrace.data;
+const LABEL: Record<string, string> = { you: 'YOU', task: 'TASK', verify: 'VERIFY', integrate: 'INTEGRATE' };
+const boxOf = (id: string) => trace.flow.boxes.find((box) => box.id === id);
+const KIND: Record<string, string> = { start: 'starts', end: 'done', tool: 'runs a tool', text: 'writes' };
+const said = (event: (typeof trace.events)[number]) =>
+  event.kind === 'verdict' ? (event.verdict === 'pass' ? '✓ pass' : event.verdict === 'fail' ? '✗ fail' : 'verdict') : KIND[event.kind] ?? event.kind;
+
+const tabs = [
+  {
+    id: 'vscode',
+    label: 'VS Code',
+    line: 'OpenCode in VS Code’s terminal, Clank’s agent panel beside it.',
+    pending: 'The agent panel comes with the next release.',
+    capture: vscodeFrames,
+    times: vscodeFrames.data.map((frame) => frame.t),
+    captions: vscodeFrames.data.map((frame) => frame.caption),
+  },
+  {
+    id: 'console',
+    label: 'Console',
+    line: 'The console in your terminal: what runs, what fills the window, and keys to steer it.',
+    pending: '',
+    capture: consoleFrames,
+    times: consoleFrames.data.map((frame) => frame.t),
+    captions: consoleFrames.data.map((frame) => frame.caption),
+  },
+  {
+    id: 'phone',
+    label: 'iPhone',
+    line: 'Your iPhone, over your tailnet only: it reaches Clank on your PC, and nothing is public.',
+    pending: 'The iPhone app comes with the next release.',
+    capture: phoneFrames,
+    times: phoneFrames.data.map((frame) => frame.t),
+    captions: phoneFrames.data.map((frame) => frame.caption),
+  },
+  {
+    id: 'flow',
+    label: 'A flow',
+    line: `A flow on ${trace.problem.bench}, problem ${problemNumber(trace.problem.id)}: each box a fresh session${trace.flow.boxes.some((box) => box.type === 'verify') ? ', a check that can send the work back' : ''}.`,
+    pending: '',
+    capture: flowTrace,
+    times: trace.events.map((event) => event.t),
+    captions: [],
+  },
+];
+/* The tabs whose recording is real: a sample shows only in development, so a tab waits for its capture. */
+const shown = tabs.filter((tab) => shipped(tab.capture));
+const on = (id: string) => shown.some((tab) => tab.id === id);
+const timesOf = (id: string) => JSON.stringify(tabs.find((tab) => tab.id === id)!.times);
+const first = shown[0]?.id;
+const compact = JSON.stringify({
+  boxes: trace.flow.boxes.map((box) => box.id),
+  lines: trace.flow.lines,
+  events: trace.events.map((event) => ({ t: event.t, box: event.box, try: event.try, kind: event.kind, verdict: event.verdict, n: event.text.length })),
+});
+---
+
+<div class="uc" data-usecases>
+  <div class="uc-tabs" role="tablist" aria-label="Clank in use">
+    {
+      shown.map((tab, i) => (
+        <button
+          type="button"
+          role="tab"
+          id={`uc-tab-${tab.id}`}
+          aria-controls={`uc-panel-${tab.id}`}
+          aria-selected={i === 0 ? 'true' : 'false'}
+          tabindex={i === 0 ? 0 : -1}
+          data-tab={tab.id}
+        >
+          <span>{tab.label}</span>
+          <i class="uc-tab-time" aria-hidden="true" />
+        </button>
+      ))
+    }
+  </div>
+
+  <div class="uc-stage">
+    {on('vscode') && (
+    <section
+      class="uc-panel"
+      role="tabpanel"
+      id="uc-panel-vscode"
+      aria-labelledby="uc-tab-vscode"
+      tabindex="0"
+      data-panel="vscode"
+      data-times={timesOf('vscode')}
+      hidden={first !== 'vscode'}
+    >
+      <div class="uc-screen uc-shot" role="img" aria-label="VS Code with Clank: the files, the editor, OpenCode and Clank's agent panel.">
+        {
+          vscodeFrames.data.map((frame, i) => (
+            <Image
+              src={frame.image}
+              alt=""
+              class:list={['uc-frame', i === 0 && 'on']}
+              data-frame={i}
+              widths={[640, 960, 1280, Math.min(1920, frame.image.width)]}
+              sizes="(min-width: 1180px) 720px, (min-width: 760px) 92vw, 100vw"
+              loading={i === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+            />
+          ))
+        }
+      </div>
+    </section>
+    )}
+
+    {on('console') && (
+    <section
+      class="uc-panel"
+      role="tabpanel"
+      id="uc-panel-console"
+      aria-labelledby="uc-tab-console"
+      tabindex="0"
+      data-panel="console"
+      data-times={timesOf('console')}
+      hidden={first !== 'console'}
+    >
+      <div class="uc-screen uc-term" role="img" aria-label="Clank's console in a terminal." style={`--cols: ${cols}; --rows: ${rows}`}>
+        {term.map((frame, i) => <pre class:list={['uc-frame', 'uc-cells', i === 0 && 'on']} data-frame={i} aria-hidden="true" set:html={frame.html} />)}
+      </div>
+    </section>
+    )}
+
+    {on('phone') && (
+    <section
+      class="uc-panel"
+      role="tabpanel"
+      id="uc-panel-phone"
+      aria-labelledby="uc-tab-phone"
+      tabindex="0"
+      data-panel="phone"
+      data-times={timesOf('phone')}
+      hidden={first !== 'phone'}
+    >
+      <div class="uc-screen uc-phonebox">
+        <div class="uc-phone" role="img" aria-label="Clank's iPhone app.">
+          <div class="uc-phone-glass">
+            {
+              phoneFrames.data.map((frame, i) => (
+                <Image
+                  src={frame.image}
+                  alt=""
+                  class:list={['uc-frame', i === 0 && 'on']}
+                  data-frame={i}
+                  widths={[Math.min(780, frame.image.width), frame.image.width].filter((w, k, all) => all.indexOf(w) === k)}
+                  sizes="260px"
+                  loading="lazy"
+                  decoding="async"
+                />
+              ))
+            }
+          </div>
+        </div>
+        <div class="uc-phone-text">
+          <p class="uc-k">How it reaches your PC</p>
+          <p>
+            Through your tailnet only. Clank publishes its phone page on your tailnet with Tailscale’s
+            <code>serve</code>, never with Funnel, so nothing of it is on the internet.
+          </p>
+          <p>The app talks to your PC and nothing else. You pair it once, from a QR code on the console.</p>
+        </div>
+      </div>
+    </section>
+    )}
+
+    {on('flow') && (
+    <section
+      class="uc-panel"
+      role="tabpanel"
+      id="uc-panel-flow"
+      aria-labelledby="uc-tab-flow"
+      tabindex="0"
+      data-panel="flow"
+      data-flow={compact}
+      hidden={first !== 'flow'}
+    >
+      <div class="uc-screen uc-flowbox">
+        <p class="uc-problem">
+          <span class="uc-k uc-k-plain">{trace.problem.bench} · problem {problemNumber(trace.problem.id)}</span>
+          <span class="uc-problem-text" set:html={texToHtml(trace.problem.text)} />
+        </p>
+        <FlowDiagram flow={trace.flow} events={trace.events} id="hero" small class="uc-diagram" />
+        <ol class="uc-ticker" aria-label="What each box did">
+          {
+            trace.events.map((event, i) => (
+              <li class:list={['uc-ev', `k-${event.kind}`, event.verdict && `v-${event.verdict}`, i >= trace.events.length - 2 && 'shown', i === trace.events.length - 1 && 'now']} data-i={i}>
+                <span class="uc-ev-t">{clock(event.t)}</span>
+                <span class="uc-ev-who" data-type={boxOf(event.box)?.type}>
+                  {LABEL[boxOf(event.box)?.type ?? ''] ?? event.box}
+                  {event.try > 1 ? ` · try ${event.try}` : ''} · {said(event)}
+                </span>
+                <span class="uc-ev-text" set:html={texToHtml(event.text)} />
+              </li>
+            ))
+          }
+        </ol>
+        <p class:list={['uc-answer', trace.result.correct ? 'right' : 'wrong']} data-answer>
+          Answer <b set:html={texToHtml(trace.result.answer)} />
+          <span>{trace.result.correct ? '✓ right' : '✗ wrong'}</span>
+          <span class="uc-dim">{trace.result.minutes} min · {trace.result.sessions} sessions</span>
+        </p>
+      </div>
+    </section>
+    )}
+  </div>
+
+  <div class="uc-foot">
+    <div class="uc-caps">
+      {
+        shown.map((tab, i) => (
+          <div class="uc-cap" data-cap={tab.id} hidden={i !== 0}>
+            <p class="uc-line">
+              <b>{tab.line}</b>
+              {tab.captions.map((caption, k) => (
+                <span class="uc-frame-cap" data-cap-frame={k} hidden={k !== 0}>
+                  {caption}
+                </span>
+              ))}
+              {RELEASE.pending && tab.pending && (
+                <span class="uc-pending">
+                  {tab.pending} <a href={PAGES.changelog.path}>What each version has</a>
+                </span>
+              )}
+            </p>
+            {tab.capture.sample && <SampleTag source={tab.capture.source} class="uc-sample" />}
+          </div>
+        ))
+      }
+    </div>
+    <div class="uc-ctl" role="group" aria-label="The recording">
+      <button type="button" class="uc-btn" data-act="back" aria-label="The frame before">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" /></svg>
+      </button>
+      <button type="button" class="uc-btn" data-act="play" aria-label="Pause">
+        <span class="i-pause"><Icon name="pause" size={14} /></span>
+        <span class="i-play"><Icon name="play" size={14} /></span>
+      </button>
+      <button type="button" class="uc-btn" data-act="next" aria-label="The frame after">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg>
+      </button>
+      <span class="uc-count" data-count>1 of {shown[0]?.times.length ?? 0}</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  import '../../scripts/usecases';
+</script>
+
+<style>
+  .uc {
+    --stage-ratio: 16 / 10.4;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  /* ---- the tabs ---- */
+  .uc-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--well);
+  }
+
+  .uc-tabs button {
+    position: relative;
+    min-height: 40px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .uc-tabs button:hover {
+    color: var(--text-strong);
+  }
+
+  .uc-tabs button[aria-selected='true'] {
+    background: var(--surface-2);
+    color: var(--text-strong);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
+
+  /* How long until the next tab, while it goes on by itself. */
+  .uc-tab-time {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 4px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--orange);
+    transform: scaleX(var(--done, 0));
+    transform-origin: left;
+    opacity: 0;
+  }
+
+  .uc.rolling .uc-tabs button[aria-selected='true'] .uc-tab-time {
+    opacity: 0.9;
+  }
+
+  /* ---- the stage: one height for every panel ---- */
+  .uc-stage {
+    position: relative;
+    aspect-ratio: var(--stage-ratio);
+    border: 1px solid #343a55;
+    border-radius: 14px;
+    background:
+      linear-gradient(to right, rgba(122, 162, 247, 0.05) 1px, transparent 1px) 0 0 / 24px 24px,
+      linear-gradient(to bottom, rgba(122, 162, 247, 0.05) 1px, transparent 1px) 0 0 / 24px 24px,
+      #13131a;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 40px 90px -40px rgba(0, 0, 0, 0.85),
+      0 0 120px -50px rgba(122, 162, 247, 0.35);
+    overflow: hidden;
+  }
+
+  .uc-panel {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    padding: clamp(8px, 1.4vw, 14px);
+  }
+
+  .uc-panel[hidden] {
+    display: none;
+  }
+
+  .uc-panel:focus-visible {
+    outline-offset: -3px;
+  }
+
+  .uc-screen {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .uc-frame {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.45s ease,
+      visibility 0s linear 0.45s;
+  }
+
+  .uc-frame.on {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.45s ease;
+  }
+
+  /* VS Code: the window, whole. */
+  .uc-shot img.uc-frame {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+  }
+
+  /* The console: its cells, scaled to fit the screen both ways. */
+  .uc-term {
+    container-type: size;
+    border: 1px solid #272b3f;
+    border-radius: 9px;
+    background: #1a1b26;
+  }
+
+  .uc-cells {
+    margin: 0;
+    padding: 1.2cqh 1.2cqw;
+    font-family: var(--font-cells);
+    font-size: min(calc(97.6cqw / (var(--cols) * 0.6)), calc(97.6cqh / (var(--rows) * 1.3)));
+    line-height: 1.3;
+    white-space: pre;
+    color: #c0caf5;
+    font-variant-ligatures: none;
+    font-feature-settings: 'calt' 0, 'liga' 0;
+    overflow: hidden;
+  }
+
+  .uc-cells :global(.ln) { color: #565f89; }
+  .uc-cells :global(.or) { color: #ff9e64; font-weight: 700; }
+  .uc-cells :global(.g) { color: #9ece6a; }
+  .uc-cells :global(.r) { color: #f7768e; }
+
+  /* The iPhone: a phone's frame, and how it reaches the PC. */
+  .uc-phonebox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(16px, 4cqi, 40px);
+    container-type: size;
+  }
+
+  .uc-phone {
+    flex: none;
+    height: 100%;
+    aspect-ratio: 406 / 860;
+    padding: 1.8%;
+    border-radius: 13% / 6.2%;
+    background: linear-gradient(150deg, #33384f, #15161e 60%);
+    box-shadow:
+      inset 0 0 0 1.5px #3b4261,
+      0 30px 60px -30px rgba(0, 0, 0, 0.9);
+  }
+
+  .uc-phone-glass {
+    position: relative;
+    height: 100%;
+    border-radius: 11.5% / 5.4%;
+    overflow: hidden;
+    background: #16161e;
+  }
+
+  .uc-phone-glass img.uc-frame {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+  }
+
+  .uc-phone-text {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 22rem;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: var(--text);
+  }
+
+  .uc-phone-text code {
+    font-size: 0.88em;
+    color: var(--text-strong);
+  }
+
+  .uc-k {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--orange);
+  }
+
+  .uc-k-plain {
+    letter-spacing: 0.04em;
+    text-transform: none;
+  }
+
+  /* A flow: the problem, the diagram, what the box does now, the answer. */
+  .uc-flowbox {
+    container-type: size;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    padding: 4px 6px;
+  }
+
+  /* A long flow drawn as a column keeps to the screen's height. */
+  .uc-flowbox :global(.fx-column) {
+    max-height: 62cqh;
+  }
+
+  .uc-problem {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: var(--text-strong);
+  }
+
+  .uc-problem-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .uc-flowbox :global(.uc-diagram) {
+    flex: none;
+  }
+
+  .uc-ticker {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 0;
+  }
+
+  .uc-ev {
+    display: none;
+    grid-template-columns: 3.2rem minmax(0, 1fr);
+    gap: 0 10px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 0.86rem;
+    line-height: 1.4;
+    color: var(--muted);
+  }
+
+  .uc-ev.shown {
+    display: grid;
+  }
+
+  .uc-ev.now {
+    background: color-mix(in srgb, var(--orange) 9%, var(--well));
+    box-shadow: inset 3px 0 0 var(--orange);
+    color: var(--text-strong);
+  }
+
+  .uc-ev-t {
+    grid-row: span 2;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--faint);
+    padding-top: 0.15em;
+  }
+
+  .uc-ev-who {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--c, var(--faint));
+  }
+
+  .uc-ev-who[data-type='you'] { --c: var(--purple); }
+  .uc-ev-who[data-type='task'] { --c: var(--teal); }
+  .uc-ev-who[data-type='verify'] { --c: var(--green); }
+  .uc-ev-who[data-type='integrate'] { --c: var(--blue); }
+
+  .uc-ev.v-fail .uc-ev-who { color: var(--red); }
+
+  .uc-ev-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .uc-ev.now .uc-ev-text {
+    white-space: normal;
+  }
+
+  .uc-answer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    font-size: 0.92rem;
+    color: var(--text);
+  }
+
+  .uc-answer b {
+    font-size: 1.15rem;
+    color: var(--text-strong);
+  }
+
+  .uc-answer.right span:first-of-type { color: var(--green); font-family: var(--font-mono); font-weight: 700; }
+  .uc-answer.wrong span:first-of-type { color: var(--red); font-family: var(--font-mono); font-weight: 700; }
+
+  .uc-dim {
+    color: var(--faint);
+    font-size: 0.85rem;
+  }
+
+  .uc-answer.later {
+    visibility: hidden;
+  }
+
+  .uc :global(.tex-boxed) {
+    padding: 0 0.25em;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+  }
+
+  .uc :global(.tex sub),
+  .uc :global(.tex sup) {
+    font-size: 0.72em;
+    line-height: 0;
+  }
+
+  /* ---- under the stage: the caption, and the recording's controls ---- */
+  .uc-foot {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px 16px;
+    min-height: 4.4rem;
+  }
+
+  .uc-caps {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .uc-cap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .uc-cap[hidden] {
+    display: none;
+  }
+
+  .uc-line {
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  .uc-line b {
+    display: block;
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+
+  .uc-pending {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.84rem;
+    color: var(--faint);
+  }
+
+  .uc-ctl {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .uc-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--line-strong);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--text-strong);
+    cursor: pointer;
+  }
+
+  .uc-btn:hover {
+    border-color: var(--muted);
+  }
+
+  .uc-btn svg {
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .uc-btn .i-play,
+  .uc.paused .uc-btn .i-pause {
+    display: none;
+  }
+
+  .uc.paused .uc-btn .i-play,
+  .uc-btn .i-pause {
+    display: inline-flex;
+  }
+
+  .uc-count {
+    min-width: 4.2rem;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--faint);
+    white-space: nowrap;
+  }
+
+  /* ---- narrow screens: a taller stage, the phone's words in the caption ---- */
+  @media (max-width: 700px) {
+    .uc {
+      --stage-ratio: 4 / 5;
+    }
+
+    .uc-phone-text {
+      display: none;
+    }
+
+    /* A window this narrow shows the right half of VS Code: the terminal and the agent panel, large enough to read. */
+    .uc-shot img.uc-frame {
+      object-fit: cover;
+      object-position: right top;
+    }
+
+    .uc-tabs button {
+      font-size: 0.84rem;
+      padding: 0 4px;
+    }
+
+    .uc-foot {
+      flex-direction: column;
+    }
+
+    /* A flow, narrow: the problem's name, the diagram as a column that fits, and only what happens now. */
+    .uc-flowbox {
+      justify-content: flex-start;
+      gap: 8px;
+    }
+
+    .uc-problem-text {
+      display: none;
+    }
+
+    .uc-ev.shown:not(.now) {
+      display: none;
+    }
+
+    .uc-ev.now .uc-ev-text {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .uc-frame,
+    .uc-frame.on {
+      transition: none;
+    }
+  }
+</style>

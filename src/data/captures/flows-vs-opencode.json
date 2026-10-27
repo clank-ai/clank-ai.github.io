@@ -1,0 +1,61 @@
+{
+ "bench": "AIME 2026",
+ "model": "frontier 262K (Swift 1.5, a fine-tune of Qwen3.8-27B)",
+ "conditions": "while the CPU was fully loaded by other work",
+ "rows": [
+  {
+   "id": "aime2026-11",
+   "opencode": {
+    "correct": true,
+    "minutes": 40.8,
+    "tokens": 53360
+   },
+   "flow": {
+    "correct": true,
+    "minutes": 16.8,
+    "tokens": 36845,
+    "tries": 1
+   }
+  },
+  {
+   "id": "aime2026-12",
+   "opencode": {
+    "correct": true,
+    "minutes": 6.5,
+    "tokens": 11957
+   },
+   "flow": {
+    "correct": true,
+    "minutes": 12.1,
+    "tokens": 30857,
+    "tries": 1
+   }
+  },
+  {
+   "id": "aime2026-13",
+   "opencode": {
+    "correct": true,
+    "minutes": 5.3,
+    "tokens": 10355
+   },
+   "flow": {
+    "correct": true,
+    "minutes": 13.1,
+    "tokens": 35338,
+    "tries": 1
+   }
+  }
+ ],
+ "summary": {
+  "opencode": {
+   "right": 3,
+   "n": 3,
+   "minutes": 52.6
+  },
+  "flow": {
+   "right": 3,
+   "n": 3,
+   "minutes": 42.0
+  }
+ }
+}

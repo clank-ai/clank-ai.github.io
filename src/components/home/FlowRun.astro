@@ -1,0 +1,64 @@
+---
+/**
+ * Home: a flow on a real benchmark problem, played back (FlowViewer), then in one line how flows did against
+ * OpenCode alone on the same problems, and the way to every problem (the features page, section Flows against
+ * OpenCode alone, which sits beside how flows work).
+ */
+import FlowViewer from '../flow/FlowViewer.astro';
+import SampleTag from '../SampleTag.astro';
+import { comparison, flowTrace } from '../../data/captures';
+import { minutes, problemNumber, timeOf } from '../../scripts/compare';
+import { PAGES } from '../../config';
+
+const { problem, flow } = flowTrace.data;
+const checks = flow.boxes.some((box) => box.type === 'verify');
+const versus = comparison.data;
+const s = versus.summary;
+---
+
+<section class="section flow-run" id="demo" aria-labelledby="flow-run-title">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">A flow, recorded</p>
+      <h2 id="flow-run-title">One problem, solved as a flow.</h2>
+      <p class="lead">
+        {problem.bench}, problem {problemNumber(problem.id)}, played back as it ran. Each box is a fresh session that starts with only what
+        it needs{checks ? '; the check reads the solution without the session that wrote it, and can send it back' : ''}.
+      </p>
+    </div>
+    <div class="stage">
+      <FlowViewer />
+    </div>
+    <div class="versus">
+      <p>
+        On {s.flow.n} problems of {versus.bench}, the flow got <b>{s.flow.right}</b> right in {minutes(timeOf(versus, 'flow').total)}
+        minutes; OpenCode alone got <b>{s.opencode.right}</b> right in {minutes(timeOf(versus, 'opencode').total)}.
+      </p>
+      <a class="more" href={`${PAGES.features.path}#flows-vs-opencode`}>Every problem, side by side</a>
+      {comparison.sample && <SampleTag source={comparison.source} />}
+    </div>
+  </div>
+</section>
+
+<style>
+  .flow-run {
+    scroll-margin-top: 90px;
+  }
+
+  .stage {
+    margin-top: clamp(28px, 3.5vw, 44px);
+  }
+
+  .versus {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 20px;
+    color: var(--text);
+  }
+
+  .versus b {
+    color: var(--text-strong);
+  }
+</style>

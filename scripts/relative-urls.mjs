@@ -40,7 +40,9 @@ for await (const file of htmlFiles(dist)) {
       if (attr === 'href' && isPage && preview) return `${attr}="${prefix}${name || 'index'}.html${rest}"`;
       if (attr === 'href' && isPage) return whole;
       return `${attr}="${prefix}${path}${rest}"`;
-    });
+    })
+    // An image's srcset: each of its comma-separated addresses ("/assets/a.webp 640w, /assets/b.webp 960w").
+    .replace(/srcset="([^"]*)"/g, (whole, list) => `srcset="${list.replace(/(^|,\s*)\/(?!\/)/g, `$1${prefix}`)}"`);
   if (after !== before) {
     await writeFile(file, after);
     changed++;

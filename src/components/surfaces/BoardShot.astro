@@ -1,0 +1,60 @@
+---
+/**
+ * A real board, as Clank's VS Code extension draws it: a screenshot of the extension's own board page
+ * (vscode/media/board.html, board.css and board.js, with the board core compiled from vscode/src/core/board.ts, and
+ * KaTeX from Clank's artifact libraries) in headless Chrome, in the Clank Night theme, sent a board file the way the
+ * board editor sends one. The board (figures/pendulum.board) holds three figures from a small pendulum simulation
+ * (RK4; the periods match the exact elliptic-integral period to eleven digits), its formula as LaTeX, a note, an open
+ * slot, a pin, a pen loop and an arrow; the phase portrait is selected, so the selection's bar shows. Nothing in it
+ * is drawn by this site. A phone gets the same screenshot cut to the toolbar and Figure 2, large enough to read.
+ */
+import { Image, getImage } from 'astro:assets';
+import shot from '../../assets/board/pendulum-board.png';
+import part from '../../assets/board/pendulum-board-figure.png';
+
+const narrow = await getImage({ src: part, widths: [640, 960, part.width], format: 'webp' });
+---
+
+<figure class="board-shot">
+  <div class="window">
+    <div class="window-bar" aria-hidden="true">
+      <span class="dots"><i></i><i></i><i></i></span>
+      <span>VS Code · figures/pendulum.board · Clank board</span>
+    </div>
+    <picture>
+      <source media="(max-width: 640px)" srcset={narrow.srcSet.attribute} sizes="100vw" type="image/webp" />
+      <Image
+      src={shot}
+      alt="A board in VS Code: a frame named Figure 2 holds a plot of the pendulum's period against its amplitude (simulated points on the exact curve, the series leaving it above 120 degrees, circled in pink ink) and the period's formula drawn as LaTeX; beside it a plot of the damped swing with a pinned comment, Put gamma in the legend; a note on how it was simulated with an arrow to Figure 2; an empty slot, energy against time on a log scale, with a Fill button; and the phase portrait, selected, under a bar with Ask the agent."
+      widths={[800, 1200, 1600, 2400, shot.width]}
+      sizes="(min-width: 1280px) 1200px, 100vw"
+      loading="lazy"
+      decoding="async"
+      />
+    </picture>
+  </div>
+  <figcaption>
+    A real board, drawn by the extension's own board page: three figures from a pendulum simulation, its formula, a note,
+    a slot for the agent to fill, a pin and a pen loop.
+  </figcaption>
+</figure>
+
+<style>
+  .board-shot {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .window :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  figcaption {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+</style>

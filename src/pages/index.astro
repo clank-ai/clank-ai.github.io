@@ -1,14 +1,16 @@
 ---
 /**
- * Home: what Clank is in one screen (the hero), then in plain words (what it is, who it is for), a
- * normal session in four steps, a flow built and run in the demo, what is in the box, how it differs
- * from a hosted agent, everything it puts in one place, the invitation to fork it, and how to start.
+ * Home: what Clank is in one screen (the hero, beside Clank in use: VS Code, the console, the iPhone over Tailscale,
+ * a flow running, each a recording played back), then in plain words (what it is, who it is for), a normal session
+ * in four steps, a flow on a real benchmark problem played back with how flows did against OpenCode alone, what is in
+ * the box, how it differs from a hosted agent, everything it puts in one place, the invitation to fork it, and how to
+ * start.
  */
 import Base from '../layouts/Base.astro';
 import Hero from '../components/Hero.astro';
 import WhatItIs from '../components/home/WhatItIs.astro';
 import Session from '../components/home/Session.astro';
-import SplitDemo from '../components/demo/SplitDemo.astro';
+import FlowRun from '../components/home/FlowRun.astro';
 import InTheBox from '../components/home/InTheBox.astro';
 import Differs from '../components/home/Differs.astro';
 import OnePlace from '../components/home/OnePlace.astro';
@@ -20,44 +22,10 @@ import FinalCta from '../components/FinalCta.astro';
   <Hero />
   <WhatItIs />
   <Session />
-  <section class="demo-stage" id="demo" aria-label="A flow, built and run">
-    <div class="stage-light" aria-hidden="true"></div>
-    <div class="container">
-      <SplitDemo />
-    </div>
-  </section>
+  <FlowRun />
   <InTheBox />
   <Differs />
   <OnePlace />
   <OpenSourceBand />
   <FinalCta />
 </Base>
-
-<style>
-  .demo-stage {
-    position: relative;
-    isolation: isolate;
-    padding-block: var(--section-gap) 24px;
-    /* A link to #demo lands with the demo itself just under the top bar, as it is sized to fit
-       (the page keeps 124px of scroll padding for the bars; 76px is the top bar and a margin). */
-    scroll-margin-top: calc(76px - 124px - var(--section-gap));
-  }
-
-  /* The demo may use more of a wide screen than the text does. */
-  .demo-stage .container {
-    max-width: calc(1680px + 2 * var(--pad));
-  }
-
-  .stage-light {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 12%;
-    height: 70%;
-    z-index: -1;
-    background:
-      radial-gradient(45% 55% at 50% 40%, rgba(122, 162, 247, 0.12), transparent 70%),
-      radial-gradient(30% 40% at 78% 60%, rgba(255, 158, 100, 0.06), transparent 70%);
-    pointer-events: none;
-  }
-</style>

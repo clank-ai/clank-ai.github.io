@@ -1,0 +1,5 @@
+[
+  { "file": "01-now.png", "t": 0, "caption": "Now: the model at work on a flow's check, the machine's load, and an edit waiting for your answer." },
+  { "file": "02-flows.png", "t": 6, "caption": "Flows: one running, one waiting for your review, one done." },
+  { "file": "03-flow.png", "t": 12, "caption": "A flow: its boxes, the check on its second try, and what comes next." }
+]

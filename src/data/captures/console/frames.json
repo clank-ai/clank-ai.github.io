@@ -1,0 +1,27 @@
+[
+ {
+  "file": "01.txt",
+  "t": 0.0,
+  "caption": "Solve it: the model works the problem in its own session, Python at hand"
+ },
+ {
+  "file": "02.txt",
+  "t": 276.0,
+  "caption": "Solve it: the model works the problem in its own session, Python at hand"
+ },
+ {
+  "file": "03.txt",
+  "t": 583.0,
+  "caption": "Solve it: the model works the problem in its own session, Python at hand"
+ },
+ {
+  "file": "04.txt",
+  "t": 707.0,
+  "caption": "Check it independently: a fresh session sees only the problem and the solution"
+ },
+ {
+  "file": "05.txt",
+  "t": 925.0,
+  "caption": "The check passed; the last box writes the answer"
+ }
+]

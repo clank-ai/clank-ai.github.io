@@ -1,0 +1,36 @@
+ ◆ CLANK  agentic   ● service up 1h37m  ● docker running  ● frontier 262K  ● gateway  ⣾ working                   03:30 
+  Flow   Session   Context                                                                                              
+ flow “AIME 2026 problem 11” · workspace agentic · run 3 · started 03:18 · running: check                               
+                                                                                                                        
+ ┌─ Flow ────────────────────────────────────────────────────────────────────────── 2 done · 1 running · 1 waiting ─┐   
+ │ ┌────────────────────────────────┐   ┌────────────────────────────────┐   ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓     │   
+ │ │ YOU                           ✓│──▸│ TASK solve                    ✓│──▸┃ VERIFY                        ●┃     │   
+ │ │ The problem                    │   │ Solve it                       │   ┃ Check it independently         ┃     │   
+ │ │                                │   │                                │   ┃                                ┃     │   
+ │ │ you                            │   │ frontier 262K                  │   ┃ frontier 262K                  ┃     │   
+ │ │ flow/p11/BRIEF.md · 03:18      │   │ flow/p11/SOLUTION.md · 03:30   │   ┃ a verdict: pass or findings    ┃     │   
+ │ │                                │   │ try 1 of 3 · 12 min · 26.8K to…│   ┃ try 1 of 3 · since 03:30 · 0 t…┃     │   
+ │ └────────────────────────────────┘   └─▴──────────────────────────────┘   ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┬━┬┛     │   
+ │                                        ╰┄ fail ⟲ back ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄╯ ┆      │   
+ │                  ╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄╯      │   
+ │                  ▾                                                                                               │   
+ │ ┌┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┐                                                                               │   
+ │ ┆ INTEGRATE                     ○┆                                                                               │   
+ │ ┆ Give the answer                ┆                                                                               │▅▅ 
+ │ ┆                                ┆                                                                               │   
+ │ ┆ frontier 262K                  ┆                                                                               │   
+ │ ┆ flow/p11/ANSWER.md             ┆                                                                               │   
+ │ ┆ up to 3 tries · 45 min each    ┆                                                                               │   
+ │ └┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┘                                                                               │   
+ └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘   
+                                                                                                                        
+ ┌─ Selected ────────────────────────────────────────────┐  ┌─ Thinking ─────────────────────────── VERIFY · try 1 ─┐   
+ │ VERIFY · ● running                                    │  │ no box at work: the running box's session shows here  │   
+ │ Check it independently                                │  │                                                       │   
+                                                                                                                        
+ ┌─ Tool calls ───────────────────────── VERIFY · try 1 ─┐  ┌─ Context window ───────────────────── VERIFY · try 1 ─┐   
+ │ no box at work: the running box's session shows here  │  │ no session yet                                        │   
+ └───────────────────────────────────────────────────────┘  └───────────────────────────────────────────────────────┘   
+                                                                                                                        
+                                                                                                                        
+ f10 next view  enter open  p pause  O orchestrator  + bigger boxes  - smaller boxes  L ledger  ? explain  f1 help

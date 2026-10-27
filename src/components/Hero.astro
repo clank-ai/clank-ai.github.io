@@ -1,7 +1,12 @@
 ---
-/** The hero: the approved headline and subline, the installer, and the two ways on. */
+/**
+ * The hero: the approved headline and subline, the installer and the two ways on, beside Clank in use (UseCases: VS
+ * Code, the console, the iPhone over Tailscale, a flow running, each a recording played back). On a wide screen the
+ * words sit left of the recordings; on a narrower one the recordings follow the words.
+ */
 import InstallCommand from './InstallCommand.astro';
 import Icon from './Icon.astro';
+import UseCases from './hero/UseCases.astro';
 import { LICENSE, LINKS, PAGES, RELEASED } from '../config';
 ---
 
@@ -9,30 +14,35 @@ import { LICENSE, LINKS, PAGES, RELEASED } from '../config';
   <div class="grid-bg" aria-hidden="true"></div>
   <div class="light" aria-hidden="true"></div>
   <div class="container hero-inner">
-    <p class="pill">
-      <span class="pill-mark" aria-hidden="true"></span>
-      Open source <span class="sep" aria-hidden="true">·</span> {LICENSE}
-    </p>
-    <h1 id="hero-title">Precise control over your AI coding agents.</h1>
-    <p class="sub">
-      On your GPU and/or a cloud API key, with far less reliance on hosted tools like Codex and Claude Code.
-    </p>
-    <div class="actions">
-      <InstallCommand id="hero" note={false} />
-      <div class="ctas">
-        <a class="btn btn-primary" href={PAGES.start.path}>
-          Get started
-          <Icon name="arrow" size={18} />
-        </a>
-        {RELEASED && (
-        <a class="btn btn-ghost" href={LINKS.github}>
-          <Icon name="github" size={18} />
-          View on GitHub
-        </a>
-        )}
+    <div class="hero-text">
+      <p class="pill">
+        <span class="pill-mark" aria-hidden="true"></span>
+        Open source <span class="sep" aria-hidden="true">·</span> {LICENSE}
+      </p>
+      <h1 id="hero-title">Precise control over your AI coding agents.</h1>
+      <p class="sub">
+        On your GPU and/or a cloud API key, with far less reliance on hosted tools like Codex and Claude Code.
+      </p>
+      <div class="actions">
+        <InstallCommand id="hero" note={false} />
+        <div class="ctas">
+          <a class="btn btn-primary" href={PAGES.start.path}>
+            Get started
+            <Icon name="arrow" size={18} />
+          </a>
+          {RELEASED && (
+          <a class="btn btn-ghost" href={LINKS.github}>
+            <Icon name="github" size={18} />
+            View on GitHub
+          </a>
+          )}
+        </div>
       </div>
+      <p class="note">Then type <code class="inline">clank</code> in a project folder. Needs Docker.</p>
     </div>
-    <p class="note">Then type <code class="inline">clank</code> in a project folder. Needs Docker.</p>
+    <div class="hero-stage">
+      <UseCases />
+    </div>
   </div>
 </section>
 
@@ -40,7 +50,7 @@ import { LICENSE, LINKS, PAGES, RELEASED } from '../config';
   .hero {
     position: relative;
     isolation: isolate;
-    padding-block: clamp(56px, 9vw, 112px) clamp(40px, 5vw, 64px);
+    padding-block: clamp(40px, 6vw, 84px) clamp(40px, 5vw, 64px);
   }
 
   /* A faint grid of terminal cells (one column wide, two rows tall), fading out. */
@@ -62,14 +72,27 @@ import { LICENSE, LINKS, PAGES, RELEASED } from '../config';
     position: absolute;
     inset: -20% 0 0 0;
     z-index: -1;
-    background: radial-gradient(40% 50% at 20% 10%, rgba(122, 162, 247, 0.1), transparent 70%);
+    background:
+      radial-gradient(40% 50% at 20% 10%, rgba(122, 162, 247, 0.1), transparent 70%),
+      radial-gradient(35% 45% at 80% 40%, rgba(255, 158, 100, 0.05), transparent 70%);
     pointer-events: none;
   }
 
   .hero-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(36px, 5vw, 56px);
+  }
+
+  .hero-text {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    min-width: 0;
+  }
+
+  .hero-stage {
+    min-width: 0;
   }
 
   .pill {
@@ -98,7 +121,7 @@ import { LICENSE, LINKS, PAGES, RELEASED } from '../config';
   }
 
   h1 {
-    margin-top: 28px;
+    margin-top: 24px;
     max-width: 14em;
     font-size: var(--fs-h1);
     line-height: 1.02;
@@ -107,7 +130,7 @@ import { LICENSE, LINKS, PAGES, RELEASED } from '../config';
   }
 
   .sub {
-    margin-top: 24px;
+    margin-top: 22px;
     max-width: 36rem;
     font-size: var(--fs-lead);
     line-height: 1.5;
@@ -115,7 +138,7 @@ import { LICENSE, LINKS, PAGES, RELEASED } from '../config';
   }
 
   .actions {
-    margin-top: 40px;
+    margin-top: 34px;
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
@@ -133,6 +156,25 @@ import { LICENSE, LINKS, PAGES, RELEASED } from '../config';
     margin-top: 14px;
     font-size: 0.92rem;
     color: var(--muted);
+  }
+
+  /* Side by side: the words narrower, the recordings beside them. */
+  @media (min-width: 1180px) {
+    .hero-inner {
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      align-items: center;
+      gap: clamp(36px, 3.6vw, 64px);
+    }
+
+    h1 {
+      font-size: clamp(2.6rem, 1.2rem + 2.6vw, 4rem);
+    }
+
+    .actions {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 18px;
+    }
   }
 
   @media (max-width: 420px) {

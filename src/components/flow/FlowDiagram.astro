@@ -1,0 +1,282 @@
+---
+/**
+ * A flow as a small diagram: its boxes and the lines between them, a fail line drawn back, as the console's Flow view
+ * draws a flow. Laid out at build time (src/scripts/flow-layout.ts) twice, as a row for a wide box and as a column for
+ * a narrow one; the CSS shows the one that fits. Drawn as the run ended, so it reads without scripts; a player
+ * (src/scripts/flow-viewer.ts, src/scripts/usecases.ts) steps it through the run by each box's data-box and each
+ * line's data-line.
+ */
+import type { FlowTrace } from '../../data/captures';
+import { layout, type Layout } from '../../scripts/flow-layout';
+import { replay, stateClass, stateWords } from '../../scripts/flow-play';
+
+interface Props {
+  flow: FlowTrace['flow'];
+  events: FlowTrace['events'];
+  /** Unique on the page: it names the arrowheads. */
+  id: string;
+  /** Keep the row down to a narrower box (420 pixels, not 640) before the column replaces it. */
+  small?: boolean;
+  class?: string;
+}
+
+const { flow, events, id, small = false, class: cls } = Astro.props;
+const done = replay(flow.boxes.map((box) => box.id), flow.lines, events, events.length);
+const shapes: [string, Layout][] = [
+  ['row', layout(flow, 'row')],
+  ['column', layout(flow, 'column')],
+];
+const LABEL: Record<string, string> = { you: 'YOU', task: 'TASK', verify: 'VERIFY', integrate: 'INTEGRATE' };
+const across = Math.min(7, Math.max(4, shapes[0][1].across)); // a4 to a7: how long the row is
+const words = flow.boxes.map((box) => `${box.title} (${LABEL[box.type] ?? box.type.toUpperCase()})`).join(', then ');
+---
+
+<div class:list={['fx', `a${across}`, small && 'small', cls]} data-flow-diagram>
+  {
+    shapes.map(([shape, laid]) => (
+      <svg
+        class={`fx-${shape}`}
+        viewBox={`0 0 ${laid.width} ${laid.height}`}
+        role="img"
+        aria-label={`The flow “${flow.title}”: ${words}.`}
+      >
+        <defs>
+          <marker id={`${id}-${shape}-head`} class="fx-head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" />
+          </marker>
+          <marker id={`${id}-${shape}-head-on`} class="fx-head on" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" />
+          </marker>
+        </defs>
+        {laid.lines.map((line) => (
+          <g
+            class:list={['fx-line', line.back && 'back', line.when && `when-${line.when}`, done.taken.includes(line.key) && 'is-taken']}
+            data-line={line.key}
+          >
+            <path d={line.d} marker-end={`url(#${id}-${shape}-head)`} class="fx-path" />
+            <path d={line.d} marker-end={`url(#${id}-${shape}-head-on)`} class="fx-path fx-path-on" />
+            {line.label && (
+              <text x={line.label.x} y={line.label.y} text-anchor={line.label.anchor} class="fx-label">
+                {line.label.text}
+              </text>
+            )}
+          </g>
+        ))}
+        {laid.boxes.map((box) => (
+          <g class={`fx-box ${stateClass(done.boxes[box.id])}`} data-box={box.id} data-type={box.type} transform={`translate(${box.x} ${box.y})`}>
+            <rect class="fx-rect" width={box.w} height={box.h} rx="9" />
+            <text class="fx-type" x="14" y={shape === 'row' ? 22 : 21}>{LABEL[box.type] ?? box.type.toUpperCase()}</text>
+            <text class="fx-title" x="14" y={shape === 'row' ? 44 : 43}>
+              {box.title.map((line, k) => (
+                <tspan x="14" dy={k ? 17 : 0}>{line}</tspan>
+              ))}
+            </text>
+            <text class="fx-state" x="14" y={box.h - 13} data-state>{stateWords(done.boxes[box.id])}</text>
+          </g>
+        ))}
+      </svg>
+    ))
+  }
+</div>
+
+<style>
+  .fx {
+    container-type: inline-size;
+    min-width: 0;
+  }
+
+  .fx svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .fx-column {
+    max-width: 440px;
+    margin-inline: auto;
+  }
+
+  .fx .fx-column {
+    display: none;
+  }
+
+  /* The row while each box keeps about 150 pixels (110 in a small diagram); the column below that. */
+  @container (max-width: 640px) {
+    .fx.a4:not(.small) .fx-row { display: none; }
+    .fx.a4:not(.small) .fx-column { display: block; }
+  }
+
+  @container (max-width: 780px) {
+    .fx.a5:not(.small) .fx-row { display: none; }
+    .fx.a5:not(.small) .fx-column { display: block; }
+  }
+
+  @container (max-width: 920px) {
+    .fx.a6:not(.small) .fx-row { display: none; }
+    .fx.a6:not(.small) .fx-column { display: block; }
+  }
+
+  @container (max-width: 1060px) {
+    .fx.a7:not(.small) .fx-row { display: none; }
+    .fx.a7:not(.small) .fx-column { display: block; }
+  }
+
+  @container (max-width: 420px) {
+    .fx.small.a4 .fx-row { display: none; }
+    .fx.small.a4 .fx-column { display: block; }
+  }
+
+  @container (max-width: 520px) {
+    .fx.small.a5 .fx-row { display: none; }
+    .fx.small.a5 .fx-column { display: block; }
+  }
+
+  @container (max-width: 620px) {
+    .fx.small.a6 .fx-row { display: none; }
+    .fx.small.a6 .fx-column { display: block; }
+  }
+
+  @container (max-width: 720px) {
+    .fx.small.a7 .fx-row { display: none; }
+    .fx.small.a7 .fx-column { display: block; }
+  }
+
+  .fx-rect {
+    fill: var(--well);
+    stroke: var(--line-strong);
+    stroke-width: 1.5;
+    transition: stroke 0.25s ease, fill 0.25s ease;
+  }
+
+  .fx-type {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    fill: var(--c, var(--muted));
+  }
+
+  .fx-box[data-type='you'] { --c: var(--purple); }
+  .fx-box[data-type='task'] { --c: var(--teal); }
+  .fx-box[data-type='verify'] { --c: var(--green); }
+  .fx-box[data-type='integrate'] { --c: var(--blue); }
+
+  .fx-title {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    fill: var(--text-strong);
+  }
+
+  .fx-state {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    fill: var(--faint);
+  }
+
+  .fx-box.is-wait .fx-rect {
+    stroke-dasharray: 4 4;
+  }
+
+  .fx-box.is-wait .fx-title {
+    fill: var(--muted);
+  }
+
+  .fx-box.is-run .fx-rect {
+    stroke: var(--orange);
+    fill: color-mix(in srgb, var(--orange) 9%, var(--well));
+  }
+
+  .fx-box.is-run .fx-state {
+    fill: var(--orange);
+  }
+
+  .fx-box.is-done .fx-rect,
+  .fx-box.is-pass .fx-rect {
+    stroke: color-mix(in srgb, var(--green) 70%, var(--line));
+  }
+
+  .fx-box.is-done .fx-state,
+  .fx-box.is-pass .fx-state {
+    fill: var(--green);
+  }
+
+  .fx-box.is-fail .fx-rect {
+    stroke: var(--red);
+    fill: color-mix(in srgb, var(--red) 8%, var(--well));
+  }
+
+  .fx-box.is-fail .fx-state {
+    fill: var(--red);
+  }
+
+  .fx-path {
+    fill: none;
+    stroke: var(--line-strong);
+    stroke-width: 1.5;
+  }
+
+  .fx-head path {
+    fill: var(--line-strong);
+  }
+
+  .fx-head.on path {
+    fill: var(--muted);
+  }
+
+  .fx-path-on {
+    stroke: var(--muted);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .fx-line.is-taken .fx-path-on {
+    opacity: 1;
+  }
+
+  .fx-line.back .fx-path {
+    stroke-dasharray: 5 4;
+  }
+
+  .fx-line.when-fail.is-taken .fx-path-on {
+    stroke: var(--red);
+  }
+
+  .fx-line.when-fail.is-taken .fx-label {
+    fill: var(--red);
+  }
+
+  .fx-line.is-now .fx-path-on {
+    stroke: var(--orange);
+  }
+
+  .fx-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    fill: var(--faint);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .fx-line.is-now .fx-path-on {
+      stroke-dasharray: 6 5;
+      animation: fx-march 0.8s linear infinite;
+    }
+
+    .fx-box.is-run .fx-rect {
+      animation: fx-pulse 1.6s ease-in-out infinite;
+    }
+  }
+
+  @keyframes fx-march {
+    to {
+      stroke-dashoffset: -11;
+    }
+  }
+
+  @keyframes fx-pulse {
+    50% {
+      fill: color-mix(in srgb, var(--orange) 16%, var(--well));
+    }
+  }
+</style>
