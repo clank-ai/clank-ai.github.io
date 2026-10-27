@@ -1,65 +1,118 @@
 ---
 /**
- * Post: running Qwen3.8-27B (Swift 1.5) with a 262K context on a 16 GB GPU with KVMem and Clank.
- * Every number comes from Clank's repository (docs/models/frontier-262k.md and the measurements it
- * links), and the video's claims from the check made on 2026-10-18. Diagrams are plain HTML and CSS.
+ * Post: Swift 1.5 (Qwen3.8-27B) with its whole 262K context on a 16 GB GPU, with KVMem and Clank. What each piece is
+ * and where it comes from, why it fits, what it did in a real session, what broke, and how to set it up. Every number
+ * comes from Clank's repository (docs/models/frontier-262k.md and the measurements it links) or from the gateway's own
+ * record of the session plotted (src/data/session-2026-10-20.json). Figures are HTML and CSS; the session's chart is
+ * inline SVG. Colors in charts are the validated categorical slots below, not the site's accents.
  */
 import Base from '../../layouts/Base.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import CommandBlock from '../../components/CommandBlock.astro';
 import { PAGES, LINKS, INSTALL } from '../../config';
 import { POSTS, postPath } from '../../data/blog';
+import session from '../../data/session-2026-10-20.json';
 
 const post = POSTS.find((p) => p.slug === '27b-262k-on-a-16gb-gpu')!;
 const repo = LINKS.github;
 const VIDEO = 'https://www.youtube.com/watch?v=h_KqS4GtU3I';
-const KVMEM_PAPER = 'https://arxiv.org/abs/2609.04852';
-const KVMEM_REPO = 'https://github.com/kvmem/kvmem';
+const KVMEM_REPO = 'https://github.com/kvmem/kvmem-llama.cpp';
 const FILE = 'Swift-1.5-Qwen3.8-27B-GSQ-RCO-IQ3_S-mtp.gguf';
 const REVISION = 'd74895bbe5db4bec1e0024e7cc87d59c02d7631a';
 const SHA = '9aecf1cd41b2cb2f32a74e0d889e33855ebef43b26f43b43feb5720239e677e5';
+const fmt = (n: number) => n.toLocaleString('en-US');
 
-const ram = [1, 0, 0, 2, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 2, 0, 0, 0, 2, 2, 2];
+/* What runs where, top to bottom, and what passes between them. */
+const pieces = [
+  {
+    where: 'Docker container, one per project',
+    name: 'OpenCode',
+    does: 'The coding agent. It reads and edits the project, runs commands, and sends every step to the model.',
+    from: 'opencode.ai',
+    href: 'https://opencode.ai',
+    hop: 'each step, to localhost:18210',
+  },
+  {
+    where: 'Windows 11',
+    name: 'Clank',
+    does: 'Checks the build and the file, starts the engine with the preset’s flags. Its gateway counts and logs each request.',
+    from: 'clank-ai/clank',
+    href: repo,
+    hop: 'the same request, to localhost:18200',
+  },
+  {
+    where: 'WSL 2, Ubuntu 22.04',
+    name: 'KVMem server',
+    does: 'Runs the model. A llama.cpp fork that keeps the whole KV cache in RAM and the part that matters on the GPU.',
+    from: 'kvmem/kvmem-llama.cpp, v0.16.0-rc1',
+    href: KVMEM_REPO,
+    hop: 'runs on',
+  },
+];
 
+/* Layers 4, 8 … 64 attend fully (full_attention_interval = 4 in the file). */
+const layers = Array.from({ length: 64 }, (_, i) => (i + 1) % 4 === 0);
+
+/* KVMem: the whole context in RAM as blocks; the first block and the best matches go to the GPU. Not to scale. */
+const blocks = Array.from({ length: 48 }, (_, i) => i === 0 || [5, 9, 10, 17, 23, 24, 31, 38, 41, 44, 46, 47].includes(i));
+
+/* MiB of the card, as Clank estimates it and as nvidia-smi counts the card. */
 const memory = [
-  { label: 'Weights', mib: 11160, cls: 'w' },
-  { label: 'KV cache', mib: 1728, cls: 'kv' },
-  { label: 'Buffers', mib: 1141, cls: 'buf' },
-  { label: 'KVMem', mib: 424, cls: 'kvm' },
+  { label: 'Weights', mib: 11160, cls: 's1' },
+  { label: 'KV cache', mib: 1728, cls: 's2' },
+  { label: 'Buffers', mib: 1141, cls: 's3' },
+  { label: 'KVMem', mib: 424, cls: 's4' },
   { label: 'Driver', mib: 326, cls: 'drv' },
-  { label: 'Desktop and headroom', mib: 1524, cls: 'free' },
+  { label: 'Left for the desktop', mib: 1524, cls: 'free' },
 ];
 
-const speeds = [
-  { label: 'Idle desktop, 8K–33K', value: '74–79', pct: 100, cls: 'good' },
-  { label: 'Agent session, 245K', value: '57', pct: 72, cls: 'good' },
-  { label: 'CPU loaded, 8K–237K', value: '33–44', pct: 55, cls: 'mid' },
-  { label: 'Desktop busy, 8K', value: '37', pct: 46, cls: 'bad' },
+/* Writing speed, tokens a second: [label, low, high]. */
+const speeds: [string, number, number][] = [
+  ['Quiet desktop, 8K–33K prompt', 74, 79],
+  ['Agent session at 245K tokens', 57, 57],
+  ['CPU busy, 8K to 237K', 33, 44],
+  ['Desktop busy, 8K', 37, 37],
 ];
 
-const settings = [
-  ['-c', '262144', "The model's full context"],
-  ['--kvmem-budget', '57344', 'Exact window on the GPU'],
-  ['--kvmem-gen-reserve', '40960', 'The longest answer (32,768) plus one step’s tool results. v0.16 fails an answer that outgrows it.'],
-  ['--kv-dtype', 'q4_0', 'At q8_0 the exact window would shrink to about 23,800'],
-  ['-n', '32768', 'Room for long thinking plus the answer'],
-  ['--enable-thinking', 'no budget', 'Effort stays at the template’s xhigh; a thinking budget would cut it off'],
-  ['--spec-type', 'draft-mtp', 'Speculative decoding with the model’s own MTP head, 3 drafts per step'],
-  ['CUDA graphs', 'off', 'Crashed three times on a speculative verify step'],
-  ['sampling', 't 1.0, p 0.95, k 20', 'KVMem’s defaults for this model; not tuned yet'],
+/* The session: tokens in the prompt, tokens read new, seconds to the first token, one row a step. */
+const steps = (session as number[][]).map(([tokens, fresh, seconds], i) => ({ step: i + 1, tokens, fresh, seconds }));
+const first = steps[0];
+const tallest = steps.slice(1).reduce((a, b) => (b.seconds > a.seconds ? b : a));
+const last = steps[steps.length - 1];
+const X_MAX = 250000;
+const Y_MAX = 16;
+const yTicks = [0, 4, 8, 12, 16];
+/* The chart twice: wide for a desktop, narrow for a phone, so its text stays readable on both. */
+const charts = [
+  { cls: 'wide', W: 640, H: 320, M: { l: 52, r: 18, t: 34, b: 48 }, xTicks: [0, 50000, 100000, 150000, 200000, 250000], notes: true },
+  { cls: 'narrow', W: 360, H: 300, M: { l: 34, r: 14, t: 30, b: 46 }, xTicks: [0, 100000, 200000], notes: false },
+].map((c) => ({
+  ...c,
+  px: (v: number) => c.M.l + (v / X_MAX) * (c.W - c.M.l - c.M.r),
+  py: (v: number) => c.H - c.M.b - (v / Y_MAX) * (c.H - c.M.t - c.M.b),
+}));
+
+const settings: [string, string, string][] = [
+  ['-c', '262144', 'The model’s whole context.'],
+  ['--kvmem-budget', '57344', 'Tokens attended exactly on the GPU.'],
+  ['--kvmem-gen-reserve', '40960', 'The longest answer plus one step’s tool results. v0.16 fails an answer that outgrows it.'],
+  ['--kv-dtype', 'q4_0', 'Half the size of q8_0, which would leave a window of about 23,800.'],
+  ['-n', '32768', 'Room for long thinking and the answer.'],
+  ['--spec-type', 'draft-mtp', 'The MTP head drafts 3 tokens a step.'],
+  ['--enable-thinking', 'no budget', 'Effort stays at the template’s default, xhigh.'],
+  ['GGML_CUDA_DISABLE_GRAPHS', '1', 'CUDA graphs crashed on a draft check.'],
 ];
 
 const build = [
-  'git clone --recurse-submodules https://github.com/kvmem/kvmem.git kvmem-llama.cpp',
+  'git clone --recurse-submodules https://github.com/kvmem/kvmem-llama.cpp.git',
   'cd kvmem-llama.cpp',
   'git checkout v0.16.0-rc1        # commit db4bc22, the version measured here',
   "git submodule update --init     # llama.cpp at KVMem's pin",
-  'git cherry-pick -n 7e20823      # the large-tool-result fix (in v0.17.0 and later)',
-  "scripts/apply-patches.sh        # KVMem's patch into the llama.cpp submodule",
-  'scripts/build-cuda.sh           # CUDA 13.2, 120a-real for RTX 50-series',
+  'git cherry-pick -n 7e20823      # the long tool result fix, from v0.17.0',
+  "scripts/apply-patches.sh        # KVMem's patch into llama.cpp",
+  'scripts/build-cuda.sh           # CUDA 13.2; 120a-real is for RTX 50-series',
 ];
 
-const installClank = [INSTALL.windows];
 const withClank = [
   'clank serve --background',
   'clank host add ubuntu-22.04 --wsl Ubuntu-22.04',
@@ -69,21 +122,12 @@ const withClank = [
   'clank model switch frontier-262k',
 ];
 
-const download = [
+const withoutClank = [
   'mkdir -p ~/models && cd ~/models',
   `wget -c https://huggingface.co/ukisai/Swift-1.5-Qwen3.8-27B-GSQ-RCO-GGUF/resolve/${REVISION}/${FILE}`,
   `echo "${SHA}  ${FILE}" | sha256sum -c`,
-];
-
-const serve = [
   'cd ~/kvmem-llama.cpp',
   `GGML_CUDA_DISABLE_GRAPHS=1 build/bin/llama-kvmem-server -m ~/models/${FILE} -c 262144 -n 32768 --kvmem-budget 57344 --kvmem-gen-reserve 40960 --kv-dtype q4_0 --spec-type draft-mtp --enable-thinking --host 127.0.0.1 --port 8080`,
-];
-
-const test = [
-  'curl -s http://127.0.0.1:8080/health',
-  'curl -s http://127.0.0.1:8080/v1/models',
-  `curl -s http://127.0.0.1:8080/v1/chat/completions -H 'Content-Type: application/json' -d '{"model":"MODEL_ID","max_tokens":256,"messages":[{"role":"user","content":"Hello"}]}'`,
 ];
 
 const opencode = `{
@@ -107,75 +151,19 @@ const opencode = `{
   "model": "kvmem/MODEL_ID"
 }`;
 
-type Verdict = 'Accurate' | 'Mostly accurate' | 'Misleading' | 'Wrong as captioned';
-const verdictClass: Record<Verdict, string> = {
-  Accurate: 'v-ok',
-  'Mostly accurate': 'v-most',
-  Misleading: 'v-mis',
-  'Wrong as captioned': 'v-wrong',
-};
-const claims: [string, string, Verdict, string][] = [
-  ['C01', 'Qwen beats Opus 4.6 Max on LiveCodeBench and SWE-bench Pro by "not small gaps"', 'Mostly accurate', 'Numbers are on Qwen’s card. The 1.5-point LiveCodeBench gap is within run-to-run spread; the SWE-bench Pro comparison is not like for like.'],
-  ['C02', 'Another video’s "86.6, beats Opus 4.8" is a copy-paste error; there is no Opus 4.8', 'Misleading', 'Opus 4.8 exists (May 28, 2026). 86.6 is Qwen’s figure for Qwen3.8-Max.'],
-  ['C03', 'Artificial Analysis: xhigh 34, medium 28, low 26, thinking off 20', 'Accurate', 'AA’s values: 33.68, 27.55, 26.20, 20.15.'],
-  ['C04', 'At xhigh Qwen beats Opus 4.6 Max, GPT-5.3 Codex and Gemini 3.1 Pro; at medium it loses to all three', 'Mostly accurate', 'True on AA’s index, but two of the three scores are AA estimates.'],
-  ['C05', 'The "52 on AA" came from an older index', 'Accurate', '52.02 on v4.1.1, 34 on v4.3. It was outdated, not wrong.'],
-  ['C06', 'The top model on AA is Claude Opus 5.5 at 58', 'Accurate', '57.62, at its Max setting.'],
-  ['C07', 'AA runs its own 10-test suite', 'Mostly accurate', '10 tests run by AA; AA built 3 of them. The summary skips coding and a knowledge test, 35% of the weight.'],
-  ['C08', 'Effort is three values, a line of prompt text, default xhigh', 'Accurate', 'Matches the chat template. Note: llama.cpp’s web UI effort menu is a token cap instead.'],
-  ['C09', 'An xhigh Pac-Man run thought 40,000 tokens before writing code', 'Mostly accurate', '40K was the post’s top figure, not a typical one; "before writing code" was added.'],
-  ['C10', 'ARC Prize saw medium cost more than low and score less', 'Accurate', 'ARC offered the template as a possible explanation, not a finding.'],
-  ['C11', 'AA’s GPQA Diamond: 88.28 / 84.14 / 84.04', 'Wrong as captioned', 'Those are UkisAI’s numbers; AA has 90.51 / 84.55 / 84.55. Likely a caption error.'],
-  ['C12', '~15,000 thinking tokens per GPQA question, ~5.5 min at 45.6 tok/s', 'Accurate', 'It is a mean; the median is 6,642.'],
-  ['C13', 'A Terminal-Bench task takes 28 min at xhigh, under a minute at medium', 'Misleading', 'Medium thinks ~30,000 tokens on the same tasks, about 16–24 min.'],
-  ['C14', 'A 5060 Ti at 45–46 tok/s beats the 41.3 tok/s hosted median', 'Misleading', '41.3 is Alibaba’s endpoint; the middle AA provider ran ~145.'],
-  ['C15', 'The build is 11.77 GB; with MTP 12.12 GB', 'Mostly accurate', 'Two different files; the recommended one is 12.12 GB.'],
-  ['C16', 'Popular 16 GB setups set medium effort', 'Accurate', 'Both cited posts do.'],
-  ['C17', 'Another video capped thinking at 512 tokens, ~3% of what is needed', 'Mostly accurate', 'It ran Swift 1.5 (mean 8,717), so 512 is ~5.9%.'],
-  ['C18', 'The benchmarks used a 500K window', 'Misleading', 'No source says 500K; the stated window is 256K.'],
-  ['C19', 'About 110,000 tokens of q8_0 cache fit', 'Mostly accurate', '~93–95K with MTP on an empty card; ~57K beside a desktop.'],
-  ['C20', 'The other video’s 50K context ran out mid-task', 'Accurate', 'Its log shows truncation at 50,176 tokens.'],
-  ['C21', 'Swift 1.5 thinks 42% less on GPQA (15,014 → 8,717) at 88.59%', 'Mostly accurate', 'Matches UkisAI’s card; the quantization is ISTA-DASLab’s.'],
-  ['C22', '58.5% is the best case; 1.95x and 9.18x come from two tables', 'Mostly accurate', 'The conflict is between two cards, not two tables.'],
-  ['C23', 'Aider: base 77.6%, Swift 75.7%, in half the time', 'Accurate', 'That was Swift 1.0 at Q8_0 on Apple Silicon.'],
-  ['C24', '~5,000 tasks on 4×3090: low and xhigh tied at 89.3%', 'Mostly accurate', 'The tie is one of five inference stacks.'],
-  ['C25', 'VulcanBench: xhigh "slightly" worse', 'Mostly accurate', '8.7 points worse, the report’s headline.'],
-  ['C26', 'Benjamin Marie: xhigh is most accurate on harder tasks', 'Accurate', 'It also wrote 2.7× medium’s tokens.'],
-  ['C27', 'Run the IQ3_S-mtp file, 12.12 GB, UkisAI’s license', 'Accurate', 'The license allows commercial use only under US$1M revenue.'],
-  ['C28', 'The desktop holds 1–2 GB of VRAM; skip the vision projector', 'Mostly accurate', 'True on my PC, far less on others; the recommended repo has no projector.'],
-  ['C29', 'MTP gives ~45 tok/s instead of 30-something', 'Mostly accurate', 'Without MTP those cards run in the high 20s; some users see no gain.'],
-  ['C30', 'RX 9070 XT: 43.7 tok/s at 65K, 37.4 at 131K', 'Mostly accurate', 'Measured with MTP off, on Vulkan.'],
-  ['C31', 'Hosted Qwen3.8-27B costs $2.20 per million output tokens', 'Mostly accurate', 'One provider’s price; the range is $0.50–$3.20.'],
-  ['C32', 'Leaving effort unset runs xhigh, as the benchmarks did', 'Accurate', 'Same template in the GGUF files; Qwen’s own tables do not state their effort.'],
-];
-const tally = (v: Verdict) => claims.filter((c) => c[2] === v).length;
-const verdicts: Verdict[] = ['Accurate', 'Mostly accurate', 'Misleading', 'Wrong as captioned'];
-
-const contents: [string, string, string][] = [
-  ['stack', 'The stack', 'what runs where, from OpenCode down to the GPU'],
-  ['kv-cache', 'KV cache', 'why this model needs little memory per token'],
-  ['kvmem', 'KVMem', 'how 262K tokens fit beside 16 GB'],
-  ['memory', 'GPU memory', 'where each gigabyte goes'],
-  ['speed', 'Speed', 'how fast it writes, idle and under load'],
-  ['settings', 'Settings', 'every flag, and why'],
-  ['problems', 'Problems', 'what broke, and the fix for each'],
-  ['setup', 'Setup', 'the steps, with Clank or without'],
-  ['video', 'Fact-checking the video', '32 claims against their sources'],
-];
-
-const links = [
-  [VIDEO, 'Kai: How I Got Frontier Performance on 16GB VRAM (Qwen 3.8 27B)'],
-  [KVMEM_PAPER, 'KVMem: Virtualizing Million-Token Agent Workspaces on a Consumer GPU (arXiv:2609.04852)'],
-  [KVMEM_REPO, 'KVMem on GitHub'],
-  ['https://huggingface.co/ukisai/Swift-1.5-Qwen3.8-27b', 'Swift 1.5 model card (UkisAI)'],
-  ['https://huggingface.co/ukisai/Swift-1.5-Qwen3.8-27B-GSQ-RCO-GGUF', 'Swift 1.5 GSQ-RCO GGUF files'],
-  ['https://arxiv.org/abs/2604.18556', 'GSQ (arXiv:2604.18556), ISTA-DASLab'],
-  ['https://arxiv.org/abs/2605.00649', 'RCO (arXiv:2605.00649), ISTA-DASLab'],
-  ['https://huggingface.co/Qwen/Qwen3.8-27B', 'Qwen3.8-27B'],
-  [`${repo}/blob/main/docs/models/frontier-262k.md`, 'The full recipe in Clank’s repository'],
-  [`${repo}/blob/main/docs/measurements/2026-10-18-the-frontier-preset.md`, 'Measurements, October 18'],
-  [`${repo}/blob/main/docs/measurements/2026-10-15-kvmem-long-tool-results.md`, 'KVMem and long tool results'],
-  [`${repo}/blob/main/docs/measurements/2026-10-14-the-nvidia-driver.md`, 'The driver measurement'],
+const sources: [string, string, string][] = [
+  ['https://huggingface.co/Qwen/Qwen3.8-27B', 'Qwen3.8-27B', 'the base model, by Qwen'],
+  ['https://huggingface.co/ukisai/Swift-1.5-Qwen3.8-27b', 'Swift 1.5', 'the fine-tune, by UkisAI'],
+  ['https://huggingface.co/ukisai/Swift-1.5-Qwen3.8-27B-GSQ-RCO-GGUF', 'The GGUF files', 'UkisAI’s, with the MTP head'],
+  ['https://arxiv.org/abs/2604.18556', 'GSQ', 'and'],
+  ['https://arxiv.org/abs/2605.00649', 'RCO', 'the quantization, by ISTA-DASLab'],
+  ['https://arxiv.org/abs/2609.04852', 'KVMem’s paper', 'and'],
+  [KVMEM_REPO, 'its code', 'the engine'],
+  ['https://github.com/ggml-org/llama.cpp', 'llama.cpp', 'what KVMem builds on'],
+  ['https://opencode.ai', 'OpenCode', 'the agent'],
+  [`${repo}/blob/main/docs/models/frontier-262k.md`, 'The whole recipe', 'in Clank’s repository, with every setting and why'],
+  [`${repo}/blob/main/docs/measurements/2026-10-18-the-frontier-preset.md`, 'The measurements', 'speed, memory and the long sessions'],
+  [VIDEO, 'Kai’s video', 'the one that started it'],
 ];
 ---
 
@@ -188,921 +176,825 @@ const links = [
       <span>{post.author}</span><span aria-hidden="true">·</span><time datetime={post.date}>{post.dateText}</time><span aria-hidden="true">·</span><span>{post.minutes} min read</span>
     </p>
 
-    <aside class="summary" aria-labelledby="summary-title">
-      <h2 id="summary-title">In short</h2>
-      <ul>
-        <li><b>What:</b> a 27-billion-parameter model (Qwen3.8-27B, in UkisAI’s Swift 1.5 fine-tune) reading up to
-          262,144 tokens of context, on one 16 GB graphics card, as the model behind a coding agent.</li>
-        <li><b>How:</b> a compressed model file of 12.1 GB, and KVMem, which keeps the whole conversation in the PC’s
-          main memory and only the part that matters right now on the GPU.</li>
-        <li><b>How fast:</b> 74–79 tokens a second on an idle desktop; 57 deep into a 245K-token agent session.</li>
-        <li><b>What you need:</b> an NVIDIA card with 16 GB, Windows 11 with WSL 2, and the steps under
-          <a href="#setup">Setup</a>; Clank does most of them for you.</li>
-        <li><b>The catches:</b> one NVIDIA driver crashed it, a busy desktop halves the speed, and a few settings must be
-          exactly right. Each is under <a href="#problems">Problems</a>.</li>
-      </ul>
-    </aside>
+    <p>
+      This is the model I run every day for long agent sessions: Qwen3.8-27B in UkisAI’s Swift 1.5 fine-tune, with its
+      full 262,144-token context, on one RTX 5080 with 16 GB.
+    </p>
+    <p>
+      It started with <a href={VIDEO}>Kai’s video</a> arguing that this model scores like a frontier model when its
+      reasoning effort is left at the default. On 16 GB, memory was the limit: only about 57,000 tokens of context fit
+      beside my desktop. KVMem moves most of the cache into system RAM, which took it to 262,144. Clank runs it all from
+      one preset.
+    </p>
 
-    <nav class="contents" aria-labelledby="contents-title">
-      <h2 id="contents-title">On this page</h2>
-      <ol>
-        {contents.map(([id, title, what]) => (
-          <li><a href={`#${id}`}>{title}</a><span>{what}</span></li>
+    <h2 id="pieces">The pieces</h2>
+    <figure class="fig">
+      <ol class="chain">
+        {pieces.map((p) => (
+          <li>
+            <div class="piece">
+              <span class="where">{p.where}</span>
+              <strong>{p.name}</strong>
+              <span class="does">{p.does}</span>
+              <a class="from" href={p.href}>{p.from}</a>
+            </div>
+            <p class="hop"><span class="arrow" aria-hidden="true">↓</span>{p.hop}</p>
+          </li>
         ))}
       </ol>
-    </nav>
-
-    <p>
-      On October 18 I watched Kai’s video <a href={VIDEO}>How I Got Frontier Performance on 16GB VRAM (Qwen 3.8 27B)</a>.
-      Its argument is simple.
-    </p>
-    <p>
-      Qwen3.8-27B scores like a February frontier model if you leave its reasoning effort at the default, xhigh. And the
-      Swift 1.5 fine-tune gets most of that score while thinking far less.
-    </p>
-    <p>
-      Before copying anything, I checked all 32 of the video’s claims; the results are at the end. Then I built the setup
-      into Clank and pushed the context from about 57K tokens to 262K with KVMem. It has been my main model for long agent
-      sessions ever since.
-    </p>
-
-    <dl class="stats">
-      {post.stats.map((s) => (
-        <div>
-          <dt>{s.label}</dt>
-          <dd>{s.value}</dd>
+      <div class="hw">
+        <div class="piece">
+          <span class="where">GPU</span>
+          <strong>RTX 5080, 16 GB</strong>
+          <span class="does">The weights, and up to 98,304 tokens of cache.</span>
         </div>
-      ))}
-    </dl>
-
-    <h2 id="stack">The stack</h2>
-    <p>
-      Each box runs inside the one around it. OpenCode sends requests to Clank’s gateway, which forwards them to the KVMem
-      server in WSL; KVMem loads the model file onto the GPU.
-    </p>
-    <figure class="stack">
-      <div class="box pc">
-        <div class="head"><strong>Windows 11 PC</strong><span>RTX 5080 16 GB · Ryzen 9 9950X3D · 64 GB RAM</span></div>
-        <div class="pair">
-          <div class="box clankbox">
-            <div class="head"><strong>Docker</strong></div>
-            <div class="box inner2">
-              <strong>OpenCode</strong>
-              <p>The coding agent, in the project’s container.</p>
-            </div>
-          </div>
-          <div class="box clankbox">
-            <div class="head"><strong>Clank</strong></div>
-            <p>Service: adopts and checks the KVMem build, starts it with the preset’s flags.</p>
-            <p>Gateway (port 18210): receives OpenCode’s requests, counts tokens, logs each request.</p>
-          </div>
-        </div>
-        <div class="box wsl">
-          <div class="head"><strong>WSL 2 · Ubuntu 22.04</strong><span>CUDA toolkit 13.2, the Windows driver</span></div>
-          <div class="box kvmem">
-            <div class="head"><strong>KVMem server, port 18200</strong><span>llama.cpp fork, v0.16.0-rc1 + one fix</span></div>
-            <p>Keeps the KV cache for the exact window on the GPU and the rest in system RAM.</p>
-            <div class="box file">
-              <div class="head"><strong>Model file · GSQ-RCO IQ3_S, 12.1 GB</strong><span>quantization by ISTA-DASLab, packaged by UkisAI</span></div>
-              <div class="box weights">
-                <div class="head"><strong>Weights · Swift 1.5</strong><span>fine-tune by UkisAI</span></div>
-                <div class="box arch">
-                  <div class="head"><strong>Architecture · Qwen3.8-27B</strong><span>Qwen</span></div>
-                  <p>64 layers (16 full attention), MTP head</p>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="piece">
+          <span class="where">System RAM</span>
+          <strong>64 GB</strong>
+          <span class="does">The rest of the cache, up to 262,144 tokens.</span>
         </div>
       </div>
-      <figcaption>Requests: OpenCode → gateway :18210 → KVMem :18200. Memory: weights and the exact window on the GPU, older context in system RAM.</figcaption>
+      <figcaption>All of it runs on one PC with a Ryzen 9 9950X3D. Nothing leaves it.</figcaption>
     </figure>
 
-    <h2 id="kv-cache">KV cache</h2>
-    <p class="plain">
-      <b>In plain words:</b> the KV cache is the model’s working memory of the conversation. Every token it has read
-      leaves a little data there, so it grows with the context, and it has to sit on the GPU to be fast.
-    </p>
-    <p>
-      Qwen3.8-27B has 64 layers, but only 16 of them use full attention. The other 48 are linear-attention layers with a
-      small fixed-size state. Only the 16 full-attention layers keep a KV cache, so a token costs 18,432 bytes of cache at
-      <code>q4_0</code>. If all 64 layers kept a cache it would be four times as much.
-    </p>
-    <figure class="layers" role="img" aria-label="Of 64 layers, 48 are linear attention with a fixed state and 16 are full attention with a KV cache.">
-      <div class="bar">
-        <div class="lin">48 linear-attention layers · fixed state, no KV cache</div>
-        <div class="full">16 full · KV cache</div>
+    <h2 id="file">The model file</h2>
+    <figure class="fig">
+      <ol class="lineage">
+        <li class="card">
+          <span class="who">Qwen</span>
+          <strong>Qwen3.8-27B</strong>
+          <span>The base model: 27 billion parameters in 64 layers. Its reasoning effort defaults to xhigh.</span>
+        </li>
+        <li class="link" aria-hidden="true"><span>fine-tuned</span></li>
+        <li class="card">
+          <span class="who">UkisAI</span>
+          <strong>Swift 1.5</strong>
+          <span>Thinks about 42% less for the same GPQA Diamond score.</span>
+        </li>
+        <li class="link" aria-hidden="true"><span>compressed</span></li>
+        <li class="card">
+          <span class="who">ISTA-DASLab, refined by UkisAI</span>
+          <strong>GSQ-RCO IQ3_S</strong>
+          <span>About 3.5 bits a weight: one 12.1 GB file, with the MTP head that drafts tokens.</span>
+        </li>
+      </ol>
+      <figcaption>The file’s KL divergence from the full-precision model is 0.0513 (UkisAI’s measure).</figcaption>
+    </figure>
+
+    <h2 id="fit">Why 262K tokens fit</h2>
+    <p>Most of the model’s layers keep no cache at all, and most of the cache that remains lives in RAM.</p>
+
+    <figure class="fig">
+      <div class="layers" role="img" aria-label="64 layers: every fourth one, 16 in all, attends fully and keeps a KV cache; the other 48 keep a small fixed state.">
+        {layers.map((full, i) => <span class={full ? 'full' : 'lin'} title={`Layer ${i + 1}: ${full ? 'full attention, KV cache' : 'linear attention, fixed state'}`} />)}
       </div>
-      <figcaption>Counts, not positions.</figcaption>
+      <ul class="legend">
+        <li><span class="sw full" aria-hidden="true" />16 full-attention layers: they keep a KV cache</li>
+        <li><span class="sw lin" aria-hidden="true" />48 linear-attention layers: a small fixed state</li>
+      </ul>
+      <figcaption>Every fourth layer attends to the whole context. Those 16 keep 18,432 bytes per token at q4_0.</figcaption>
     </figure>
 
-    <h2 id="kvmem">KVMem</h2>
-    <p class="plain">
-      <b>In plain words:</b> a 262K-token cache does not fit next to the model on a 16 GB card. KVMem keeps all of it in
-      the PC’s main memory and gives the GPU only the part the model needs for the next step.
-    </p>
-    <p>
-      KVMem (<a href={KVMEM_PAPER}>paper</a>, <a href={KVMEM_REPO}>repo</a>) keeps the full KV history in system RAM and
-      gives the GPU a fixed working set. Up to 57,344 tokens, attention is exact. Past that, the GPU holds the first 128
-      tokens plus the blocks that best match the latest user message, and the rest stays in RAM. A separate 40,960-token
-      reserve holds the tokens the model writes and new tool results.
-    </p>
-    <figure class="kvmem-fig" role="img" aria-label="The whole 262,144-token context sits in system RAM as blocks. The GPU holds 98,304 cells: the first 128 tokens and the best-matching blocks, up to 57,344 tokens, plus a 40,960-token reserve for new tokens.">
-      <div class="row-label"><span>System RAM: the whole context, 262,144 tokens</span><span>marked: blocks matching the latest message</span></div>
-      <div class="blocks">{ram.map((b) => <span class={b === 1 ? 'sink' : b === 2 ? 'pick' : ''} />)}</div>
-      <div class="down" aria-hidden="true">↓</div>
-      <div class="row-label"><span>GPU: 98,304 cache cells</span></div>
-      <div class="gpu">
-        <div class="sink">first</div>
-        <div class="exact">exact window: 57,344</div>
-        <div class="reserve">reserve for new tokens: 40,960</div>
+    <figure class="fig">
+      <p class="row-label">System RAM: the whole conversation, 262,144 tokens, in 128-token blocks</p>
+      <div class="blocks" role="img" aria-label="The conversation in RAM as blocks; the first block and the blocks most like the latest message are highlighted.">
+        {blocks.map((picked, i) => <span class={i === 0 ? 'first' : picked ? 'picked' : ''} />)}
       </div>
-      <figcaption>Block sizes and positions are not to scale.</figcaption>
-    </figure>
-    <p>
-      KVMem also caches the prompt prefix. In an agent session each step resends the whole conversation plus a little
-      more. In four long sessions (up to 250+ steps and 245,411 tokens), about 99% of each prompt came from KVMem’s cache,
-      so a step only processes what is new.
-    </p>
-
-    <h2 id="memory">GPU memory</h2>
-    <p class="plain">
-      <b>In plain words:</b> the model file is compressed (IQ3_S: about 3.5 bits per weight instead of 16), which is how
-      27 billion weights fit in about 11 GB of the card, with room left for the cache and the desktop.
-    </p>
-    <figure class="mem" role="img" aria-label="Of 16,303 MiB: weights 11,160; KV cache 1,728; buffers 1,141; KVMem overhead 424; driver reserve 326; 1,524 left for the desktop and headroom.">
-      <div class="bar">{memory.map((m) => <div class={m.cls} style={`flex: ${m.mib}`} />)}</div>
-      <ul class="legend">{memory.map((m) => <li><span class={`sw ${m.cls}`} aria-hidden="true" />{m.label} {m.mib.toLocaleString('en-US')}</li>)}</ul>
-    </figure>
-    <p>
-      The model takes 14,453 MiB of the card’s 16,303. With my desktop on the same card, total use was 15,753 MiB. If your
-      desktop needs more, the IQ3_XXS file from the same repository is 1.6 GB smaller (KL divergence 0.0978 instead of
-      0.0513).
-    </p>
-
-    <h2 id="speed">Speed</h2>
-    <p class="plain">
-      <b>In plain words:</b> about 75 tokens a second is faster than most people read. The model also guesses three
-      tokens ahead and checks them in one step (MTP, its multi-token prediction head), which is where much of the speed
-      comes from.
-    </p>
-    <figure class="speed" role="img" aria-label="Generation speed in tokens per second: idle desktop 74 to 79; long agent session 57; CPU loaded 33 to 44; desktop busy 37.">
-      {speeds.map((s) => (
-        <div class="srow">
-          <span>{s.label}</span>
-          <div class="track"><div class={`fill ${s.cls}`} style={`width: ${s.pct}%`} /><b>{s.value}</b></div>
-        </div>
-      ))}
+      <p class="copy"><span class="arrow" aria-hidden="true">↓</span>the first block, and the blocks most like your latest message</p>
+      <p class="row-label">GPU: 98,304 cache cells</p>
+      <div class="gpu" role="img" aria-label="The GPU's cache: the first block and the best-matching blocks, up to 57,344 tokens, then a reserve of 40,960 for new tokens.">
+        <span class="exact">first block + best matches: 57,344</span>
+        <span class="reserve">reserve: 40,960</span>
+      </div>
       <figcaption>
-        Generation, tokens per second. Prompt processing: 1,520–1,601 tok/s idle, 981–576 with the CPU loaded, 492 with
-        the desktop busy. MTP drafts 3 tokens per step; 81–87% are accepted.
+        Up to 57,344 tokens, the whole conversation is on the GPU and attention is exact. The reserve holds what the model
+        writes next and new tool results. Not to scale.
       </figcaption>
     </figure>
 
-    <h2 id="settings">Settings</h2>
-    <p>Every flag the server starts with, and why. Clank’s preset sets them all; this is for checking, or running it by hand.</p>
-    <dl class="settings">
-      {settings.map(([f, v, w]) => (
-        <div>
-          <dt><code class="flag">{f}</code> <code class="val">{v}</code></dt>
-          <dd>{w}</dd>
+    <figure class="fig">
+      <div class="mem" role="img" aria-label="Of the card's 16,303 MiB: weights 11,160, KV cache 1,728, buffers 1,141, KVMem 424, driver 326, and 1,524 left for the desktop.">
+        {memory.map((m) => (
+          <span class={m.cls} style={`flex-grow: ${m.mib}`} title={`${m.label}: ${fmt(m.mib)} MiB`}>
+            {m.cls === 's1' && <b>Weights · 11,160 MiB</b>}
+          </span>
+        ))}
+      </div>
+      <ul class="legend">
+        {memory.map((m) => <li><span class={`sw ${m.cls}`} aria-hidden="true" />{m.label} <span class="num">{fmt(m.mib)}</span></li>)}
+      </ul>
+      <figcaption>
+        The card’s 16,303 MiB. The model takes 14,453 of it. If your desktop needs more than mine, the IQ3_XXS file is
+        1.6 GB smaller.
+      </figcaption>
+    </figure>
+
+    <h2 id="session">In a real session</h2>
+    <p>
+      An agent sends the whole conversation again at every step. KVMem keeps what it read the step before, so the model
+      reads only what is new.
+    </p>
+    <figure class="fig">
+      {charts.map((c) => (
+        <svg class={`chart ${c.cls}`} viewBox={`0 0 ${c.W} ${c.H}`} role="img" aria-label={`Seconds to the first token at each of ${steps.length} steps, against the conversation's size: near one second from ${fmt(first.tokens)} to ${fmt(last.tokens)} tokens; the first step ${first.seconds} seconds; steps with a long tool result up to ${tallest.seconds}.`}>
+          <text class="axis-title" x={c.M.l} y={16}>seconds to the first token</text>
+          {yTicks.map((t) => (
+            <g>
+              <line class="grid" x1={c.M.l} x2={c.W - c.M.r} y1={c.py(t)} y2={c.py(t)} />
+              <text class="tick" x={c.M.l - 8} y={c.py(t) + 4} text-anchor="end">{t}</text>
+            </g>
+          ))}
+          {c.xTicks.map((t) => (
+            <text class="tick" x={c.px(t)} y={c.H - c.M.b + 20} text-anchor="middle">{t === 0 ? '0' : `${t / 1000}K`}</text>
+          ))}
+          <text class="axis-title" x={c.W - c.M.r} y={c.H - 6} text-anchor="end">tokens in the conversation</text>
+          <line class="ref" x1={c.px(57344)} x2={c.px(57344)} y1={c.M.t} y2={c.H - c.M.b} />
+          {steps.map((s) => (
+            <circle class="dot" cx={c.px(s.tokens)} cy={c.py(s.seconds)} r={c.cls === 'wide' ? 4.5 : 3.5}>
+              <title>{`Step ${s.step}: ${fmt(s.tokens)} tokens, ${fmt(s.fresh)} of them new, ${s.seconds} s`}</title>
+            </circle>
+          ))}
+          {c.notes && (
+            <g>
+              <text class="note" x={c.px(57344) + 8} y={c.M.t + 12}>exact window ends</text>
+              <text class="note" x={c.px(first.tokens) + 10} y={c.py(first.seconds) + 4}>first step</text>
+              <text class="note" x={c.px(tallest.tokens) + 12} y={c.py(tallest.seconds) + 4}>a long tool result</text>
+            </g>
+          )}
+        </svg>
+      ))}
+      <figcaption>
+        One OpenCode session on October 20: {steps.length} steps over 67 minutes, from {fmt(first.tokens)} to
+        {' '}{fmt(last.tokens)} tokens. The median step waited 1.4 seconds. The first step read all {fmt(first.tokens)}
+        tokens; the line marks where the exact window ends.
+      </figcaption>
+      <details class="data">
+        <summary>The {steps.length} steps</summary>
+        <div class="table">
+          <table>
+            <thead><tr><th scope="col">Step</th><th scope="col">Tokens</th><th scope="col">New</th><th scope="col">Seconds</th></tr></thead>
+            <tbody>{steps.map((s) => <tr><td>{s.step}</td><td>{fmt(s.tokens)}</td><td>{fmt(s.fresh)}</td><td>{s.seconds}</td></tr>)}</tbody>
+          </table>
         </div>
+      </details>
+    </figure>
+    <p>
+      A new chat gets no such head start. Its first step reads OpenCode’s whole prompt, about 20,000 tokens: 12 seconds
+      here, and up to 37 on a busy desktop.
+    </p>
+
+    <figure class="fig">
+      <div class="speed">
+        {speeds.map(([label, low, high]) => (
+          <div class="srow" title={`${label}: ${low === high ? low : `${low}–${high}`} tokens a second`}>
+            <span class="slabel">{label}</span>
+            <span class="track">
+              <span class="fill" style={`width: ${(low / 80) * 100}%`} />
+              {high > low && <span class="span" style={`left: ${(low / 80) * 100}%; width: ${((high - low) / 80) * 100}%`} />}
+            </span>
+            <span class="sval">{low === high ? low : `${low}–${high}`}</span>
+          </div>
+        ))}
+      </div>
+      <figcaption>
+        Writing speed, tokens a second. The MTP head drafts 3 tokens a step, and 81–87% are kept. Reading a prompt runs at
+        about 1,500 tokens a second on a quiet desktop.
+      </figcaption>
+    </figure>
+
+    <h2 id="problems">What broke</h2>
+    <ul class="problems">
+      <li>NVIDIA driver 617.42, installed by the NVIDIA app on its own, crashed KVMem on 2 of 9 cache clears. On 591.74, none in 66. Automatic driver updates are off now.</li>
+      <li>When the card filled, Windows moved part of the model into RAM, and it crawled at 10 tokens a second. The Sysmem Fallback setting below prevents that.</li>
+      <li>CUDA graphs crashed it three times during speculative decoding. They are off.</li>
+      <li>A tool result bigger than the window failed with HTTP 500. KVMem fixed it in <code>7e20823</code>, which I picked onto v0.16.</li>
+      <li>OpenCode compacted too late once, and KVMem refused a 246,931-token prompt. Clank now gives OpenCode the window less 16,384 tokens.</li>
+      <li>A busy desktop or a video on the same card halves the speed.</li>
+    </ul>
+
+    <h2 id="settings">The settings</h2>
+    <dl class="flags">
+      {settings.map(([flag, value, why]) => (
+        <div><dt><code>{flag}</code> <code class="val">{value}</code></dt><dd>{why}</dd></div>
       ))}
     </dl>
 
-    <h2 id="problems">Problems</h2>
-    <ul class="problems">
-      <li><b>A driver update.</b> The NVIDIA app installed 617.42 on its own on October 13. KVMem then crashed with CUDA errors on 2 of 9 cache clears. Back on 591.74: 0 of 66. Automatic driver updates are off now.</li>
-      <li><b>Windows moving the model to RAM.</b> When the card filled, generation fell to 10 tok/s until a restart. Fix: NVIDIA Control Panel → Manage 3D settings → CUDA Sysmem Fallback Policy → Prefer No Sysmem Fallback.</li>
-      <li><b>CUDA graphs.</b> Three crashes on October 8 during speculative decoding. Disabled with <code>GGML_CUDA_DISABLE_GRAPHS=1</code>.</li>
-      <li><b>A large tool result.</b> One tool output bigger than the exact window failed the request with HTTP 500. Fixed upstream in commit <code>7e20823</code>, which I cherry-picked onto v0.16.</li>
-      <li><b>Late compaction.</b> OpenCode sent 246,931 tokens plus 16,384 for the answer, over the limit, and KVMem refused. Clank now tells OpenCode the window minus a 16K margin and turns the refusal into an overflow error OpenCode compacts on.</li>
-      <li><b>A shared card.</b> A busy desktop or a video on the same GPU halves generation speed.</li>
-      <li><b>Recall past the window.</b> At about 220,000 tokens it passed 5 of 6 retrieval probes. The miss was a rule from the system prompt.</li>
-    </ul>
-
     <h2 id="setup">Setup</h2>
-    <p>
-      Two options: with Clank, which adopts and checks the build, or with only KVMem and the model file. The first two
-      steps are the same for both.
-    </p>
+    <p>You need an NVIDIA card with 16 GB, Windows 11 with WSL 2, and about 6 GB of RAM free for WSL.</p>
     <h3>1. Windows</h3>
     <ol class="steps">
-      <li>Install NVIDIA driver <b>591.74</b> (610.88 also worked; 617.42 crashed KVMem). Turn off automatic driver updates in the NVIDIA app.</li>
-      <li>NVIDIA Control Panel → Manage 3D settings → <b>CUDA Sysmem Fallback Policy: Prefer No Sysmem Fallback</b>.</li>
-      <li>Install WSL 2 with Ubuntu 22.04: <code>wsl --install -d Ubuntu-22.04</code>. Leave about 6 GB of RAM free for it.</li>
-      <li>In Ubuntu, install the <b>CUDA toolkit 13.2 for WSL-Ubuntu</b> from NVIDIA’s download page. Do not install a Linux driver; WSL uses the Windows one. Then <code>sudo apt install build-essential cmake git</code>.</li>
+      <li>Install NVIDIA driver 591.74 (610.88 also worked), and turn off automatic driver updates in the NVIDIA app.</li>
+      <li>NVIDIA Control Panel, Manage 3D settings: set CUDA Sysmem Fallback Policy to Prefer No Sysmem Fallback.</li>
+      <li>Install Ubuntu 22.04 in WSL: <code>wsl --install -d Ubuntu-22.04</code>.</li>
+      <li>In Ubuntu, install NVIDIA’s CUDA toolkit 13.2 for WSL-Ubuntu (no Linux driver: WSL uses the Windows one), then <code>sudo apt install build-essential cmake git</code>.</li>
     </ol>
-    <h3>2. Build KVMem</h3>
+    <h3>2. Build KVMem, in Ubuntu</h3>
     <CommandBlock shell="Ubuntu (WSL)" label="build KVMem" lines={build} />
     <p class="note">
-      The cherry-pick stops at one conflict; resolve it to v0.17.0’s version, keeping v0.16’s <code>fprintf</code>
-      logging. Other cards need their own CUDA architecture instead of <code>120a-real</code>. Newer KVMem releases
-      include the fix but may change flags; the flags here are for v0.16.0-rc1.
+      The cherry-pick stops at one conflict: take v0.17.0’s version and keep v0.16’s <code>fprintf</code> logging. Other
+      cards need their own CUDA architecture.
     </p>
-
+    <h3>3. Run it</h3>
     <div class="options">
       <section class="option">
-        <h3>3A. With Clank</h3>
-        <p class="note">Clank checks the build, the file’s SHA-256 and whether the preset fits, then runs it and serves OpenCode. Install it in PowerShell; the installer gets uv, Git and Docker Desktop if they are missing, asking first:</p>
-        <CommandBlock label="install Clank" lines={installClank} />
-        <p class="note">Then, in a new PowerShell:</p>
-        <CommandBlock label="set up Clank with KVMem and Swift 1.5" lines={withClank} />
+        <h4>With Clank, in PowerShell</h4>
+        <CommandBlock label="install Clank" lines={[INSTALL.windows]} />
+        <p class="note">Then, in a new PowerShell window:</p>
+        <CommandBlock label="load the model with Clank" lines={withClank} />
         <p class="note">
-          <code>&lt;checkout&gt;</code> is the KVMem folder inside Ubuntu. Then open a terminal in your project, type
-          <code>clank</code>, press <kbd>g</kbd> to finish the folder’s setup and <kbd>a</kbd> to start OpenCode.
+          <code>&lt;checkout&gt;</code> is the KVMem folder in Ubuntu. Clank checks the build, the file’s SHA-256 and
+          whether it fits. Then open a terminal in your project, type <code>clank</code>, press <kbd>g</kbd> to set the
+          folder up and <kbd>a</kbd> to start OpenCode.
         </p>
       </section>
       <section class="option">
-        <h3>3B. KVMem and the model only</h3>
-        <p class="note">No Clank; everything in Ubuntu. Download and check the model:</p>
-        <CommandBlock shell="Ubuntu (WSL)" label="download and check the model" lines={download} />
-        <p class="note">Start the server:</p>
-        <CommandBlock shell="Ubuntu (WSL)" label="start the KVMem server" lines={serve} />
-        <p class="note">Check it answers:</p>
-        <CommandBlock shell="Ubuntu (WSL)" label="test the server" lines={test} />
-        <p class="note">Point OpenCode at it, in <code>~/.config/opencode/opencode.json</code>:</p>
+        <h4>Without Clank, in Ubuntu</h4>
+        <CommandBlock shell="Ubuntu (WSL)" label="download the model and start the server" lines={withoutClank} />
+        <p class="note">Then point OpenCode at it in <code>~/.config/opencode/opencode.json</code>, with the id from <code>/v1/models</code> as <code>MODEL_ID</code>:</p>
         <pre class="json"><code set:text={opencode} /></pre>
-        <p class="note">
-          Use the id from <code>/v1/models</code> as <code>MODEL_ID</code>. The context limit is 16,384 under 262,144 on
-          purpose, so OpenCode compacts before KVMem refuses the request.
-        </p>
+        <p class="note">The context limit is 16,384 under 262,144 so OpenCode compacts before KVMem refuses.</p>
       </section>
     </div>
 
-    <h2 id="video">Fact-checking the video</h2>
-    <p>
-      Before copying the setup I checked the video’s claims against their sources: Qwen’s model card and chat template,
-      Artificial Analysis, UkisAI’s cards and report, ARC Prize, the Reddit and X posts it cites, and archived copies of
-      each. 32 claims, five of them checked twice by an independent second pass; both passes agreed on all five. The check
-      was done on October 18.
-    </p>
-    <figure class="verdicts" role="img" aria-label={`Of 32 claims: ${tally('Accurate')} accurate, ${tally('Mostly accurate')} mostly accurate, ${tally('Misleading')} misleading, ${tally('Wrong as captioned')} wrong as captioned.`}>
-      <div class="bar">{verdicts.map((v) => <div class={verdictClass[v]} style={`flex: ${tally(v)}`}>{tally(v)}</div>)}</div>
-      <ul class="legend">{verdicts.map((v) => <li><span class={`sw ${verdictClass[v]}`} aria-hidden="true" />{v}</li>)}</ul>
-    </figure>
-
-    <h3>Correct</h3>
-    <p>
-      Qwen’s chat template defaults to xhigh. The effort setting is a line of text in the system prompt, not a token cap,
-      and medium adds no instruction at all. Artificial Analysis scores the same weights 34 at xhigh and 28 at medium,
-      which puts xhigh above the three February frontier models the video names and medium below all three. So in my
-      setup the effort is left unset (xhigh) and thinking has no budget.
-    </p>
-    <h3>Incorrect or misleading</h3>
-    <ul class="problems">
-      <li>"There is no Opus 4.8" is false: Anthropic released it on May 28, 2026. The 86.6 on Terminal-Bench 2.1 the video calls a copy-paste error is Qwen’s published score for a different model, Qwen3.8-Max.</li>
-      <li>The "median hosted speed" of 41.3 tok/s is Alibaba’s own endpoint, one of the slowest. The middle provider ran about 145 tok/s.</li>
-      <li>No source gives the 500K-token window the benchmarks supposedly used. The only stated window is 256K.</li>
-      <li>"28 minutes per task at xhigh, under a minute at medium" compares an agent task with a chat prompt. On the same tasks medium thinks about 30,000 tokens, roughly 16–24 minutes.</li>
-      <li>"About 110,000 tokens at q8_0" ignores buffers and the MTP cache: about 93–95K with MTP on an empty card, about 57K next to my desktop. This is the number that sent me to KVMem.</li>
-      <li>The GSQ-RCO quantization is ISTA-DASLab’s (<a href="https://arxiv.org/abs/2604.18556">GSQ</a>, <a href="https://arxiv.org/abs/2605.00649">RCO</a>); UkisAI packaged it for Swift.</li>
+    <h2 id="sources">Where each piece comes from</h2>
+    <ul class="sources">
+      {sources.map(([href, label, what]) => <li><a href={href}>{label}</a> <span>{what}</span></li>)}
     </ul>
-
-    <details class="claims">
-      <summary>All 32 claims</summary>
-      <div class="table">
-        <table>
-          <thead><tr><th scope="col">#</th><th scope="col">Claim</th><th scope="col">Verdict</th><th scope="col">What the sources say</th></tr></thead>
-          <tbody>
-            {claims.map(([id, claim, verdict, note]) => (
-              <tr><td><code>{id}</code></td><td>{claim}</td><td class={`verdict ${verdictClass[verdict]}`}>{verdict}</td><td>{note}</td></tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </details>
-    <p class="note">
-      Not checkable: the video it debunks at 03:51, the source of Opus 4.6’s 53.4 on SWE-bench Pro, how UkisAI computed
-      1.95x, and the audio at 08:18, which could not be fetched.
-    </p>
-
-    <h2 id="next">Next</h2>
-    <p>
-      This model now runs Clank’s flows, which work through long multi-step tasks on their own. The next posts cover a
-      benchmark for those flows and the search for a faster second model to run beside this one.
-    </p>
-
-    <aside class="links" aria-labelledby="links-title">
-      <h2 id="links-title">Links</h2>
-      <ul>{links.map(([href, label]) => <li><a href={href}>{label}</a></li>)}</ul>
-    </aside>
   </article>
 </Base>
 
 <style>
   .post {
-    max-width: calc(52rem + 2 * var(--pad));
+    /* Validated categorical slots for the dark surface (dataviz palette): blue, orange, aqua, yellow. */
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --s4: #c98500;
+    --neutral: #3b4261;
+    --track: #262a3d;
+    max-width: calc(46rem + 2 * var(--pad));
     padding-block: clamp(32px, 4vw, 48px) var(--section-gap);
     font-size: 1.125rem;
-    line-height: 1.8;
+    line-height: 1.75;
   }
-  /* Prose stays at a comfortable line length (about 70 characters); figures and tables keep the full width. */
   .post > p,
   .post > ul,
   .post > ol,
   .post > h2,
   .post > h3,
-  .post > .dek,
-  .post > .stats {
-    max-width: 42rem;
+  .post > .dek {
+    max-width: 40rem;
+  }
+  h1 {
+    margin-top: 20px;
+    font-size: clamp(2rem, 1.4rem + 2.6vw, 3rem);
+    line-height: 1.1;
+    color: var(--text-strong);
+    text-wrap: balance;
+  }
+  .dek {
+    margin-top: 14px;
+    font-size: var(--fs-lead);
+    color: var(--muted);
+  }
+  .byline {
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: var(--fs-sm);
+    color: var(--faint);
   }
   .post > p,
   .post > ul,
   .post > ol {
-    margin-top: 1.15em;
-  }
-  .post li + li {
-    margin-top: 0.55em;
-  }
-  .summary {
-    margin-top: 32px;
-    max-width: 42rem;
-    padding: 20px 24px;
-    background: var(--surface);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius-sm);
-  }
-  .summary h2,
-  .contents h2 {
-    margin: 0;
-    font-size: var(--fs-xs);
-    font-family: var(--font-mono);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--faint);
-  }
-  .summary ul {
-    margin: 12px 0 0;
-    padding-left: 1.1rem;
-  }
-  .summary li {
-    margin-top: 0.6em;
-  }
-  .contents {
-    margin-top: 28px;
-    max-width: 42rem;
-  }
-  .contents ol {
-    margin: 10px 0 0;
-    padding: 0;
-    list-style: none;
-    counter-reset: part;
-    display: grid;
-    gap: 2px;
-  }
-  .contents li {
-    counter-increment: part;
-    display: grid;
-    grid-template-columns: 2rem auto 1fr;
-    gap: 0 0.6rem;
-    align-items: baseline;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--line);
-    font-size: var(--fs-sm);
-  }
-  .contents li::before {
-    content: counter(part, decimal-leading-zero);
-    font-family: var(--font-mono);
-    font-size: var(--fs-xs);
-    color: var(--faint);
-  }
-  .contents a {
-    color: var(--blue);
-    font-weight: 600;
-    white-space: nowrap;
-  }
-  .contents span {
-    color: var(--muted);
-  }
-  @media (max-width: 560px) {
-    .contents li {
-      grid-template-columns: 2rem 1fr;
-    }
-    .contents span {
-      grid-column: 2;
-    }
-  }
-  .plain {
-    margin-top: 14px !important;
-    padding: 12px 16px;
-    font-size: 1.0625rem;
-    color: var(--text);
-    background: color-mix(in srgb, var(--blue) 8%, transparent);
-    border-left: 3px solid var(--blue);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  }
-  h1 {
-    margin-top: 24px;
-    font-size: clamp(2rem, 1.4rem + 2.6vw, 3.1rem);
-    line-height: 1.12;
-    letter-spacing: -0.02em;
-    color: var(--text-strong);
-  }
-  .dek {
-    margin-top: 16px;
-    font-size: var(--fs-lead);
-    line-height: 1.55;
-    color: var(--muted);
-  }
-  .byline {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 14px;
-    margin-top: 18px;
-    padding-bottom: 22px;
-    border-bottom: 1px solid var(--line);
-    font-family: var(--font-mono);
-    font-size: var(--fs-xs);
-    color: var(--faint);
-  }
-  .post > p:first-of-type {
-    margin-top: 28px;
+    margin-top: 1.1em;
   }
   h2 {
-    margin-top: 72px;
-    padding-top: 28px;
-    border-top: 1px solid var(--line);
-    font-size: 1.75rem;
+    margin-top: 64px;
+    font-size: 1.6rem;
     line-height: 1.2;
     color: var(--text-strong);
     scroll-margin-top: 80px;
   }
-  .summary h2,
-  .contents h2 {
-    padding-top: 0;
-    border-top: 0;
-  }
   h3 {
-    margin-top: 26px;
-    font-size: 1.25rem;
+    margin-top: 32px;
+    font-size: var(--fs-h3);
     color: var(--text-strong);
   }
-  b {
+  h4 {
+    margin: 0 0 8px;
+    font-size: 1rem;
     color: var(--text-strong);
+  }
+  a {
+    color: var(--blue);
+    text-underline-offset: 3px;
   }
   code {
     font-family: var(--font-mono);
-    font-size: 0.9em;
+    font-size: 0.86em;
     color: var(--yellow);
     overflow-wrap: anywhere;
   }
-  .note {
-    margin-top: 12px;
-    font-size: var(--fs-sm);
-    color: var(--muted);
+  kbd {
+    padding: 1px 6px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    border: 1px solid var(--line-strong);
+    border-radius: 5px;
   }
-  figure {
-    margin: 20px 0 0;
-  }
-  figcaption {
-    margin-top: 8px;
-    font-size: var(--fs-xs);
-    color: var(--faint);
-  }
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
-    margin-top: 28px;
-  }
-  .stats div {
-    display: flex;
-    flex-direction: column-reverse;
-    padding: 14px;
+
+  /* Figures: a card each, with a short caption. */
+  .fig {
+    margin: 24px 0 0;
+    padding: 20px;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
   }
-  .stats dd {
-    font-family: var(--font-mono);
-    font-size: 1.2rem;
-    white-space: nowrap;
-    color: var(--text-strong);
-  }
-  .stats dt {
-    font-size: var(--fs-xs);
-    color: var(--faint);
-    line-height: 1.4;
-  }
-
-  /* The stack: each box inside the one it runs in. */
-  .box {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1px solid var(--line-strong);
-    background: var(--surface);
-    min-width: 0;
-  }
-  .box p {
+  figcaption {
+    margin-top: 14px;
     font-size: var(--fs-sm);
-    line-height: 1.45;
-  }
-  .box .head {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 4px 12px;
-  }
-  .box .head strong,
-  .box > strong {
-    color: var(--text-strong);
-  }
-  .box .head span {
-    font-size: var(--fs-xs);
-    color: var(--faint);
-  }
-  .stack .pc {
-    background: var(--bg);
-    border-radius: var(--radius);
-    padding: 16px;
-    gap: 12px;
-  }
-  .pair {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 12px;
-  }
-  .clankbox {
-    border-color: var(--orange);
-  }
-  .inner2,
-  .kvmem,
-  .weights {
-    background: var(--surface-2);
-  }
-  .wsl,
-  .kvmem {
-    border-color: var(--blue);
-  }
-  .file {
-    border-color: var(--purple);
-  }
-  .weights {
-    border-color: var(--teal);
-  }
-  .arch {
-    border-color: var(--yellow);
-  }
-
-  .bar {
-    display: flex;
-    min-height: 40px;
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-    border: 1px solid var(--line-strong);
-    font-size: var(--fs-xs);
-  }
-  .layers .lin {
-    flex: 48;
-    display: flex;
-    align-items: center;
-    padding-inline: 12px;
-    background: var(--surface-2);
+    line-height: 1.6;
     color: var(--muted);
   }
-  .layers .full {
-    flex: 16;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding-inline: 6px;
-    background: var(--blue);
-    color: var(--on-accent);
-    font-weight: 600;
-  }
-
-  .row-label {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 4px 12px;
-    margin-bottom: 6px;
-    font-size: var(--fs-xs);
-    color: var(--faint);
-  }
-  .blocks {
-    display: grid;
-    grid-template-columns: repeat(32, minmax(0, 1fr));
-    gap: 3px;
-  }
-  .blocks span {
-    height: 24px;
-    border-radius: 3px;
-    background: var(--line);
-  }
-  .blocks .sink {
-    background: var(--orange);
-  }
-  .blocks .pick {
-    background: var(--blue);
-  }
-  .down {
-    margin-block: 8px;
-    text-align: center;
-    color: var(--line-strong);
-    font-size: 1.2rem;
-    line-height: 1;
-  }
-  .gpu {
-    display: flex;
-    min-height: 44px;
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-    border: 1px solid var(--line-strong);
-    font-size: var(--fs-xs);
-    text-align: center;
-  }
-  .gpu > div {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px;
-  }
-  .gpu .sink {
-    flex: 4;
-    background: var(--orange);
-    color: var(--on-accent);
-    font-weight: 600;
-  }
-  .gpu .exact {
-    flex: 53;
-    background: var(--blue);
-    color: var(--on-accent);
-    font-weight: 600;
-  }
-  .gpu .reserve {
-    flex: 40;
-    background: var(--surface-2);
-  }
-
-  .mem .w,
-  .mem .sw.w {
-    background: var(--blue);
-  }
-  .mem .kv,
-  .mem .sw.kv {
-    background: var(--purple);
-  }
-  .mem .buf,
-  .mem .sw.buf {
-    background: var(--teal);
-  }
-  .mem .kvm,
-  .mem .sw.kvm {
-    background: var(--yellow);
-  }
-  .mem .drv,
-  .mem .sw.drv {
-    background: var(--faint);
-  }
-  .mem .free,
-  .mem .sw.free {
-    background: var(--surface-2);
-  }
   .legend {
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
     display: flex;
     flex-wrap: wrap;
     gap: 6px 18px;
-    margin-top: 10px;
-    list-style: none;
     font-size: var(--fs-sm);
+    color: var(--text);
+  }
+  .legend li {
+    display: flex;
+    align-items: center;
+    gap: 7px;
   }
   .sw {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    margin-right: 6px;
-    border-radius: 2px;
-    border: 1px solid var(--line-strong);
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex: none;
+  }
+  .num {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .arrow {
+    margin-right: 8px;
+    color: var(--faint);
   }
 
-  .speed {
+  /* The pieces: a chain, top to bottom. */
+  .chain {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .piece {
+    display: grid;
+    align-content: start;
+    gap: 2px;
+    padding: 12px 14px;
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+  }
+  .piece strong {
+    font-size: 1.05rem;
+    color: var(--text-strong);
+  }
+  .where {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--faint);
+  }
+  .does {
+    font-size: var(--fs-sm);
+    line-height: 1.55;
+  }
+  .from {
+    justify-self: start;
+    margin-top: 4px;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+  }
+  .hop {
+    margin: 0;
+    padding: 6px 0 6px 18px;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--muted);
+  }
+  .hw {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  @media (max-width: 560px) {
+    .hw {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* The model file: three cards and what joined them. */
+  .lineage {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 5.25rem 1fr 5.25rem 1fr;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .card {
+    display: grid;
+    align-content: start;
+    gap: 4px;
+    padding: 12px 14px;
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-sm);
+    line-height: 1.55;
+  }
+  .card strong {
+    font-size: 1.02rem;
+    color: var(--text-strong);
+  }
+  .who {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--faint);
+  }
+  .link {
+    display: grid;
+    place-items: center;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--muted);
+  }
+  .link span::after {
+    content: '→';
+    display: block;
+    font-size: 1.1rem;
+    color: var(--faint);
+  }
+  @media (max-width: 720px) {
+    .lineage {
+      grid-template-columns: 1fr;
+    }
+    .link {
+      justify-items: start;
+      padding-left: 18px;
+    }
+    .link span::after {
+      content: '';
+      display: none;
+    }
+    .link span::before {
+      content: '↓  ';
+    }
+  }
+
+  /* Layers: 64 cells, every fourth one full attention. */
+  .layers {
+    display: grid;
+    grid-template-columns: repeat(32, 1fr);
+    gap: 3px;
+  }
+  .layers span {
+    aspect-ratio: 1 / 1.6;
+    border-radius: 2px;
+  }
+  @media (max-width: 560px) {
+    .layers {
+      grid-template-columns: repeat(16, 1fr);
+    }
+  }
+  .full {
+    background: var(--s2);
+  }
+  .lin {
+    background: var(--neutral);
+  }
+
+  /* KVMem: blocks in RAM, the GPU's working set. */
+  .row-label {
+    margin: 0 0 8px;
+    font-size: var(--fs-sm);
+    color: var(--text);
+  }
+  .blocks {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 3px;
+  }
+  .blocks span {
+    height: 18px;
+    border-radius: 2px;
+    background: var(--neutral);
+  }
+  .blocks .first,
+  .blocks .picked {
+    background: var(--s2);
+  }
+  .copy {
+    margin: 10px 0 10px;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--muted);
+  }
+  .gpu {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    gap: 2px;
+    font-size: var(--fs-xs);
+    font-family: var(--font-mono);
+    color: #fff;
+  }
+  .gpu span {
+    padding: 8px 10px;
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+  .gpu .exact {
+    flex: 57344;
+    background: var(--s2);
+    border-radius: 4px 0 0 4px;
+  }
+  .gpu .reserve {
+    flex: 40960;
+    background: var(--s3);
+    border-radius: 0 4px 4px 0;
+  }
+  @media (max-width: 560px) {
+    .gpu {
+      flex-direction: column;
+    }
+    .gpu .exact,
+    .gpu .reserve {
+      border-radius: 4px;
+    }
+  }
+
+  /* GPU memory: one stacked bar. */
+  .mem {
+    display: flex;
+    gap: 2px;
+    height: 36px;
+  }
+  .mem span {
+    display: flex;
+    align-items: center;
+    min-width: 3px;
+  }
+  .mem span:first-child {
+    border-radius: 4px 0 0 4px;
+  }
+  .mem span:last-child {
+    border-radius: 0 4px 4px 0;
+  }
+  .mem b {
+    padding-left: 10px;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .s1 {
+    background: var(--s1);
+  }
+  .s2 {
+    background: var(--s2);
+  }
+  .s3 {
+    background: var(--s3);
+  }
+  .s4 {
+    background: var(--s4);
+  }
+  .drv {
+    background: var(--neutral);
+  }
+  .free {
+    background: var(--track);
+  }
+
+  /* The session's chart. */
+  .chart {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .chart text {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    fill: var(--muted);
+  }
+  .chart .tick {
+    font-variant-numeric: tabular-nums;
+  }
+  .chart .axis-title {
+    fill: var(--text);
+  }
+  .chart .note {
+    fill: var(--text);
+  }
+  .chart .grid {
+    stroke: var(--line);
+    stroke-width: 1;
+  }
+  .chart .ref {
+    stroke: var(--faint);
+    stroke-width: 1;
+  }
+  .chart .dot {
+    fill: var(--s1);
+    stroke: var(--surface);
+    stroke-width: 2;
+  }
+  .chart .dot:hover {
+    stroke: var(--text-strong);
+  }
+  .chart.narrow {
+    display: none;
+  }
+  .chart.narrow text {
+    font-size: 14px;
+  }
+  @media (max-width: 600px) {
+    .chart.wide {
+      display: none;
+    }
+    .chart.narrow {
+      display: block;
+    }
+  }
+  .data {
+    margin-top: 12px;
+    font-size: var(--fs-sm);
+  }
+  .data summary {
+    cursor: pointer;
+    color: var(--blue);
+  }
+  .data .table {
+    max-height: 320px;
+    overflow: auto;
+    margin-top: 10px;
+  }
+
+  /* Writing speed: one bar a case; a range shows its spread lighter. */
+  .speed {
+    display: grid;
+    gap: 10px;
   }
   .srow {
     display: grid;
-    grid-template-columns: minmax(150px, 210px) minmax(0, 1fr);
-    gap: 14px;
+    grid-template-columns: minmax(9rem, 15rem) 1fr 3.5rem;
     align-items: center;
+    gap: 12px;
     font-size: var(--fs-sm);
   }
   .track {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    position: relative;
+    height: 14px;
+    background: var(--track);
+    border-radius: 0 4px 4px 0;
+  }
+  .fill,
+  .span {
+    position: absolute;
+    top: 0;
+    bottom: 0;
   }
   .fill {
-    height: 22px;
-    border-radius: 4px;
-    flex: none;
-    max-width: calc(100% - 60px);
+    left: 0;
+    background: var(--s1);
+    border-radius: 0 4px 4px 0;
   }
-  .fill.good {
-    background: var(--blue);
+  .span {
+    background: color-mix(in srgb, var(--s1) 45%, transparent);
+    border-radius: 0 4px 4px 0;
   }
-  .fill.mid {
-    background: var(--yellow);
+  .sval {
+    color: var(--text-strong);
+    font-variant-numeric: tabular-nums;
   }
-  .fill.bad {
-    background: var(--red);
-  }
-  .track b {
-    font-family: var(--font-mono);
-    font-weight: 500;
-    white-space: nowrap;
+  @media (max-width: 560px) {
+    .srow {
+      grid-template-columns: 1fr 3.5rem;
+    }
+    .slabel {
+      grid-column: 1 / -1;
+    }
   }
 
+  /* Lists and tables. */
+  .problems,
+  .steps {
+    padding-left: 1.2rem;
+  }
+  .problems li + li,
+  .steps li + li {
+    margin-top: 0.6em;
+  }
   .table {
-    margin-top: 16px;
     overflow-x: auto;
+    margin-top: 16px;
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
   }
   table {
     width: 100%;
-    min-width: 34rem;
     border-collapse: collapse;
     font-size: var(--fs-sm);
-    line-height: 1.5;
+  }
+  th,
+  td {
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--line);
   }
   th {
-    text-align: left;
-    padding: 10px 12px;
+    color: var(--text-strong);
     background: var(--surface);
-    color: var(--faint);
-    font-weight: 500;
   }
-  td {
-    padding: 10px 12px;
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  .data td {
+    font-variant-numeric: tabular-nums;
+  }
+  .flags {
+    margin: 16px 0 0;
     border-top: 1px solid var(--line);
-    vertical-align: top;
   }
-  td code {
-    white-space: nowrap;
-    overflow-wrap: normal;
-  }
-
-  .settings {
-    margin-top: 16px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-  }
-  .settings div {
+  .flags div {
     display: grid;
-    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
-    gap: 4px 18px;
-    padding: 10px 14px;
+    grid-template-columns: minmax(15rem, 19rem) 1fr;
+    gap: 2px 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
     font-size: var(--fs-sm);
-    line-height: 1.5;
   }
-  .settings div + div {
-    border-top: 1px solid var(--line);
+  .flags dt {
+    white-space: nowrap;
   }
-  .settings .flag {
+  .flags .val {
     color: var(--text-strong);
   }
-  .settings dd {
+  .flags dd {
     margin: 0;
   }
   @media (max-width: 640px) {
-    .settings div {
-      grid-template-columns: minmax(0, 1fr);
+    .flags div {
+      grid-template-columns: 1fr;
     }
   }
-
-  .problems,
-  .steps {
-    padding-left: 22px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  .note {
+    margin-top: 10px;
+    font-size: var(--fs-sm);
+    color: var(--muted);
   }
-
   .options {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    margin-top: 28px;
+    display: grid;
+    gap: 16px;
+    margin-top: 12px;
   }
   .option {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 22px;
+    padding: 16px;
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
-  .option h3 {
-    margin-top: 0;
-  }
-  .option :global(.cmd-block) {
-    margin-top: 8px;
+    border-radius: var(--radius-sm);
+    min-width: 0;
   }
   .json {
-    margin-top: 8px;
-    padding: 14px 16px;
+    margin: 10px 0 0;
+    padding: 14px;
     overflow-x: auto;
     background: var(--well);
-    border: 1px solid var(--line-strong);
-    border-radius: 12px;
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-xs);
     line-height: 1.6;
   }
   .json code {
     color: var(--text);
-    overflow-wrap: normal;
   }
-  .post > :global(.cmd-block) {
-    margin-top: 12px;
+  .sources {
+    padding-left: 1.2rem;
   }
-
-  .verdicts .bar > div {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--on-accent);
-    font-weight: 600;
+  .sources li + li {
+    margin-top: 0.35em;
   }
-  .v-ok {
-    background: var(--green);
-  }
-  .v-most {
-    background: var(--teal);
-  }
-  .v-mis {
-    background: var(--yellow);
-  }
-  .v-wrong {
-    background: var(--red);
-  }
-  td.verdict {
-    background: none;
-    white-space: nowrap;
-  }
-  td.v-ok {
-    color: var(--green);
-  }
-  td.v-most {
-    color: var(--teal);
-  }
-  td.v-mis {
-    color: var(--yellow);
-  }
-  td.v-wrong {
-    color: var(--red);
-  }
-  .claims {
-    margin-top: 22px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-  }
-  .claims summary {
-    cursor: pointer;
-    padding: 14px 18px;
-    color: var(--text-strong);
-    font-weight: 600;
-  }
-  .claims table {
-    min-width: 44rem;
-  }
-  .claims .table {
-    margin-top: 0;
-    border: 0;
-    border-top: 1px solid var(--line);
-    border-radius: 0;
-  }
-
-  .links {
-    margin-top: 52px;
-    padding-top: 20px;
-    border-top: 1px solid var(--line);
-    font-size: var(--fs-sm);
-  }
-  .links h2 {
-    margin-top: 0;
-    font-family: var(--font-mono);
-    font-size: var(--fs-xs);
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--faint);
-  }
-  .links ul {
-    margin-top: 10px;
-    padding-left: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+  .sources span {
+    color: var(--muted);
   }
 </style>
