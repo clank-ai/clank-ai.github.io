@@ -38,25 +38,25 @@ const k = (key: string) => `<kbd>${key}</kbd>`;
 /** What you need, by system: [what, needed for, notes]. */
 const needs: Record<string, string[][]> = {
   windows: [
-    ['Windows 10 or 11, with WSL 2', 'everything', 'Docker Desktop turns WSL 2 on when it installs'],
-    ['Docker Desktop', "the agent's workspaces", 'each folder you work in gets a container of its own; the first one downloads about a gigabyte'],
+    ['Windows 10 (22H2) or 11, 64-bit', 'everything', 'with WSL 2, which Docker Desktop turns on when it installs'],
+    ['Docker Desktop', "the agent's workspaces", 'the installer offers it, then waits for its first start; each folder you work in gets a container of its own, and the first downloads about a gigabyte'],
     ['uv and Git', 'installing Clank', 'the installer gets them if they are missing, asking first; uv brings Python 3.12 by itself'],
     ['An OpenRouter account and key', 'path A, a cloud model', 'free models exist; paid ones need credits'],
     ['An NVIDIA GPU (16 GB is comfortable)', 'path B, a local model', 'not needed for path A'],
   ],
   macos: [
-    ['macOS', 'everything', 'untested beyond the installer, for now'],
-    ['Docker Desktop', "the agent's workspaces", 'each folder you work in gets a container of its own; the first one downloads about a gigabyte'],
+    ['A macOS that Docker Desktop supports', 'everything', 'Clank on macOS is tested through its installer so far'],
+    ['Docker Desktop', "the agent's workspaces", 'the installer offers it with Homebrew, then opens it once for its terms; the first workspace downloads about a gigabyte'],
     ['uv and Git', 'installing Clank', 'the installer gets uv, and offers the command for Git, asking first'],
     ['An OpenRouter account and key', 'path A, a cloud model', 'free models exist; paid ones need credits'],
     ['A cloud model', 'the agent', "Clank's local engines need an NVIDIA GPU, which a Mac does not have: take path A"],
   ],
   linux: [
-    ['Linux', 'everything', 'untested beyond the installer, for now'],
-    ['Docker Engine', "the agent's workspaces", "from Docker's own instructions; the agent reaching the model from its container is still being built here"],
+    ['64-bit Linux with systemd', 'everything', 'Ubuntu 22.04 or 24.04, Debian 12, Fedora, RHEL 9 and its kin (Rocky, Alma), or Arch: the installer knows each'],
+    ['Docker Engine', "the agent's workspaces", "from Docker's own packages, not the snap: the installer offers it, starts it at boot and adds you to the docker group, asking before each"],
     ['uv and Git', 'installing Clank', "the installer gets uv, and offers your package manager's command for Git, asking first"],
     ['An OpenRouter account and key', 'path A, a cloud model', 'free models exist; paid ones need credits'],
-    ['An NVIDIA GPU (16 GB is comfortable)', 'path B, a local model', 'engines run on the computer itself here, rather than in WSL'],
+    ['An NVIDIA GPU (16 GB is comfortable)', 'path B, a local model', 'with its driver; engines run on the computer itself here, rather than in WSL'],
   ],
 };
 
@@ -64,21 +64,46 @@ const installerSays: Record<string, string[]> = {
   windows: [
     "<b>uv</b>: the one you have, or Astral's own installer.",
     '<b>Git</b>: if it is missing, it offers <code>winget install --id Git.Git -e</code> and asks first.',
-    '<b>Docker Desktop</b>: if it is missing, it offers <code>winget install --id Docker.DockerDesktop -e</code>, asking first (administrator rights, maybe a restart). Clank itself installs without it.',
+    '<b>Docker Desktop</b>: if it is missing, it offers <code>winget install --id Docker.DockerDesktop -e</code>, asking first. Windows asks for administrator rights; Docker Desktop may turn WSL 2 on and ask to restart (restart, and run the one line again: it goes on where it stopped). Then it offers to start Docker Desktop and waits while you accept its terms in its window.',
     '<b>Clank</b>: its latest release, with <code>uv tool install</code>, then <code>uv tool update-shell</code> so <code>clank</code> is on your path.',
     '<b><code>clank doctor</code></b>: checks the computer and changes nothing.',
   ],
-  unix: [
+  macos: [
     "<b>uv</b>: the one you have, or Astral's own installer.",
-    "<b>Git</b>: if it is missing, it offers your system's command for it (Homebrew or <code>xcode-select --install</code> on macOS; apt, dnf, pacman or zypper on Linux), asking first.",
-    "<b>Docker</b>: Docker Desktop on macOS; on Linux, Docker Engine, from Docker's own instructions. It says how; it never installs Docker itself.",
+    '<b>Git</b>: if it is missing, <code>xcode-select --install</code> (Apple\'s command-line tools) or <code>brew install git</code>, asking first.',
+    "<b>Docker Desktop</b>: if it is missing and you have Homebrew, it offers <code>brew install --cask docker</code>; without Homebrew, Docker's download page. Then it offers to open Docker Desktop and waits while you accept its terms in its window.",
+    '<b>Clank</b>: its latest release, with <code>uv tool install</code>, then <code>uv tool update-shell</code> so <code>clank</code> is on your path.',
+    '<b><code>clank doctor</code></b>: checks the computer and changes nothing.',
+  ],
+  linux: [
+    "<b>uv</b>: the one you have, or Astral's own installer.",
+    '<b>Git</b>: if it is missing, your package manager\'s command for it (apt, dnf, pacman or zypper), with <code>sudo</code>, asking first.',
+    "<b>Docker Engine</b>, from Docker's own packages: it reads your distribution, prints the exact commands Docker's installation pages give for it, and asks once before running them with <code>sudo</code>, which asks for your password itself. Then it offers to start Docker now and at every boot, and to add you to the <code>docker</code> group, saying first what Docker says of it: the group gives root's rights on that computer. The snap's Docker and rootless Docker are not supported, and it says why.",
     '<b>Clank</b>: its latest release, with <code>uv tool install</code>, then <code>uv tool update-shell</code> so <code>clank</code> is on your path.',
     '<b><code>clank doctor</code></b>: checks the computer and changes nothing.',
   ],
 };
 
+/** Troubles of one system: [what you see, what to do]. */
+const troubleBy: Record<string, string[][]> = {
+  windows: [
+    ['Docker Desktop asks for WSL, or will not start after installing', 'Restart Windows; if it still asks, run <code>wsl --install</code> in an administrator PowerShell, restart, then open Docker Desktop'],
+    ['The installer cannot find winget', 'Update <b>App Installer</b> from the Microsoft Store, or install Git and Docker Desktop from their sites, then run the installer again'],
+  ],
+  macos: [
+    ['<code>brew</code> is not found', "Install Docker Desktop from Docker's page, open it once, then run the installer again"],
+    ['Docker Desktop waits for permissions', 'Open it, accept its terms, and let it finish starting; then <code>clank doctor</code>'],
+  ],
+  linux: [
+    ['“permission denied” on <code>/var/run/docker.sock</code>, or Clank says this account may not use Docker', 'Join the group (<code>sudo usermod -aG docker $USER</code>) if you have not, log out and in once, then <code>clank stop</code> and <code>clank</code>'],
+    ["Docker is installed from the snap", "Clank does not support it: install Docker Engine from Docker's packages (the one line offers it), which Clank then uses"],
+    ['Docker stops after a restart', '<code>sudo systemctl enable docker</code>'],
+    ['The installer does not know your distribution', "Install Docker Engine as Docker's pages say for it, then run the installer again"],
+  ],
+};
+
 const trouble = [
-  ['“Docker is stopped”', 'Start Docker (Docker Desktop, or Docker Engine on Linux), or <code>clank docker start</code>'],
+  ['“Docker is stopped”', 'Start Docker Desktop (Windows, macOS), or <code>clank docker start</code>; on Linux, <code>sudo systemctl start docker</code>'],
   ['A workspace says its container uses an older sandbox image', `Reopen it: ${k('F6')}, ${k('x')}, then ${k('o')}`],
   [`${k('F10')} opens your terminal's menu instead of the Monitor`, '<code>clank console --page monitor</code>'],
   ['The key is refused (401)', 'Make a new key at OpenRouter and add it again (<code>clank endpoint key openrouter</code>)'],
@@ -109,8 +134,8 @@ const trouble = [
         </p>
         <SystemSwitch id="head" />
         <p class="sys-note" data-for="macos linux">
-          On macOS and Linux, the console, the cloud path and the commands are the same as on Windows, but untested beyond
-          the installer for now.
+          On macOS and Linux, the console, the cloud path and the commands are the same as on Windows. The installer sets
+          Docker up on both; Clank itself is in daily use on Windows, and tested on Linux by its checks.
         </p>
       </div>
       <nav class="paths" aria-label="The two paths">
@@ -165,19 +190,28 @@ const trouble = [
           <InstallCommand id="gs" note={false} />
           <p class="mu">It says each step as it takes it, and never asks for a key:</p>
           <ol class="says" data-for="windows">{installerSays.windows.map((t) => <li set:html={t} />)}</ol>
-          <ol class="says" data-for="macos linux">{installerSays.unix.map((t) => <li set:html={t} />)}</ol>
+          <ol class="says" data-for="macos">{installerSays.macos.map((t) => <li set:html={t} />)}</ol>
+          <ol class="says" data-for="linux">{installerSays.linux.map((t) => <li set:html={t} />)}</ol>
+          <p class="mu" data-for="macos linux">
+            To see first what it would do, without changing anything: <code>{INSTALL.unix.replace('| sh', '| CLANK_DRY_RUN=1 sh')}</code>.
+            <code>CLANK_YES=1</code> answers yes to every question, for a script.
+          </p>
+          <h3 class="h3 after">After it</h3>
           <p class="mu" data-for="windows">
-            Then open Docker Desktop once if it is new, accept its terms and let it finish starting, and open a new
-            PowerShell so <code>clank</code> is found.
+            Open a new PowerShell, so <code>clank</code> is found. Docker Desktop runs (its whale is in the taskbar); after a
+            restart it starts when you sign in, if you let it in its settings.
           </p>
           <p class="mu" data-for="macos">
-            Then open Docker Desktop once if it is new, accept its terms and let it finish starting, and open a new
-            terminal so <code>clank</code> is found.
+            Open a new terminal, so <code>clank</code> is found. Docker Desktop runs (its whale is in the menu bar).
           </p>
           <p class="mu" data-for="linux">
-            Then install Docker Engine by <a href="https://docs.docker.com/engine/install/">Docker's instructions</a> if it
-            is missing, let your user run it (<a href="https://docs.docker.com/engine/install/linux-postinstall/">its
-            post-install steps</a>), and open a new terminal so <code>clank</code> is found.
+            If the installer added you to the <code>docker</code> group, <b>log out and in once</b> (or restart), so every
+            program you start can use Docker. Then open a terminal: <code>clank</code> is found.
+          </p>
+          <p class="mu">
+            <code>clank doctor</code> checks the computer and changes nothing: each line is ok, warn, fail or skip (a check
+            that does not apply here), with what to do under each that is not ok. Without an NVIDIA GPU, its GPU line warns,
+            and that is fine for path A.
           </p>
         </div>
 
@@ -204,9 +238,10 @@ const trouble = [
               <div data-for="linux">
                 <CommandBlock shell="Terminal" label="install Git and uv" lines={['sudo apt-get install -y git', 'curl -LsSf https://astral.sh/uv/install.sh | sh']} />
                 <p class="mu small">
-                  Or <code>dnf</code>, <code>pacman</code> or <code>zypper</code> for Git. Docker Engine:
-                  <a href="https://docs.docker.com/engine/install/">Docker's instructions</a>, then
-                  <a href="https://docs.docker.com/engine/install/linux-postinstall/">its post-install steps</a>. Then open a new terminal.
+                  Or <code>dnf</code>, <code>pacman</code> or <code>zypper</code> for Git. Docker Engine: run the one line
+                  once (it asks before each step), or follow <a href="https://docs.docker.com/engine/install/">Docker's
+                  instructions</a> and <a href="https://docs.docker.com/engine/install/linux-postinstall/">its post-install
+                  steps</a>. Then open a new terminal.
                 </p>
               </div>
             </li>
@@ -461,7 +496,10 @@ const trouble = [
         set up than path A: an engine, a model's files of many gigabytes, and a load. Clank does each step, asking first.
       </p>
       <p class="callout" data-for="macos">On a Mac, take <a href="#path-a">path A</a>: Clank's local engines need an NVIDIA GPU.</p>
-      <p class="callout" data-for="linux">On Linux, engines run on the computer itself rather than in WSL. Untested so far.</p>
+      <p class="callout" data-for="linux">
+        On Linux, engines run on the computer itself rather than in WSL. Install NVIDIA's driver first: <code>nvidia-smi</code>
+        must list the card, and <code>clank doctor</code> says what it sees.
+      </p>
 
       <ol class="steps">
         <li class="step">
@@ -725,15 +763,14 @@ const trouble = [
         <p class="num">6</p>
         <h2 id="updating-title" class="h2">Updating</h2>
         <p class="para">
-          <b>Clank 0.3.0b1</b>, the release the installer installs today: run the installer again (it installs the latest
-          release in place of yours), or <code>git pull</code> in a clone; then restart Clank's service, so it runs the new
-          version.
-        </p>
-        <p class="para">
-          <b>From the next release</b>: <code>clank update --check</code> says how Clank was installed and what is newer,
-          asking only GitHub (or your clone's own remote); <code>clank update</code> updates it the way it was installed,
-          stops and starts its service itself, and writes each step to <code>~/.clank/logs/update.log</code>. The
+          <code>clank update --check</code> says how Clank was installed and what is newer, asking only GitHub (or your
+          clone's own remote); <code>clank update</code> updates it the way it was installed, stops and starts its service
+          itself, and writes each step to <code>~/.clank/logs/update.log</code>. The
           <a href={PAGES.changelog.path}>changelog</a> says what each version brings.
+        </p>
+        <p class="para mu">
+          From Clank 0.3.0b1, which has no <code>clank update</code>, run the installer again: it installs the latest
+          release in place of yours. Then restart Clank's service, so it runs the new version.
         </p>
         <p class="para mu">
           Run these at the computer itself, not over SSH. If Clank then says a workspace's container uses an older sandbox
@@ -743,12 +780,12 @@ const trouble = [
       </div>
       <div class="ss">
         <div data-for="windows">
-          <CommandBlock label="update Clank 0.3.0b1" lines={[INSTALL.windows, 'clank stop', 'clank serve --background', 'clank gateway restart']} />
-          <CommandBlock label="from the next release" lines={['clank update --check', 'clank update']} />
+          <CommandBlock label="update Clank" lines={['clank update --check', 'clank update']} />
+          <CommandBlock label="from 0.3.0b1" lines={[INSTALL.windows, 'clank stop', 'clank serve --background', 'clank gateway restart']} />
         </div>
         <div data-for="macos linux">
-          <CommandBlock shell="Terminal" label="update Clank 0.3.0b1" lines={[INSTALL.unix, 'clank stop', 'clank serve --background', 'clank gateway restart']} />
-          <CommandBlock shell="Terminal" label="from the next release" lines={['clank update --check', 'clank update']} />
+          <CommandBlock shell="Terminal" label="update Clank" lines={['clank update --check', 'clank update']} />
+          <CommandBlock shell="Terminal" label="from 0.3.0b1" lines={[INSTALL.unix, 'clank stop', 'clank serve --background', 'clank gateway restart']} />
         </div>
       </div>
     </div>
@@ -771,11 +808,20 @@ const trouble = [
           </tbody>
         </table>
       </div>
-      <p class="callout" data-for="linux">
-        On Linux, the agent's container reaching Clank's gateway through Docker Engine is still being built
-        (<a href={docs('design/0014-linux-and-small-machines.md')}>design 0014</a>), so the agent may not reach the model
-        there yet.
-      </p>
+      {
+        Object.entries(troubleBy).map(([system, rows]) => (
+          <div class="table-wrap system-trouble" data-for={system}>
+            <table class="t trouble">
+              <caption class="sr-only">On this system: what you see, and what to do</caption>
+              <tbody>
+                {rows.map(([see, todo]) => (
+                  <tr><th scope="row" set:html={see} /><td set:html={todo} /></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))
+      }
     </div>
   </section>
 
@@ -791,6 +837,16 @@ const trouble = [
           <span data-for="windows macos">Docker Desktop</span><span data-for="linux">Docker</span>. If the installer
           installed uv and nothing else uses it,
           <a href="https://docs.astral.sh/uv/getting-started/installation/#uninstallation">uv's guide</a> says how to remove it.
+        </p>
+        <p class="para mu" data-for="windows macos">
+          What the installer installed for Docker stays, since other programs may use it. To remove Docker Desktop too,
+          uninstall it as any app (on macOS, from its Troubleshoot menu first).
+        </p>
+        <p class="para mu" data-for="linux">
+          What the installer installed for Docker stays, since other programs may use it. To remove it too, leave the
+          group (<code>sudo gpasswd -d $USER docker</code>), then remove Docker Engine as
+          <a href="https://docs.docker.com/engine/install/ubuntu/#uninstall-docker-engine">Docker's pages</a> say for your
+          distribution.
         </p>
       </div>
       <div class="ss">
