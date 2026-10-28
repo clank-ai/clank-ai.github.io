@@ -66,21 +66,21 @@ const installerSays: Record<string, string[]> = {
     '<b>Git</b>: if it is missing, it offers <code>winget install --id Git.Git -e</code> and asks first.',
     '<b>Docker Desktop</b>: if it is missing, it offers <code>winget install --id Docker.DockerDesktop -e</code>, asking first. Windows asks for administrator rights; Docker Desktop may turn WSL 2 on and ask to restart (restart, and run the one line again: it goes on where it stopped). Then it offers to start Docker Desktop and waits while you accept its terms in its window.',
     '<b>Clank</b>: its latest release, with <code>uv tool install</code>, then <code>uv tool update-shell</code> so <code>clank</code> is on your path.',
-    '<b><code>clank doctor</code></b>: checks the computer and changes nothing.',
+    '<b><code>clank setup --check</code></b>: what is set up and what is next, item by item; it changes nothing.',
   ],
   macos: [
     "<b>uv</b>: the one you have, or Astral's own installer.",
     '<b>Git</b>: if it is missing, <code>xcode-select --install</code> (Apple\'s command-line tools) or <code>brew install git</code>, asking first.',
     "<b>Docker Desktop</b>: if it is missing and you have Homebrew, it offers <code>brew install --cask docker</code>; without Homebrew, Docker's download page. Then it offers to open Docker Desktop and waits while you accept its terms in its window.",
     '<b>Clank</b>: its latest release, with <code>uv tool install</code>, then <code>uv tool update-shell</code> so <code>clank</code> is on your path.',
-    '<b><code>clank doctor</code></b>: checks the computer and changes nothing.',
+    '<b><code>clank setup --check</code></b>: what is set up and what is next, item by item; it changes nothing.',
   ],
   linux: [
     "<b>uv</b>: the one you have, or Astral's own installer.",
     '<b>Git</b>: if it is missing, your package manager\'s command for it (apt, dnf, pacman or zypper), with <code>sudo</code>, asking first.',
     "<b>Docker Engine</b>, from Docker's own packages: it reads your distribution, prints the exact commands Docker's installation pages give for it, and asks once before running them with <code>sudo</code>, which asks for your password itself. Then it offers to start Docker now and at every boot, and to add you to the <code>docker</code> group, saying first what Docker says of it: the group gives root's rights on that computer. The snap's Docker and rootless Docker are not supported, and it says why.",
     '<b>Clank</b>: its latest release, with <code>uv tool install</code>, then <code>uv tool update-shell</code> so <code>clank</code> is on your path.',
-    '<b><code>clank doctor</code></b>: checks the computer and changes nothing.',
+    '<b><code>clank setup --check</code></b>: what is set up and what is next, item by item; it changes nothing.',
   ],
 };
 
@@ -209,9 +209,13 @@ const trouble = [
             program you start can use Docker. Then open a terminal: <code>clank</code> is found.
           </p>
           <p class="mu">
-            <code>clank doctor</code> checks the computer and changes nothing: each line is ok, warn, fail or skip (a check
-            that does not apply here), with what to do under each that is not ok. Without an NVIDIA GPU, its GPU line warns,
-            and that is fine for path A.
+            Then, in a terminal in the folder of a project you want the agent to work in, run <code>clank setup</code>. It
+            lists what Clank needs on this computer, in order, and offers each step that is left, showing its exact command
+            and asking before each one: Docker usable by your account, Clank's service, the sandbox image (built once, in
+            the background), a model (in the cloud with your OpenRouter key, on this computer's GPU, or both: steps A2 to
+            A4 or B), and the folder. A command that needs administrator rights runs in your terminal, where
+            <code>sudo</code> asks for your password itself; Clank never sees it. <code>clank setup --check</code> only
+            says it all, and <code>clank doctor</code> checks the computer in more detail; neither changes anything.
           </p>
         </div>
 
@@ -304,9 +308,11 @@ const trouble = [
             <p class="sn">A2</p>
             <h3>Run <code>clank</code>: Add a model</h3>
             <p>
-              Type <code>clank</code> in a terminal. With no model set up, the console opens on <b>Add a model</b> (later:
-              <Fragment set:html={k('F12')} /> in the menu, or <Fragment set:html={k('a')} /> on <b>Providers and
-              models</b>). It says what it found on this computer.
+              Type <code>clank</code> in a terminal. While something Clank needs is missing, the console opens on
+              <b>Setup</b>, the same checklist as <code>clank setup</code>: press <Fragment set:html={k('m')} /> for
+              <b>Add a model</b> (later: <Fragment set:html={k('F12')} /> in the menu, or <Fragment set:html={k('a')} /> on
+              <b>Providers and models</b>). It says what it found on this computer. <code>clank setup</code>, in a
+              terminal, walks the same steps.
             </p>
             <p>Press <Fragment set:html={k('c')} /> for a cloud model.</p>
           </div>

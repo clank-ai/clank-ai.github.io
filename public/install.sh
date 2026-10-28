@@ -480,9 +480,19 @@ main() {
     else
         say "  1. Open a new terminal, so it finds clank."
     fi
-    say "  2. Type clank. With no model set up it opens on Add a model: a cloud model with an OpenRouter key,"
-    say "     or a model on your own GPU."
-    say "  3. Then open a terminal in any project folder and type clank."
+    if [ -n "${JOINED_DOCKER:-}" ]; then
+        say "  First log out and in once (or restart): you joined the docker group, which takes effect then."
+    fi
+    if "$exe" setup --help >/dev/null 2>&1; then
+        say "  2. In a project's folder, run: clank setup"
+        say "     It does each step left, in order, asking first: Clank's service, the sandbox image, a model"
+        say "     (in the cloud with an OpenRouter key, on your own GPU, or both), and the folder."
+        say "  3. Then type clank in any project folder."
+    else
+        say "  2. Type clank. With no model set up it opens on Add a model: a cloud model with an OpenRouter key,"
+        say "     or a model on your own GPU."
+        say "  3. Then open a terminal in any project folder and type clank."
+    fi
     if [ -n "$before" ] && [ "$before" != "$after" ]; then
         say "  Clank was updated from $before. If its service was running, restart it: clank stop,"
         say "  clank serve --background, then clank gateway restart."
