@@ -3,6 +3,36 @@ installer installs the latest release; from the release after 0.3.0b1, `clank up
 a clone). Problems known now are in
 [docs/ISSUES.md](https://github.com/clank-ai/clank/blob/main/docs/ISSUES.md), open and fixed.
 
+## 0.3.0b3: Linux with Docker Engine, and the extension in every release (2026-10-27)
+
+Clank on a Linux computer without Docker Desktop: the one-line installer sets Docker Engine up from Docker's own
+packages (asking first), and the agent's container reaches its model through a socket only it mounts. Tested on every
+push on GitHub's Ubuntu runner with Docker Engine. And no build for Clank's VS Code window: each release carries its
+extension. From 0.3.0b2, `clank update`; from 0.3.0b1, run the installer again.
+
+### Added
+
+- **Clank's VS Code window without building its extension**: each release now carries Clank's VS Code extension, with
+  its SHA-256. Installed with the one-line installer, `clank code` (or `c` on This folder) downloads the extension of
+  its own release the first time, checks it against that SHA-256, keeps it and installs it: no Node and no build. A
+  clone still builds its own.
+- **Linux without Docker Desktop**: Docker Engine, the system's service from Docker's own packages, runs the workspaces'
+  containers (design 0014, decision 0070). Clank reads its state from systemd and never starts, stops or wakes it: where
+  it is stopped, `clank work`, `clank code`, the console and `clank doctor` say the command to run (`sudo systemctl
+  start docker`), and an account outside the docker group is told how to join it. The adapter is chosen on its own
+  (`"adapter": "auto"` in `config/docker.json`, the default; Docker's view says which and why). A workspace opens only
+  where Docker can limit its container's memory, unless `allow_unlimited_memory` is set, and a folder the agent's user
+  (1000) may not write is refused, saying how to let it. A workspace's own network gives this computer no address on it,
+  so nothing listening here answers its container.
+- **On Linux, the gateway's socket**: besides 127.0.0.1, the gateway listens on a socket, `gateway.sock`, and the
+  agent's proxy on `proxy.sock`, in a folder of their own outside CLANK_HOME (`~/.cache/clank/<home id>`, the owner's
+  alone; `socket_folder` in `config/gateway.json` moves it). `clank gateway status` names it. It is how the agent's
+  container reaches the model on Docker Engine, where no new address is opened for it (decision 0071, 2026-10-27).
+- **On Linux with Docker Engine, the agent reaches the model**: the edge, the workspaces' one door, mounts that folder
+  read-only and forwards the gateway's port and the proxy's to the sockets, running as you. Opening a workspace asks
+  the gateway's health through the edge and makes the edge again when it does not answer; a folder that holds the
+  socket folder, or is inside it, is not opened as a workspace. Docker Desktop's way is unchanged.
+
 ## 0.3.0b2: the installer, updates, and the agent beside VS Code (2026-10-27)
 
 The second public beta: the one-line installer and `clank update`; the agent beside VS Code; Clank for iPhone over

@@ -364,8 +364,8 @@ main() {
     esac
     say "Clank installer"
     say "  $OS $(uname -m)"
-    say "  Clank on macOS and Linux is an untested beta: it is in daily use on Windows only. On Linux, the agent's"
-    say "  container may not reach Clank's gateway yet, so the agent may not reach the model there."
+    say "  Clank is a beta: in daily use on Windows, and on Linux with Docker Engine tested on every change (from"
+    say "  Clank 0.3.0b3); macOS is untested beyond this installer."
     if [ "${CLANK_NO_MODIFY_PATH:-}" = 1 ]; then
         say "  CLANK_NO_MODIFY_PATH=1: no PATH will be changed"
     fi
