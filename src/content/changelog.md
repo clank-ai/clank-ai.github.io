@@ -3,6 +3,48 @@ installer installs the latest release; from the release after 0.3.0b1, `clank up
 a clone). Problems known now are in
 [docs/ISSUES.md](https://github.com/clank-ai/clank/blob/main/docs/ISSUES.md), open and fixed.
 
+## 0.3.0b4: `clank setup`, and OpenRouter's model list fixed (2026-10-28)
+
+Setting Clank up without help: `clank setup` says what this computer still needs and does each step, asking first,
+and the console opens on the same checklist. Picking a cloud model works again: OpenRouter had begun refusing the
+list Clank asked for. From 0.3.0b2 or 0.3.0b3, `clank update`; from 0.3.0b1, run the installer again.
+
+### Added
+
+- **`clank setup`**: what Clank needs on this computer, item by item, and what to do about each one that is not done
+  (design 0028): Docker installed, running and usable by your account (on Linux, whether it starts with the computer),
+  Clank's service, the sandbox image, a model that answered a test request, a folder that is a workspace, and Clank's
+  VS Code window. `clank setup --check` changes nothing and works without the service; the installers end with it.
+  `clank setup` then offers each fix in order, showing its exact command and asking first: Docker Desktop started; on
+  Linux `sudo systemctl start docker`, `sudo systemctl enable docker` and `sudo usermod -aG docker $USER`, run in your
+  terminal, where sudo asks for your password itself (Clank never sees it), then a log out and in after joining the
+  group; Clank's service started; a model added (in the cloud, on this computer's GPU, or both); the folder opened as a
+  workspace. It runs only the commands it builds itself, whoever gave it the checklist. `--yes` does every fix that
+  needs no administrator rights and lists the others. The sandbox image is built in the background meanwhile, so the
+  first folder opens at once.
+- **The console's Setup page**, the same checklist: while something Clank needs is missing, `clank` opens on it
+  (decision 0148), and `s` starts Docker Desktop, `t` runs the command shown in the terminal (asked first), `b` builds
+  the sandbox image, `m` opens Add a model and `f` This folder. A Docker Desktop not started yet and a sandbox image a
+  Clank update made stale are This folder's to put right, as before, so they open This folder.
+
+### Fixed
+
+- **Add a model's list of OpenRouter models was refused**: OpenRouter refuses the list Clank asked for by default
+  (most used programming models: `category` beside `supported_parameters`), so a new owner could not pick a model
+  without changing the order first. The most used now come from OpenRouter's own order over every model that takes
+  tool calls. Two models whose window OpenRouter gives as 0 beside the real one can now be picked, and its routers,
+  priced per request, are left out, since what a request costs cannot be said before it is sent.
+- **An answer to a change could be lost**: an answer given the moment the agent's change was asked about (by a client
+  answering by program) found no change and was dropped, leaving the agent waiting; and on Windows a client reading a
+  change while it was saved could make the save fail. Both are fixed.
+- **The machine column** shows a process whose name Windows does not give as `process 1234`, never a blank row.
+
+### Tested
+
+- On every change, on GitHub's Ubuntu runner with Docker Engine: the owner's first Linux test from the agent's side
+  (OpenCode in a workspace's container asks a cloud model through the edge, the gateway's socket and the gateway, and a
+  stand-in OpenRouter answers), and `clank setup --check` reading a real Docker Engine.
+
 ## 0.3.0b3: Linux with Docker Engine, and the extension in every release (2026-10-27)
 
 Clank on a Linux computer without Docker Desktop: the one-line installer sets Docker Engine up from Docker's own
