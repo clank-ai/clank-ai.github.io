@@ -106,8 +106,10 @@ const trouble = [
   ['“Docker is stopped”', 'Start Docker Desktop (Windows, macOS), or <code>clank docker start</code>; on Linux, <code>sudo systemctl start docker</code>'],
   ['A workspace says its container uses an older sandbox image', `Reopen it: ${k('F6')}, ${k('x')}, then ${k('o')}`],
   [`${k('F10')} opens your terminal's menu instead of the Monitor`, '<code>clank console --page monitor</code>'],
-  ['The key is refused (401)', 'Make a new key at OpenRouter and add it again (<code>clank endpoint key openrouter</code>)'],
+  ['The key is refused (401; OpenRouter says “Missing Authentication header” for a key it does not know)', 'Paste it again, whole (OpenRouter shows it once), or make a new key and add it (<code>clank endpoint key openrouter</code>)'],
   ['“No credits” (402)', 'Add credits at OpenRouter, or pick a free model'],
+  ['“No provider of … serves it with data_collection deny”', 'Clank asks OpenRouter by default for providers that keep no data, and none of this model’s do: pick another model, or allow any provider (Providers and models, <kbd>o</kbd>)'],
+  ['“Rate limited” (429) on a free model', 'Free models take 20 requests a minute and 50 a day (1,000 a day once you bought 10 credits): wait a minute, or pick a paid model'],
   ['<code>clank</code> is not found', 'Open a new terminal after <code>uv tool update-shell</code>'],
 ];
 ---
