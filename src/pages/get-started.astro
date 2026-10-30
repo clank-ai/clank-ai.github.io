@@ -113,6 +113,8 @@ const trouble = [
   ['“No provider of … serves it with data_collection deny”', 'Clank asks OpenRouter by default for providers that keep no data, and none of this model’s do: pick another model, allow any provider (Providers and models, <kbd>o</kbd>), or, for testing, turn dev mode on (<code>clank dev on</code>)'],
   ['“OpenRouter refuses … under your OpenRouter account’s privacy settings”', 'Your account at OpenRouter refuses providers that may train on prompts, as many free models’ do: allow them at <a href="https://openrouter.ai/settings/privacy">openrouter.ai/settings/privacy</a>, or pick another model'],
   ['“Rate limited” (429) on a free model', 'Free models take 20 requests a minute: OpenCode waits and asks again'],
+  ['The agent stops partway, its answer cut off', 'A reasoning model’s thinking counts against its most output. Clank marks the cut and tells the model to go on; to give it more room, <kbd>e</kbd> on Presets, or <code>clank preset change "cloud: &lt;name&gt;" --output 65536</code>, then start OpenCode again'],
+  ['<code>git clone</code> or <code>pip</code> fails with 403 in a workspace', 'The agent reaches only the hosts you allow for its workspace, and a host it asks for waits for your answer in Clank’s console. Answer it there (<kbd>y</kbd> allows it), or, for testing, turn on dev mode (<code>clank dev on</code>): every public host, at once'],
   ['“The free models’ limit for the day”', 'Free models take 50 requests a day until you bought 10 credits once, then 1,000; the count starts again at midnight UTC. An agent’s task can take dozens of requests: wait, buy credits, or pick a paid model'],
   ['<code>clank</code> is not found', 'Open a new terminal after <code>uv tool update-shell</code>'],
 ];
@@ -307,8 +309,11 @@ const trouble = [
               Free models need none, but take 50 requests a day until you buy 10 credits once (then 1,000, and the credits
               stay for paid models). Most free models are served by providers that may keep or train on what they are
               sent, which Clank does not ask for by default: to test with them, turn on <b>dev mode</b>
-              (<code>clank dev on</code>; the header then says <i>dev mode</i>) and let your OpenRouter account allow such
-              providers (<a href="https://openrouter.ai/settings/privacy">its privacy settings</a>).
+              (<code>clank dev on</code>; the header then says <i>dev mode: any provider, any host</i>) and let your
+              OpenRouter account allow such providers (<a href="https://openrouter.ai/settings/privacy">its privacy
+              settings</a>). Dev mode also lets the agent reach every public host at once, without asking, so a
+              <code>git clone</code> or a package install just works; your computer and your network stay out of its
+              reach. Turn it off for real work: <code>clank dev off</code>.
             </p>
             <p class="mu">Keep the key at hand for step A5: Clank never shows it again.</p>
           </div>

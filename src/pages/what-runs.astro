@@ -35,7 +35,7 @@ const files: [string, string][] = [
 const leaves: [string, string][] = [
   ['With local models', 'Nothing. Your prompts, your files and the answers stay on your PC: the gateway sends them to the engine on your PC.'],
   ['With a cloud model', 'Your requests go to the provider you chose (OpenRouter), with your key, through the gateway, which records each one and its cost. Each workspace is asked once before its first cloud request.'],
-  ['The agent\'s internet', 'Only through Clank\'s proxy, only to hosts you allowed for that workspace. A host it asks for waits while Clank asks you. Every exchange is logged: `clank network log`.'],
+  ['The agent\'s internet', 'Only through Clank\'s proxy, only to hosts you allowed for that workspace; in dev mode, every public host at once. A host it asks for waits while Clank asks you. Your computer and your network are never reached. Every exchange is logged: `clank network log`.'],
   ['Updates', 'GitHub, only when you run `clank update --check` or `clank update` (its API, or your clone\'s own remote).'],
   ['The phone', 'Over your tailnet only (Tailscale, encrypted end to end between your devices). Tailscale\'s servers see your devices, not Clank\'s traffic. Turn it on with `clank remote on`; it is off until you do.'],
   ['Telemetry', 'None. Clank sends no usage data, and this site has no trackers, analytics or cookies. Clank turns off OpenCode\'s sharing, self-update, model-list download and plugin installs.'],
