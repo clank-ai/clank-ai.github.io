@@ -8,18 +8,26 @@
 #   2. Git: needed to download Clank. If it is missing, says how to get it and offers to run that (asking first).
 #   3. Docker: needed for the agent's workspaces. Linux: Docker Engine from Docker's own packages (apt on Ubuntu,
 #      Debian and their kin, dnf on Fedora and the RHEL family, pacman on Arch), shown and asked first, then started
-#      now and at each boot and this account added to the docker group, each asked first. macOS: Docker Desktop with
-#      Homebrew, asked first, then opened once for its terms.
+#      now and at each boot and this account added to the docker group, each asked first; Clank uses the group at
+#      once (through sg), so nobody logs out and in for it. macOS: Docker Desktop with Homebrew, asked first, then
+#      opened once for its terms.
 #   4. Clank: `uv tool install` from https://github.com/clank-ai/clank at its latest release tag, then
 #      `uv tool update-shell` so `clank` is on PATH.
-#   5. `clank setup --check` (or `clank doctor` in an older Clank): what is set up and what is next.
+#   5. Clank's setup: offered at once (`clank setup`, which asks before each step: Clank's service, the sandbox image,
+#      a model, the folder); else, and for a script, `clank setup --check` (or `clank doctor` in an older Clank): what
+#      is set up and what is next, changing nothing.
 # Run it again to update Clank to the latest release. It never asks for, reads or stores any key.
+#
+# Its words are in color where they go to a terminal (green done, yellow to know or to do, red failed, commands
+# dimmed), and plain in a pipe, a file, or with NO_COLOR set (https://no-color.org).
 #
 # Settings, from the environment:
 #   CLANK_VERSION=v0.3.0b1    install this tag (or branch, e.g. main) instead of the latest release
 #   CLANK_NO_MODIFY_PATH=1    change no PATH: neither uv's installer nor `uv tool update-shell` touch it
-#   CLANK_YES=1               answer yes to every question (for a script); the commands are still shown
+#   CLANK_YES=1               answer yes to every question (for a script); the commands are still shown, and Clank's
+#                             setup is only checked, never run
 #   CLANK_DRY_RUN=1           show every command that would change this computer, and run none of them
+#   NO_COLOR=1                no color
 #   UV_TOOL_DIR, UV_TOOL_BIN_DIR, UV_INSTALL_DIR    uv's own settings: where Clank and uv are put
 #
 # Its source: https://github.com/clank-ai/clank-ai.github.io/blob/main/public/install.sh
@@ -29,10 +37,32 @@
 REPO=https://github.com/clank-ai/clank
 GET_STARTED=https://clank-ai.github.io/get-started
 
+# Color and marks: escape sequences only where the output is a terminal and NO_COLOR is not set; the marks in UTF-8
+# where the locale is, else in ASCII.
+paint_setup() {
+    if [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-dumb}" != dumb ]; then
+        esc=$(printf '\033')
+        B="${esc}[1m" D="${esc}[2m" R="${esc}[0m" RED="${esc}[1;31m" GREEN="${esc}[1;32m" YELLOW="${esc}[1;33m"
+        CYAN="${esc}[1;36m" BRAND="${esc}[1;38;5;215m"
+    else
+        B='' D='' R='' RED='' GREEN='' YELLOW='' CYAN='' BRAND=''
+    fi
+    case "${LC_ALL:-${LC_CTYPE:-${LANG:-}}}" in
+        *UTF-8* | *utf-8* | *UTF8* | *utf8*) OK='✓' NO='✗' WARN='!' ASK='?' MARK='◆' LINE='──' ;;
+        *) OK='ok' NO='x' WARN='!' ASK='?' MARK='*' LINE='--' ;;
+    esac
+}
+
 say() { printf '%s\n' "$*"; }
-step() { printf '\n%s\n' "$*"; }
+good() { printf '  %s%s%s %s\n' "$GREEN" "$OK" "$R" "$*"; }      # done: found, installed, ready
+warn() { printf '  %s%s%s %s\n' "$YELLOW" "$WARN" "$R" "$*"; }   # to know, or to do
+bad() { printf '  %s%s%s %s\n' "$RED" "$NO" "$R" "$*"; }         # failed
+more() { printf '    %s\n' "$*"; }                               # a line more of the one above
+note() { printf '  %s%s%s\n' "$D" "$*" "$R"; }                   # a quiet detail
+shown() { printf '  %s%s %s%s\n' "$D" "$1" "$2" "$R"; }          # a command as it runs: $ as this account, # as root
+step() { printf '\n%s%s%s %s%s%s  %s%s%s\n' "$CYAN" "$1" "$R" "$B" "$2" "$R" "$D" "$3" "$R"; }
 stop() {
-    printf '\nClank was not installed: %s\n' "$*" >&2
+    printf '\n%s%s Clank was not installed:%s %s\n' "$RED" "$NO" "$R" "$*" >&2
     exit 1
 }
 has() { command -v "$1" >/dev/null 2>&1; }
@@ -42,14 +72,14 @@ has() { command -v "$1" >/dev/null 2>&1; }
 # answers yes, for a script; so does CLANK_DRY_RUN=1, which then runs nothing.
 confirm() {
     if [ "${CLANK_YES:-}" = 1 ] || [ "${CLANK_DRY_RUN:-}" = 1 ]; then
-        say "  $1 [y/N] y (CLANK_YES or CLANK_DRY_RUN)"
+        printf '  %s%s%s %s %s[y/N] y (CLANK_YES or CLANK_DRY_RUN)%s\n' "$CYAN" "$ASK" "$R" "$1" "$D" "$R"
         return 0
     fi
     if ! (: </dev/tty) 2>/dev/null; then
-        say "  $1 [y/N] (not asked: no terminal to answer in)"
+        printf '  %s%s%s %s %s[y/N] (not asked: no terminal to answer in)%s\n' "$CYAN" "$ASK" "$R" "$1" "$D" "$R"
         return 1
     fi
-    printf '  %s [y/N] ' "$1" >/dev/tty
+    printf '  %s%s%s %s %s[y/N]%s ' "$CYAN" "$ASK" "$R" "$1" "$D" "$R" >/dev/tty
     read -r answer </dev/tty || return 1
     case "$answer" in
         y | Y | yes | YES | Yes) return 0 ;;
@@ -57,11 +87,24 @@ confirm() {
     esac
 }
 
+# An offer whose answer is yes unless the person types n: asked only at a terminal, never for a script (CLANK_YES=1),
+# whose answer is then no.
+offer() {
+    [ "${CLANK_YES:-}" = 1 ] && return 1
+    (: </dev/tty) 2>/dev/null || return 1
+    printf '  %s%s%s %s %s[Y/n]%s ' "$CYAN" "$ASK" "$R" "$1" "$D" "$R" >/dev/tty
+    read -r answer </dev/tty || return 1
+    case "$answer" in
+        n | N | no | NO | No) return 1 ;;
+        *) return 0 ;;
+    esac
+}
+
 # Runs a command as root: directly when this is root, else through sudo. With CLANK_DRY_RUN=1 it says the command and
 # runs nothing.
 as_root() {
     if [ "${CLANK_DRY_RUN:-}" = 1 ]; then
-        say "  (dry run) as root: $*"
+        note "(dry run) as root: $*"
         return 0
     fi
     if [ "$(id -u)" = 0 ]; then
@@ -69,14 +112,14 @@ as_root() {
     elif has sudo; then
         sudo "$@"
     else
-        say "  This needs root, and sudo is not installed: run it as root yourself: $*"
+        warn "This needs root, and sudo is not installed: run it as root yourself: $*"
         return 1
     fi
 }
 
 # Runs a command as this account, saying it first; with CLANK_DRY_RUN=1 it says the command and runs nothing.
 run() {
-    say "  > $*"
+    shown '$' "$*"
     [ "${CLANK_DRY_RUN:-}" = 1 ] && return 0
     "$@"
 }
@@ -243,18 +286,18 @@ docker_answers() {
 docker_configure() {
     if [ -d /run/systemd/system ]; then
         if ! systemctl is-active --quiet docker 2>/dev/null || ! systemctl is-enabled --quiet docker 2>/dev/null; then
-            say "  Docker Engine is not running, or would not start when the computer does. Clank needs it running."
+            warn "Docker Engine is not running, or would not start when the computer does. Clank needs it running."
             if confirm "Start it now and at every boot (systemctl enable --now docker)?"; then
-                as_root systemctl enable --now docker || say "  That did not work (its words are above)."
+                as_root systemctl enable --now docker || bad "That did not work (its words are above)."
             fi
         fi
     else
-        say "  This system does not run systemd: start Docker Engine your system's way before you use Clank."
+        warn "This system does not run systemd: start Docker Engine your system's way before you use Clank."
     fi
     me=$(id -un)
     if [ "$(id -u)" != 0 ] && ! id -nG "$me" 2>/dev/null | tr ' ' '\n' | grep -qx docker; then
-        say "  Your account, $me, is not in the docker group, so it cannot use Docker without sudo. Docker says"
-        say "  the group gives root's rights on this computer: https://docs.docker.com/engine/install/linux-postinstall/"
+        warn "Your account, $me, is not in the docker group, so it cannot use Docker without sudo. Docker says"
+        more "the group gives root's rights on this computer: https://docs.docker.com/engine/install/linux-postinstall/"
         if confirm "Add $me to the docker group (usermod -aG docker $me)?"; then
             as_root usermod -aG docker "$me" && JOINED_DOCKER=1
         fi
@@ -264,57 +307,57 @@ docker_configure() {
 # Linux: Docker Engine found, or installed from Docker's own packages on a yes, then configured and checked.
 docker_linux() {
     if docker_engine_installed; then
-        say "  found: $(docker --version 2>/dev/null || echo 'Docker Engine')"
+        good "found: $(docker --version 2>/dev/null || echo 'Docker Engine')"
     else
         if has docker && why=$(docker_unsupported); then
-            say "  found: $why. Clank does not support it; Docker Engine from Docker's own packages can be"
-            say "  installed beside it, and Clank then uses that one."
+            warn "found: $why. Clank does not support it; Docker Engine from Docker's own packages can be"
+            more "installed beside it, and Clank then uses that one."
         else
-            say "  Docker Engine is not installed. Clank runs the agent in a Docker container, one per folder, so"
-            say "  that the agent sees only that folder; it is needed before you work in a folder."
+            warn "Docker Engine is not installed. Clank runs the agent in a Docker container, one per folder, so"
+            more "that the agent sees only that folder; it is needed before you work in a folder."
         fi
         if ! docker_family; then
-            say "  Docker does not package ${DISTRO:-this Linux} (or its release could not be read): install Docker"
-            say "  Engine as https://docs.docker.com/engine/install/ says, then run this again."
+            warn "Docker does not package ${DISTRO:-this Linux} (or its release could not be read): install Docker"
+            more "Engine as https://docs.docker.com/engine/install/ says, then run this again."
             return 0
         fi
         say "  On ${DISTRO}, Docker Engine comes from ${DOCKER_SOURCE}, installed with these commands, as root:"
         commands=$(docker_install_commands)
-        say "$commands" | sed 's/^/    /'
+        say "$commands" | while IFS= read -r line; do printf '    %s%s%s\n' "$D" "$line" "$R"; done
         if ! confirm "Install Docker Engine now (the commands above, as root)?"; then
-            say "  Not installed. Run this again, or install it as above, before you work in a folder."
+            warn "Not installed. Run this again, or install it as above, before you work in a folder."
             return 0
         fi
         failed=
         say "$commands" | while IFS= read -r line; do
-            say "  # $line"
-            as_root sh -c "$line" </dev/null || { say "  That did not work (its words are above). Stopped here."; exit 1; }
+            shown '#' "$line"
+            as_root sh -c "$line" </dev/null || { bad "That did not work (its words are above). Stopped here."; exit 1; }
         done || failed=1
         if [ -n "$failed" ]; then
-            say "  Docker Engine was not installed. Clank goes on; install Docker as above, then run this again."
+            warn "Docker Engine was not installed. Clank goes on; install Docker as above, then run this again."
             return 0
         fi
         [ "${CLANK_DRY_RUN:-}" = 1 ] || docker_engine_installed || {
-            say "  The packages went in, but Docker Engine's service is not found. Run this again after a restart."
+            warn "The packages went in, but Docker Engine's service is not found. Run this again after a restart."
             return 0
         }
         if [ "${CLANK_DRY_RUN:-}" = 1 ]; then
-            say "  (dry run) Docker Engine would be installed from ${DOCKER_SOURCE}."
+            note "(dry run) Docker Engine would be installed from ${DOCKER_SOURCE}."
         else
-            say "  installed: Docker Engine, from ${DOCKER_SOURCE}"
+            good "installed: Docker Engine, from ${DOCKER_SOURCE}"
         fi
     fi
     docker_configure
     if [ "${CLANK_DRY_RUN:-}" = 1 ]; then
-        say "  (dry run) then checked: docker version, as your account (through the docker group if just joined)."
+        note "(dry run) then checked: docker version, as your account (through the docker group if just joined)."
     elif docker_answers; then
-        say "  ready: Docker Engine answers your account."
+        good "ready: Docker Engine answers your account."
         if [ -n "${JOINED_DOCKER:-}" ]; then
-            say "  You joined the docker group just now: log out and in once (or restart) before you type clank,"
-            say "  so every program you start can use Docker."
+            note "You joined the docker group just now. Clank uses it at once, so you need not log out and in;"
+            note "the docker commands you type yourself get it at your next login."
         fi
     else
-        say "  Docker does not answer your account yet: clank doctor, below, says why and what to do."
+        warn "Docker does not answer your account yet: Clank's setup, below, says why and what to do."
     fi
 }
 
@@ -322,58 +365,63 @@ docker_linux() {
 # are accepted in its own window the first time.
 docker_macos() {
     if has docker || [ -d /Applications/Docker.app ]; then
-        say "  found: $(docker --version 2>/dev/null || echo 'Docker Desktop')"
+        good "found: $(docker --version 2>/dev/null || echo 'Docker Desktop')"
     else
-        say "  Docker Desktop is not installed. Clank runs the agent in a Docker container, one per folder, so"
-        say "  that the agent sees only that folder; it is needed before you work in a folder."
+        warn "Docker Desktop is not installed. Clank runs the agent in a Docker container, one per folder, so"
+        more "that the agent sees only that folder; it is needed before you work in a folder."
         if has brew && confirm "Install Docker Desktop now with Homebrew (brew install --cask docker)?"; then
-            run brew install --cask docker || say "  Homebrew did not install it (its words are above)."
+            run brew install --cask docker || bad "Homebrew did not install it (its words are above)."
         fi
         if [ ! -d /Applications/Docker.app ] && [ "${CLANK_DRY_RUN:-}" != 1 ]; then
-            say "  Get it from https://www.docker.com/products/docker-desktop/ , then run this again."
+            warn "Get it from https://www.docker.com/products/docker-desktop/ , then run this again."
             return 0
         fi
     fi
     if [ "${CLANK_DRY_RUN:-}" != 1 ] && docker info >/dev/null 2>&1; then
-        say "  ready: Docker Desktop is running."
+        good "ready: Docker Desktop is running."
         return 0
     fi
     if confirm "Open Docker Desktop now? The first time, accept its terms in its window."; then
         run open -a Docker || return 0
         [ "${CLANK_DRY_RUN:-}" = 1 ] && return 0
-        say "  Waiting for Docker Desktop to start (up to five minutes)..."
+        note "Waiting for Docker Desktop to start (up to five minutes)..."
         waited=0
         while [ "$waited" -lt 300 ]; do
             if docker info >/dev/null 2>&1; then
-                say "  ready: Docker Desktop is running."
+                good "ready: Docker Desktop is running."
                 return 0
             fi
             sleep 5
             waited=$((waited + 5))
         done
-        say "  Docker Desktop has not started yet: finish its first start in its window; clank doctor checks it."
+        warn "Docker Desktop has not started yet: finish its first start in its window; clank setup checks it."
     fi
 }
 
+# One of the next steps, numbered.
+next() {
+    printf '  %s%s.%s %s\n' "$CYAN" "$1" "$R" "$2"
+}
+
 main() {
+    paint_setup
     ORIGINAL_PATH=$PATH
     OS=$(uname -s)
     case "$OS" in
         Linux | Darwin) ;;
         *) stop "this installer is for macOS and Linux; on Windows, in PowerShell: irm https://clank-ai.github.io/install.ps1 | iex" ;;
     esac
-    say "Clank installer"
-    say "  $OS $(uname -m)"
-    say "  Clank is a beta: in daily use on Windows, and on Linux with Docker Engine tested on every change (from"
-    say "  Clank 0.3.0b3); macOS is untested beyond this installer."
+    printf '\n%s%s CLANK%s %sinstaller%s\n' "$BRAND" "$MARK" "$R" "$B" "$R"
+    note "$OS $(uname -m) · a beta: in daily use on Windows; on Linux with Docker Engine, tested on every change;"
+    note "macOS untested beyond this installer. It shows each command, and asks before each change."
     if [ "${CLANK_NO_MODIFY_PATH:-}" = 1 ]; then
-        say "  CLANK_NO_MODIFY_PATH=1: no PATH will be changed"
+        note "CLANK_NO_MODIFY_PATH=1: no PATH will be changed"
     fi
 
     # 1. uv
-    step "[1/5] uv (installs Clank and the Python it runs on)"
+    step "[1/5]" "uv" "installs Clank and the Python it runs on"
     if ! uv=$(find_uv) && [ "${CLANK_DRY_RUN:-}" = 1 ]; then
-        say "  (dry run) uv is not installed: Astral's installer would install it (curl -LsSf https://astral.sh/uv/install.sh | sh)."
+        note "(dry run) uv is not installed: Astral's installer would install it (curl -LsSf https://astral.sh/uv/install.sh | sh)."
         uv=
     elif [ -z "$uv" ]; then
         say "  uv is not installed: installing it with Astral's installer (https://docs.astral.sh/uv/)."
@@ -394,43 +442,43 @@ main() {
     if [ -n "$uv" ]; then
         PATH="$(dirname "$uv"):$PATH"
         export PATH
-        say "  found: $("$uv" --version) ($uv)"
+        good "found: $("$uv" --version) ($uv)"
     fi
 
     # 2. Git
-    step "[2/5] Git (downloads Clank)"
+    step "[2/5]" "Git" "downloads Clank"
     if ! git --version >/dev/null 2>&1; then
         how=$(git_command)
-        say "  Git is not installed. Clank is downloaded with it, so it is needed."
+        warn "Git is not installed. Clank is downloaded with it, so it is needed."
         if [ -n "$how" ] && [ "$how" != "xcode-select --install" ] && confirm "Install Git now ($how)?"; then
             case "$how" in
                 brew*) run sh -c "$how" ;;
-                *) as_root sh -c "$how" || say "  That did not work (it needs root or sudo)." ;;
+                *) as_root sh -c "$how" || bad "That did not work (it needs root or sudo)." ;;
             esac
         fi
         if [ "${CLANK_DRY_RUN:-}" = 1 ]; then
-            say "  (dry run) Git would be installed: ${how:-with the package manager of your system}"
+            note "(dry run) Git would be installed: ${how:-with the package manager of your system}"
         elif ! git --version >/dev/null 2>&1; then
             stop "Git is needed. Install it (${how:-with the package manager of your system}) and run this again."
         fi
     fi
-    git --version >/dev/null 2>&1 && say "  found: $(git --version)"
+    git --version >/dev/null 2>&1 && good "found: $(git --version)"
 
     # 3. Docker
     if [ "$OS" = Darwin ]; then
-        step "[3/5] Docker Desktop (the agent's workspaces)"
+        step "[3/5]" "Docker Desktop" "the agent's workspaces: a container for each folder"
         docker_macos
     else
-        step "[3/5] Docker Engine (the agent's workspaces)"
+        step "[3/5]" "Docker Engine" "the agent's workspaces: a container for each folder"
         docker_linux
     fi
 
     # 4. Clank
-    step "[4/5] Clank"
+    step "[4/5]" "Clank"
     if [ "${CLANK_DRY_RUN:-}" = 1 ]; then
-        say "  (dry run) would run: uv tool install --force --reinstall-package clank --python 3.12 git+$REPO@<${CLANK_VERSION:-the latest release}>"
-        say "  (dry run) then: uv tool update-shell, and clank setup --check"
-        step "Dry run: nothing was changed."
+        note "(dry run) would run: uv tool install --force --reinstall-package clank --python 3.12 git+$REPO@<${CLANK_VERSION:-the latest release}>"
+        note "(dry run) then: uv tool update-shell, and Clank's setup (clank setup)"
+        printf '\n%s%s Dry run: nothing was changed.%s\n' "$GREEN" "$OK" "$R"
         return 0
     fi
     bin=$("$uv" tool dir --bin) || stop "uv did not say where it puts tools (uv tool dir --bin)."
@@ -438,67 +486,86 @@ main() {
     before=$(clank_version "$exe") || before=
     if [ -n "${CLANK_VERSION:-}" ]; then
         ref=$CLANK_VERSION
-        say "  version: $ref (from CLANK_VERSION)"
+        say "  version: $B$ref$R (from CLANK_VERSION)"
     else
         ref=$(latest_tag) || exit 1
-        if [ -n "$ref" ]; then say "  version: $ref, the latest release"; else say "  version: main (the repository has no release yet)"; fi
+        if [ -n "$ref" ]; then say "  version: $B$ref$R, the latest release"; else say "  version: main (the repository has no release yet)"; fi
     fi
     source="git+$REPO"
     [ -n "$ref" ] && source="$source@$ref"
-    [ -n "$before" ] && say "  installed now: $before; replacing it"
-    say "  > uv tool install --force --reinstall-package clank --python 3.12 $source"
+    [ -n "$before" ] && note "installed now: $before; replacing it"
+    shown '$' "uv tool install --force --reinstall-package clank --python 3.12 $source"
     "$uv" tool install --force --reinstall-package clank --python 3.12 "$source" || stop "uv could not install Clank (its message is above)."
     after=$(clank_version "$exe") || stop "Clank was installed but $exe does not run."
     if [ "$before" = "$after" ]; then
-        say "  installed: $after ($exe), the version it had"
+        good "installed: $after ($exe), the version it had"
     else
-        say "  installed: $after ($exe)"
+        good "installed: $after ($exe)"
     fi
     if [ "${CLANK_NO_MODIFY_PATH:-}" = 1 ]; then
-        say "  PATH: not changed (CLANK_NO_MODIFY_PATH=1); clank is $exe"
+        note "PATH: not changed (CLANK_NO_MODIFY_PATH=1); clank is $exe"
     else
         if ! PATH=$ORIGINAL_PATH "$uv" tool update-shell; then
-            say "  uv tool update-shell failed: add $bin to PATH yourself, in your shell's startup file."
+            warn "uv tool update-shell failed: add $bin to PATH yourself, in your shell's startup file."
             path_failed=1
         fi
     fi
 
-    # 5. The checklist: clank setup --check where this Clank has it, else clank doctor; both change nothing.
+    # 5. Clank's setup, at once when the person wants it (it asks before each step); else, and for a script, its
+    # checklist, which changes nothing; clank doctor in a Clank older than clank setup.
+    set_up=
     if "$exe" setup --help >/dev/null 2>&1; then
-        step "[5/5] clank setup --check (what is set up, and what is next; changes nothing)"
-        "$exe" setup --check || say "  Something is still to do (the lines above say what). Clank is installed."
+        step "[5/5]" "Clank's setup" "Clank's service, the sandbox image, a model, a folder"
+        if offer "Set Clank up now? It asks before each step."; then
+            if "$exe" setup </dev/tty; then set_up=ready; else set_up=ran; fi
+        else
+            if "$exe" setup --check; then set_up=ready; fi
+        fi
     else
-        step "[5/5] clank doctor (checks this computer; changes nothing)"
+        step "[5/5]" "clank doctor" "checks this computer; changes nothing"
         if ! "$exe" doctor; then
-            say "  clank doctor found something to fix (the lines above say what). Clank is installed."
+            warn "clank doctor found something to fix (the lines above say what). Clank is installed."
         fi
     fi
 
-    step "Next"
+    printf '\n%s%s Next %s%s\n' "$BRAND" "$LINE" "$LINE" "$R"
+    n=1
     if [ "${CLANK_NO_MODIFY_PATH:-}" = 1 ] || [ -n "${path_failed:-}" ]; then
-        say "  1. Put $bin on PATH, or run clank as $exe."
+        next "$n" "Put $B$bin$R on PATH, or run clank as $B$exe$R."
+        n=$((n + 1))
     else
-        say "  1. Open a new terminal, so it finds clank."
+        case ":$ORIGINAL_PATH:" in
+            *":$bin:"*) ;;
+            *)
+                next "$n" "Open a new terminal, so it finds clank (or in this one: ${B}export PATH=\"$bin:\$PATH\"$R)."
+                n=$((n + 1))
+                ;;
+        esac
     fi
-    if [ -n "${JOINED_DOCKER:-}" ]; then
-        say "  First log out and in once (or restart): you joined the docker group, which takes effect then."
-    fi
-    if "$exe" setup --help >/dev/null 2>&1; then
-        say "  2. In a project's folder, run: clank setup"
-        say "     It does each step left, in order, asking first: Clank's service, the sandbox image, a model"
-        say "     (in the cloud with an OpenRouter key, on your own GPU, or both), and the folder."
-        say "  3. Then type clank in any project folder."
-    else
-        say "  2. Type clank. With no model set up it opens on Add a model: a cloud model with an OpenRouter key,"
-        say "     or a model on your own GPU."
-        say "  3. Then open a terminal in any project folder and type clank."
-    fi
+    case "$set_up" in
+        ready)
+            next "$n" "In a project's folder, type ${B}clank$R: the agent works there, in a container that sees only it."
+            ;;
+        ran)
+            next "$n" "In a project's folder, type ${B}clank setup$R for what is left (above), then ${B}clank$R."
+            ;;
+        *)
+            if "$exe" setup --help >/dev/null 2>&1; then
+                next "$n" "In a project's folder, run ${B}clank setup$R: it does each step left, asking first (Clank's"
+                more " service, the sandbox image, a model in the cloud or on your GPU, the folder)."
+                next "$((n + 1))" "Then type ${B}clank$R in any project's folder."
+            else
+                next "$n" "Type ${B}clank$R. With no model set up it opens on Add a model: a cloud model with an OpenRouter"
+                more " key, or a model on your own GPU. Then type clank in any project's folder."
+            fi
+            ;;
+    esac
     if [ -n "$before" ] && [ "$before" != "$after" ]; then
-        say "  Clank was updated from $before. If its service was running, restart it: clank stop,"
-        say "  clank serve --background, then clank gateway restart."
+        warn "Clank was updated from $before. If its service was running, restart it: clank stop,"
+        more "then clank serve --background, then clank gateway restart."
     fi
-    say "  Get started: $GET_STARTED"
-    say "  To update Clank later, run this installer again."
+    note "Get started: $GET_STARTED"
+    note "Update later: clank update, or this installer again."
 }
 
 main "$@"

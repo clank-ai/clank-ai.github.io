@@ -50,7 +50,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: The Docker step, for real, as root, in a throwaway container
         run: |
-          sed 's/^main "\$@"$/OS=Linux; docker_linux; docker --version/' public/install.sh > "$RUNNER_TEMP/docker-step.sh"
+          sed 's/^main "\$@"$/OS=Linux; paint_setup; docker_linux; docker --version/' public/install.sh > "$RUNNER_TEMP/docker-step.sh"
           docker run --rm -v "$RUNNER_TEMP:/mnt:ro" "${{ matrix.image }}" sh -c 'CLANK_YES=1 sh /mnt/docker-step.sh'
       - name: A dry run of the whole installer, as an ordinary account where the image has su
         run: |
