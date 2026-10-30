@@ -16,6 +16,8 @@ import Window from '../components/Window.astro';
 import Crop from '../components/Crop.astro';
 import SystemSwitch from '../components/start/SystemSwitch.astro';
 import Screen from '../components/start/Screen.astro';
+import Shot from '../components/Shot.astro';
+import setupCheck from '../assets/captures/demo-console/00-setup-check.png';
 import { building, consent, folder, session } from '../scripts/crops';
 import * as S from '../scripts/start-screens';
 import { GITHUB_URL, INSTALL, LINKS, PAGES } from '../config';
@@ -223,6 +225,11 @@ const trouble = [
             <code>sudo</code> asks for your password itself; Clank never sees it. <code>clank setup --check</code> only
             says it all, and <code>clank doctor</code> checks the computer in more detail; neither changes anything.
           </p>
+          <Shot
+            src={setupCheck}
+            alt="clank setup --check in a terminal, in color: every item done in green (Docker installed, running and usable by this account, Clank's service, the sandbox image, a model, a folder), Clank's VS Code window optional in blue with the command that installs it, then Ready and what each thing is for."
+            note="clank setup --check on a computer where everything is set up (Clank 0.3.0b5, Windows with Docker Desktop): done in green, what is optional in blue with its command, and what each thing is for."
+          />
         </div>
 
         <div class="install-hand">

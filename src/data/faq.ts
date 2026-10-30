@@ -25,6 +25,10 @@ export const FAQ_GROUPS = [
         a: "No. The agent works in a Docker container that sees only the folder you opened it in, mounted at /workspace; the rest of your computer is not in it.",
       },
       {
+        q: 'When is Clank not for me?',
+        a: "When you want an agent with nothing to set up: a hosted one starts in a browser, and Clank needs Docker and a model of your own. When you have neither an NVIDIA GPU nor an OpenRouter key: Clank runs models on the one or through the other. When your models are served elsewhere, by vLLM or an endpoint of your company's: Clank reaches only OpenRouter in the cloud today. And on a Mac, until it is tested beyond its installer.",
+      },
+      {
         q: 'How do I remove it?',
         a: 'Get started says how, step by step, in its Uninstalling section: Clank with two commands (`clank stop`, then `uv tool uninstall clank`), then, if you want, its folder (~/.clank), its containers and image, and what the installer added.',
       },
