@@ -42,6 +42,7 @@ const { screen, title, label, marks = [] } = Astro.props;
       </div>
     </div>
   </div>
+  {screen.cols > 54 && <p class="swipe" aria-hidden="true">Swipe sideways to see the whole screen</p>}
   {
     marks.length > 0 && (
       <figcaption>
@@ -69,6 +70,27 @@ const { screen, title, label, marks = [] } = Astro.props;
 
   .crop {
     position: relative;
+  }
+
+  .swipe {
+    display: none;
+  }
+
+  /* On a phone a screen keeps its cells readable (10px at least) and scrolls sideways instead of shrinking. */
+  @media (max-width: 600px) {
+    .window-body {
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+    }
+    .crop {
+      min-width: calc(var(--cols, 60) * 0.6 * 10px + 2px);
+    }
+    .swipe {
+      display: block;
+      margin: -4px 0 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
   }
 
   /* The marks sit on the cells' own grid: the same font size, so a row is 1.32em tall. */

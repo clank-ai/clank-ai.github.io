@@ -78,7 +78,7 @@ const installerSays: Record<string, string[]> = {
   linux: [
     "<b>uv</b>: the one you have, or Astral's own installer.",
     '<b>Git</b>: if it is missing, your package manager\'s command for it (apt, dnf, pacman or zypper), with <code>sudo</code>, asking first.',
-    "<b>Docker Engine</b>, from Docker's own packages: it reads your distribution, prints the exact commands Docker's installation pages give for it, and asks once before running them with <code>sudo</code>, which asks for your password itself. Then it offers to start Docker now and at every boot, and to add you to the <code>docker</code> group, saying first what Docker says of it: the group gives root's rights on that computer. The snap's Docker and rootless Docker are not supported, and it says why.",
+    "<b>Docker Engine</b>, from Docker's own packages: it reads your distribution, prints the exact commands Docker's installation pages give for it, and asks once before running them with <code>sudo</code>, which asks for your password itself. Then it offers to start Docker now and at every boot, and to add you to the <code>docker</code> group, saying first what Docker says of it: the group gives root's rights on that computer. Clank uses the group at once, with no log out and in. The snap's Docker and rootless Docker are not supported, and it says why.",
     '<b>Clank</b>: its latest release, with <code>uv tool install</code>, then <code>uv tool update-shell</code> so <code>clank</code> is on your path.',
     '<b><code>clank setup --check</code></b>: what is set up and what is next, item by item; it changes nothing.',
   ],
@@ -95,7 +95,7 @@ const troubleBy: Record<string, string[][]> = {
     ['Docker Desktop waits for permissions', 'Open it, accept its terms, and let it finish starting; then <code>clank doctor</code>'],
   ],
   linux: [
-    ['“permission denied” on <code>/var/run/docker.sock</code>, or Clank says this account may not use Docker', 'Join the group (<code>sudo usermod -aG docker $USER</code>) if you have not, log out and in once, then <code>clank stop</code> and <code>clank</code>'],
+    ['“permission denied” on <code>/var/run/docker.sock</code>, or Clank says this account may not use Docker', '<code>clank setup</code>: it offers to join the group, takes it at once, and starts Clank\'s service again with it. Your own <code>docker</code> commands get the group at your next login'],
     ["Docker is installed from the snap", "Clank does not support it: install Docker Engine from Docker's packages (the one line offers it), which Clank then uses"],
     ['Docker stops after a restart', '<code>sudo systemctl enable docker</code>'],
     ['The installer does not know your distribution', "Install Docker Engine as Docker's pages say for it, then run the installer again"],
@@ -108,8 +108,10 @@ const trouble = [
   [`${k('F10')} opens your terminal's menu instead of the Monitor`, '<code>clank console --page monitor</code>'],
   ['The key is refused (401; OpenRouter says “Missing Authentication header” for a key it does not know)', 'Paste it again, whole (OpenRouter shows it once), or make a new key and add it (<code>clank endpoint key openrouter</code>)'],
   ['“No credits” (402)', 'Add credits at OpenRouter, or pick a free model'],
-  ['“No provider of … serves it with data_collection deny”', 'Clank asks OpenRouter by default for providers that keep no data, and none of this model’s do: pick another model, or allow any provider (Providers and models, <kbd>o</kbd>)'],
-  ['“Rate limited” (429) on a free model', 'Free models take 20 requests a minute and 50 a day (1,000 a day once you bought 10 credits): wait a minute, or pick a paid model'],
+  ['“No provider of … serves it with data_collection deny”', 'Clank asks OpenRouter by default for providers that keep no data, and none of this model’s do: pick another model, allow any provider (Providers and models, <kbd>o</kbd>), or, for testing, turn dev mode on (<code>clank dev on</code>)'],
+  ['“OpenRouter refuses … under your OpenRouter account’s privacy settings”', 'Your account at OpenRouter refuses providers that may train on prompts, as many free models’ do: allow them at <a href="https://openrouter.ai/settings/privacy">openrouter.ai/settings/privacy</a>, or pick another model'],
+  ['“Rate limited” (429) on a free model', 'Free models take 20 requests a minute: OpenCode waits and asks again'],
+  ['“The free models’ limit for the day”', 'Free models take 50 requests a day until you bought 10 credits once, then 1,000; the count starts again at midnight UTC. An agent’s task can take dozens of requests: wait, buy credits, or pick a paid model'],
   ['<code>clank</code> is not found', 'Open a new terminal after <code>uv tool update-shell</code>'],
 ];
 ---
@@ -207,11 +209,13 @@ const trouble = [
             Open a new terminal, so <code>clank</code> is found. Docker Desktop runs (its whale is in the menu bar).
           </p>
           <p class="mu" data-for="linux">
-            If the installer added you to the <code>docker</code> group, <b>log out and in once</b> (or restart), so every
-            program you start can use Docker. Then open a terminal: <code>clank</code> is found.
+            Nobody logs out and in: if the installer added you to the <code>docker</code> group, Clank uses it at once (your
+            own <code>docker</code> commands get it at your next login). Open a new terminal if the installer says so, so
+            <code>clank</code> is found.
           </p>
           <p class="mu">
-            Then, in a terminal in the folder of a project you want the agent to work in, run <code>clank setup</code>. It
+            On macOS and Linux the installer offers <code>clank setup</code> at once; otherwise, or for what is left, in a
+            terminal in the folder of a project you want the agent to work in, run <code>clank setup</code>. It
             lists what Clank needs on this computer, in order, and offers each step that is left, showing its exact command
             and asking before each one: Docker usable by your account, Clank's service, the sandbox image (built once, in
             the background), a model (in the cloud with your OpenRouter key, on this computer's GPU, or both: steps A2 to
@@ -293,7 +297,11 @@ const trouble = [
             </p>
             <p>
               <b>Credits or free models.</b> Paid models need credits, bought at OpenRouter; each request is paid from them.
-              Free models need none, but have a daily limit of requests, which OpenRouter raises once you have bought credits.
+              Free models need none, but take 50 requests a day until you buy 10 credits once (then 1,000, and the credits
+              stay for paid models). Most free models are served by providers that may keep or train on what they are
+              sent, which Clank does not ask for by default: to test with them, turn on <b>dev mode</b>
+              (<code>clank dev on</code>; the header then says <i>dev mode</i>) and let your OpenRouter account allow such
+              providers (<a href="https://openrouter.ai/settings/privacy">its privacy settings</a>).
             </p>
             <p class="mu">Keep the key at hand for step A5: Clank never shows it again.</p>
           </div>

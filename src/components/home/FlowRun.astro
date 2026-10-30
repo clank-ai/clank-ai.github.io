@@ -7,7 +7,7 @@
 import FlowViewer from '../flow/FlowViewer.astro';
 import SampleTag from '../SampleTag.astro';
 import { comparison, flowTrace } from '../../data/captures';
-import { minutes, problemNumber, timeOf } from '../../scripts/compare';
+import { minutes, problemNumber, spread, timeOf } from '../../scripts/compare';
 import { PAGES } from '../../config';
 
 const { problem, flow } = flowTrace.data;
@@ -31,8 +31,9 @@ const s = versus.summary;
     </div>
     <div class="versus">
       <p>
-        On {s.flow.n} problems of {versus.bench}, the flow got <b>{s.flow.right}</b> right in {minutes(timeOf(versus, 'flow').total)}
-        minutes; OpenCode alone got <b>{s.opencode.right}</b> right in {minutes(timeOf(versus, 'opencode').total)}.
+        On {s.flow.n} problems of {versus.bench}, the flow got <b>{s.flow.right}</b> right and OpenCode alone
+        <b>{s.opencode.right}</b>. The flow took {spread(versus, 'flow')} minutes a problem; OpenCode alone
+        {spread(versus, 'opencode')}{versus.conditions ? `, ${versus.conditions}` : ''}.
       </p>
       <a class="more" href={`${PAGES.features.path}#flows-vs-opencode`}>Every problem, side by side</a>
       {comparison.sample && <SampleTag source={comparison.source} />}

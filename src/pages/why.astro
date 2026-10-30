@@ -85,7 +85,7 @@ const independence = [
 ];
 
 const steps = [
-  ['Check the machine', 'Look up drivers, CUDA, WSL 2, Docker and disk, a guide for each.', 'clank doctor checks it all, says what is missing, and changes nothing.'],
+  ['Check the machine', 'Look up drivers, CUDA, WSL 2, Docker and disk, a guide for each.', 'clank setup checks it all, says what is missing, and does each step, asking first.'],
   ['A sandbox for the agent', 'Write a container for it, mount the folder, decide what it may reach.', 'One workspace per folder, built on first use after asking. It reaches only Clank, and the hosts you allow it, through its proxy.'],
   ['An engine', 'Build llama.cpp or another engine with the right options for your GPU.', 'Clank installs KVMem or llama.cpp by its recipe, or adopts a build you made.'],
   ['A model file', 'Find a model, pick a quantization, download it, check it.', 'A preset names the file and its SHA-256; Clank downloads it, resumes it, checks it.'],
@@ -198,8 +198,7 @@ const steps = [
           <p class="k"><span class="dot"></span>From install to a working session, on your GPU</p>
           <ol>
             <li><code>install</code><span>one line</span></li>
-            <li><code>clank doctor</code><span>checks the machine</span></li>
-            <li><code>clank</code><span>Add a model opens</span></li>
+            <li><code>clank setup</code><span>each step, asked first</span></li>
             <li><code>l</code><span>a preset that fits</span></li>
             <li><code>y y y</code><span>engine, model, load</span></li>
             <li><code>F4 · g</code><span>the folder's workspace</span></li>
@@ -210,8 +209,7 @@ const steps = [
           <p class="k"><span class="dot"></span>From install to a working session, with a cloud key</p>
           <ol>
             <li><code>install</code><span>one line</span></li>
-            <li><code>clank doctor</code><span>checks the machine</span></li>
-            <li><code>clank</code><span>Add a model opens</span></li>
+            <li><code>clank setup</code><span>each step, asked first</span></li>
             <li><code>c</code><span>OpenRouter, agreed once</span></li>
             <li><code>paste</code><span>your key, checked</span></li>
             <li><code>F4 · g</code><span>the folder's workspace</span></li>

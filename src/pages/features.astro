@@ -134,7 +134,7 @@ const sections = [
     id="models"
     eyebrow="Models and engines"
     title="Any open model, on the engine you choose."
-    lead="A preset says how a model runs: its engine, its file, its window, its most output, its thinking budget. Clank installs the engine, downloads the model and checks it, asking first at each step."
+    lead="A preset says how a model runs: its engine, its file, its window, its most output, its thinking budget. Clank installs llama.cpp (KVMem, for long windows, is built from its source), downloads the model and checks it, asking first at each step."
   >
     <ul class="points">
       <li><span><b>Local.</b> Any open model as a GGUF file, checked by its SHA-256, served by llama.cpp or KVMem.</span></li>
@@ -174,10 +174,10 @@ const sections = [
     wide
     eyebrow="VS Code"
     title="Clank's own VS Code window."
-    lead="Your files on the left, OpenCode in a terminal at the right edge, Clank's own view of the conversation beside it, and Clank in the status bar. In review mode, each change the agent wants opens beside your file with Accept and Reject."
+    lead="Your files on the left, OpenCode in a terminal at the right edge, Clank's own view of the conversation beside it, and Clank in the status bar. In review mode, each edit the agent wants opens beside your file with Accept and Reject."
   >
     <ul class="points cols">
-      <li><span><b>Review or auto.</b> Review asks before each change; auto applies it and opens it after.</span></li>
+      <li><span><b>Review or auto.</b> Review asks before each edit or write of the agent's file tools; auto applies it and opens it after. What the agent's commands change in the folder is not asked about.</span></li>
       <li><span><b>The agent panel.</b> The conversation drawn Clank's way, live: your message shows the instant you press Enter, the model's words as they stream, the header saying what it does; its readout under it: speed, context used.</span></li>
       <li><span><b>Completion.</b> Gray text as you type, from a small model on the CPU; Tab takes it.</span></li>
       <li><span><b>Figures.</b> Mark up a PNG or JPEG and send it to the agent, each mark said in words.</span></li>

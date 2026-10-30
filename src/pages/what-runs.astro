@@ -11,7 +11,7 @@ import { PAGES, repo } from '../config';
 const processes: [string, string, string, string][] = [
   ['The service', '`clank serve`: Python, from the uv tool Clank was installed as', '127.0.0.1:7720', 'Clank itself: the console, VS Code and the phone ask it everything. `clank status`'],
   ['The gateway', 'Its own Python process, started by the service', '127.0.0.1:18210 (models), 127.0.0.1:18211 (the agent\'s internet proxy)', 'Every model request goes through it, counted and recorded; the agent\'s internet goes through its proxy. `clank gateway status`'],
-  ['Model engines', 'llama.cpp or KVMem servers in WSL, started by the service from a preset', '127.0.0.1, from 18200 (one port a slot)', 'Run the local models on your GPU. None runs until you load a model. `clank model status`'],
+  ['Model engines', 'llama.cpp or KVMem servers (in WSL on Windows; on Linux, on the computer itself), started by the service from a preset', '127.0.0.1, from 18200 (one port a slot)', 'Run the local models on your GPU. None runs until you load a model. `clank model status`'],
   ['The phone listener', 'Inside the service, only when you turn the phone page on', '127.0.0.1:7721', 'Serves the iPhone app; Tailscale publishes it on your tailnet only. `clank remote status`'],
   ['OpenCode', 'In each workspace\'s container, started when you work there', 'Inside the container only', 'The coding agent. It reaches nothing but Clank\'s gateway and, by your allowance, the proxy.'],
 ];
@@ -33,7 +33,7 @@ const files: [string, string][] = [
 ];
 
 const leaves: [string, string][] = [
-  ['With local models', 'Nothing. Your prompts, your files and the answers stay on your PC: the gateway sends them to the engine in WSL.'],
+  ['With local models', 'Nothing. Your prompts, your files and the answers stay on your PC: the gateway sends them to the engine on your PC.'],
   ['With a cloud model', 'Your requests go to the provider you chose (OpenRouter), with your key, through the gateway, which records each one and its cost. Each workspace is asked once before its first cloud request.'],
   ['The agent\'s internet', 'Only through Clank\'s proxy, only to hosts you allowed for that workspace. A host it asks for waits while Clank asks you. Every exchange is logged: `clank network log`.'],
   ['Updates', 'GitHub, only when you run `clank update --check` or `clank update` (its API, or your clone\'s own remote).'],
@@ -41,9 +41,11 @@ const leaves: [string, string][] = [
   ['Telemetry', 'None. Clank sends no usage data, and this site has no trackers, analytics or cookies. Clank turns off OpenCode\'s sharing, self-update, model-list download and plugin installs.'],
 ];
 
+const HEADS = ['What', 'Runs as', 'Listens on', 'For, and how to see it'];
+
 const startup: [string, string][] = [
   ['At sign-in', 'Only with `clank autostart on`: an entry in your Windows account\'s Run key starts the service and Docker. `clank autostart off` removes it.'],
-  ['The installer', 'Installs uv, Git and Docker Desktop when they are missing (from winget or their own sites), then Clank with uv, and runs `clank doctor`. It changes nothing else.'],
+  ['The installer', 'Installs uv, Git and Docker when they are missing (Docker Desktop on Windows and macOS, Docker Engine from Docker\'s own packages on Linux), each asked first, then Clank with uv, and ends with Clank\'s setup (`clank setup`), which asks before each step. It changes nothing else.'],
 ];
 
 const see: [string, string][] = [
@@ -55,6 +57,23 @@ const see: [string, string][] = [
   ['clank docker status', 'Docker, and whose each container is'],
   ['clank network log', 'every internet exchange of the agent'],
   ['clank remote status', 'the phone page, its paired devices, and how a phone reaches it'],
+];
+
+/** What the sandbox enforces, each with the design that says so and the test that checks it; then what it does not. */
+const enforced: [string, string][] = [
+  ["One folder", "The container mounts your folder at `/workspace` and nothing else of your computer (design 0004 §3)."],
+  ["No privileges", "The agent runs as `agent` (uid 1000), with no added capabilities, `no-new-privileges`, a process limit, and CPU and memory limits (design 0004 §3)."],
+  ["No route out", "Each workspace has an internal Docker network of its own. The edge is its only door, and forwards two ports: the gateway's and the proxy's (design 0004 §3, design 0024)."],
+  ["The internet, by your leave", "Only through Clank's proxy, only to hosts you allow for that workspace; a host it asks for waits while Clank asks you. Names are resolved at the proxy, and private addresses (your computer, your network, other containers) are refused before and after a name is resolved (design 0024 §2, §7)."],
+  ["Keys stay out", "A cloud key never enters the container: the gateway adds it to each request (decision 0106)."],
+  ["Checked on every change", "The escape tests (`tests/docker/test_escape.py`) run on Docker Engine on every push: the folder and nothing else is seen, nothing answers but the edge (not the internet by address or name, not the computer, not another workspace), and the agent has no capability."],
+];
+const notEnforced: [string, string][] = [
+  ["A host you allow", "is a way out: what the agent sends there, it can send. Allow only what the work needs (`clank network log` shows every exchange)."],
+  ["HTTPS through the proxy", "is a tunnel: Clank sees the host and how much went each way, never what was inside."],
+  ["Review mode", "asks before each edit or write of the agent's file tools. What its commands change in the folder is not asked about; it stays in the folder."],
+  ["A cloud model", "sees what each request holds: the prompt, and what the agent read of the folder. Clank asks OpenRouter only for providers that keep no data, unless you allow any (or turn dev mode on)."],
+  ["The docker group", "gives its members root's rights on the computer, as Docker itself warns; Clank's installer asks before adding you to it."],
 ];
 
 /** `code` in a cell's text, as HTML. */
@@ -75,14 +94,33 @@ function cell(text: string): string {
     lead="No part of Clank is hidden. This page lists each process, port, container, network and folder it makes, what each is for, and the command that shows it, so you never have to take our word for it."
   />
   <div class="container wr">
+    <section aria-labelledby="guarantees" id="guarantees-section">
+      <h2 id="guarantees">The sandbox: what is enforced, and what is not</h2>
+      <p class="lead2">Each line names the design that says so; the tests that check the first list run on every change.</p>
+      <div class="two">
+        <div>
+          <h3 class="h3 yes">Enforced</h3>
+          <dl class="pairs">
+            {enforced.map(([term, text]) => (<div><dt>{term}</dt><dd set:html={cell(text)} /></div>))}
+          </dl>
+        </div>
+        <div>
+          <h3 class="h3 no">Not enforced: know these</h3>
+          <dl class="pairs">
+            {notEnforced.map(([term, text]) => (<div><dt>{term}</dt><dd set:html={cell(text)} /></div>))}
+          </dl>
+        </div>
+      </div>
+    </section>
+
     <section aria-labelledby="processes">
       <h2 id="processes">Processes and ports</h2>
       <p class="lead2">Every port listens on <code>127.0.0.1</code>: nothing of Clank's answers from your network.</p>
       <div class="table">
         <table>
-          <thead><tr><th>What</th><th>Runs as</th><th>Listens on</th><th>For, and how to see it</th></tr></thead>
+          <thead><tr>{HEADS.map((head) => <th>{head}</th>)}</tr></thead>
           <tbody>
-            {processes.map((row) => <tr>{row.map((text) => <td set:html={cell(text)} />)}</tr>)}
+            {processes.map((row) => <tr>{row.map((text, i) => <td data-head={HEADS[i]} set:html={cell(text)} />)}</tr>)}
           </tbody>
         </table>
       </div>
@@ -149,6 +187,29 @@ function cell(text: string): string {
     color: var(--text-strong);
     scroll-margin-top: 80px;
   }
+  .two {
+    margin-top: 1.25rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+  .two .pairs {
+    margin-top: 0.75rem;
+  }
+  .two .pairs div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .h3.yes {
+    color: var(--green);
+  }
+  .h3.no {
+    color: var(--yellow);
+  }
+  @media (max-width: 860px) {
+    .two {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
   .lead2 {
     margin-top: 0.75rem;
     color: var(--muted);
@@ -193,6 +254,54 @@ function cell(text: string): string {
     font-weight: 600;
     color: var(--text-strong);
     white-space: nowrap;
+  }
+  /* On a phone each process is a card: its name, then each cell under its head, so nothing is cut off at the right. */
+  @media (max-width: 640px) {
+    .table {
+      overflow-x: visible;
+      border: 0;
+    }
+    table,
+    tbody,
+    tr,
+    td {
+      display: block;
+      min-width: 0;
+    }
+    thead {
+      display: none;
+    }
+    tr {
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    tbody tr:nth-child(even) td {
+      background: none;
+    }
+    td {
+      border-bottom: 0;
+      padding: 0.35rem 0.9rem;
+    }
+    td:first-child {
+      padding-top: 0.75rem;
+      font-size: 1.02em;
+      white-space: normal;
+      background: var(--surface);
+    }
+    td:last-child {
+      padding-bottom: 0.75rem;
+    }
+    td:not(:first-child)::before {
+      content: attr(data-head);
+      display: block;
+      font-size: 0.78em;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
   }
   .pairs {
     margin-top: 1.25rem;

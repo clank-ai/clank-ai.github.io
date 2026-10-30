@@ -7,7 +7,7 @@
 import InstallCommand from './InstallCommand.astro';
 import Icon from './Icon.astro';
 import UseCases from './hero/UseCases.astro';
-import { LICENSE, LINKS, PAGES, RELEASED } from '../config';
+import { LICENSE, LINKS, PAGES, RELEASE, RELEASED } from '../config';
 ---
 
 <section class="hero" id="top" aria-labelledby="hero-title">
@@ -17,7 +17,10 @@ import { LICENSE, LINKS, PAGES, RELEASED } from '../config';
     <div class="hero-text">
       <p class="pill">
         <span class="pill-mark" aria-hidden="true"></span>
-        Open source <span class="sep" aria-hidden="true">·</span> {LICENSE}
+        <span class="pill-text">
+          <span>Open source</span> <span class="sep" aria-hidden="true">·</span> <span>{LICENSE}</span>
+          <span class="sep" aria-hidden="true">·</span> <span>public beta {RELEASE.latest}</span>
+        </span>
       </p>
       <h1 id="hero-title">Precise control over your AI coding agents.</h1>
       <p class="sub">
@@ -38,7 +41,16 @@ import { LICENSE, LINKS, PAGES, RELEASED } from '../config';
           )}
         </div>
       </div>
-      <p class="note">Then type <code class="inline">clank</code> in a project folder. Needs Docker.</p>
+      <p class="note">
+        It shows each command and asks before installing anything, Docker included
+        (<a href={PAGES.setup.path}>what it does</a>). Then type <code class="inline">clank</code> in a project folder.
+      </p>
+      <ul class="status" aria-label="Where Clank stands">
+        <li><b>Windows</b> in daily use</li>
+        <li><b>Linux</b> Docker Engine, tested on every change</li>
+        <li><b>macOS</b> untested beyond the installer</li>
+        <li><b>Models</b> your NVIDIA GPU, or OpenRouter's</li>
+      </ul>
     </div>
     <div class="hero-stage">
       <UseCases />
@@ -47,6 +59,23 @@ import { LICENSE, LINKS, PAGES, RELEASED } from '../config';
 </section>
 
 <style>
+  .status {
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+
+  .status b {
+    color: var(--text);
+    font-weight: 600;
+    margin-right: 4px;
+  }
+
   .hero {
     position: relative;
     isolation: isolate;
@@ -109,7 +138,19 @@ import { LICENSE, LINKS, PAGES, RELEASED } from '../config';
     color: var(--text);
   }
 
+  .pill-text > span {
+    white-space: nowrap;
+  }
+
+  @media (max-width: 420px) {
+    .pill {
+      font-size: 0.72rem;
+      letter-spacing: 0.02em;
+    }
+  }
+
   .pill-mark {
+    flex: none;
     width: 7px;
     height: 7px;
     background: var(--green);
