@@ -12,10 +12,17 @@ import RequestPath from '../components/RequestPath.astro';
 import Flows from '../components/Flows.astro';
 import FlowsVsOpenCode from '../components/flow/FlowsVsOpenCode.astro';
 import Privacy from '../components/Privacy.astro';
-import VSCodeWindow from '../components/surfaces/VSCodeWindow.astro';
+import Shot from '../components/Shot.astro';
 import BoardShot from '../components/surfaces/BoardShot.astro';
 import PhoneShots from '../components/surfaces/PhoneShots.astro';
-import { building, context, cost, loopGuard, requests, session, verdict } from '../scripts/crops';
+import { building, cost, loopGuard, verdict } from '../scripts/crops';
+import sessionShot from '../assets/captures/demo-console/02-session.png';
+import contextShot from '../assets/captures/demo-console/03-context.png';
+import requestsShot from '../assets/captures/demo-console/05-requests.png';
+import vscodeShot from '../assets/captures/demo-vscode/03-done.png';
+
+/** Where the real screenshots come from, said under each. */
+const DEMO = 'Captured 2026-10-29 from Clank 0.3.0b5 while the model on one RTX 5080 (frontier 262K lean) added rate limits to a small API.';
 import { LINKS, PAGES, RELEASE, RELEASED } from '../config';
 import { phoneFrames, shipped } from '../data/captures';
 
@@ -64,9 +71,11 @@ const sections = [
       <li><span><b>Three views.</b> Flow, Session and Context, one key apart.</span></li>
     </ul>
     <Fragment slot="art">
-      <Window title="clank · the Monitor · Session view">
-        <Crop crop={session()} label="The Monitor's Session view: the context window by part, what the session does now, and the Guide's keys." />
-      </Window>
+      <Shot
+        src={sessionShot}
+        alt="The Monitor's Session view while the agent works: its context window by part, what it does now (thinking, 63 tok/s), each step and call, and the Guide's keys."
+        note={DEMO}
+      />
       <GuideTable />
     </Fragment>
   </FeatureBlock>
@@ -84,19 +93,21 @@ const sections = [
       <li><span><b>Where figures come from.</b> The engine, the model's template, or an estimate, always labeled.</span></li>
     </ul>
     <Fragment slot="art">
-      <Window title="clank · the Monitor · Context view">
-        <Crop crop={context()} label="The Context view: each part of the window with its tokens, share and biggest item." />
-      </Window>
+      <Shot
+        src={contextShot}
+        alt="The Context view: each part of the window with its tokens, share and biggest item, and what compacting would free."
+        note={DEMO}
+      />
     </Fragment>
   </FeatureBlock>
 
   <div class="anchor">
     <Flows />
     <div class="container flow-shots">
-      <Window title="Building it with the model">
+      <Window title="Building it with the model" drawn>
         <Crop crop={building()} label="Building a flow with the model: the folder read, BRIEF.md written, a draft refused with its problem, then accepted." />
       </Window>
-      <Window title="VERIFY's report">
+      <Window title="VERIFY's report" drawn>
         <Crop crop={verdict()} label="VERIFY's report: a fail with two numbered findings, sent back to PLAN." />
       </Window>
     </div>
@@ -120,10 +131,12 @@ const sections = [
       <RequestPath />
     </Fragment>
     <div slot="after" class="container gw-shots">
-      <Window title="clank · Requests · F7">
-        <Crop crop={requests()} label="Requests: one line per request, with its model, tokens and cost." />
-      </Window>
-      <Window title="clank · the Monitor · live text">
+      <Shot
+        src={requestsShot}
+        alt="Requests: one line per request the agent made, with its tokens, how much was read from the cache, its first token and its speed; the highlighted one with its preset, engine and what was asked."
+        note={DEMO}
+      />
+      <Window title="clank · the Monitor · live text" drawn>
         <Crop crop={loopGuard()} label="The live text of an answer that repeats itself, stopped by the loop guard." />
       </Window>
     </div>
@@ -160,7 +173,7 @@ const sections = [
       <li><span><b>Estimates labeled.</b> A cost is marked as an estimate until OpenRouter gives the exact figure.</span></li>
     </ul>
     <Fragment slot="art">
-      <Window title="clank · cloud spending">
+      <Window title="clank · cloud spending" drawn>
         <Crop crop={cost()} label="Cloud spending: today's and this month's against their limits, and this session's cost." />
       </Window>
     </Fragment>
@@ -187,7 +200,11 @@ const sections = [
       <li><span><b>Elsewhere too.</b> From another computer over SSH, the folder opens in that computer's VS Code, connected to yours.</span></li>
     </ul>
     <Fragment slot="art">
-      <div class="surface"><VSCodeWindow /></div>
+      <Shot
+        src={vscodeShot}
+        alt="VS Code with Clank: the agent's new module open beside the files, and Clank's agent panel saying what it changed, all nine tests passing; under it the readout: 45 tok/s, 32K of 262K."
+        note={DEMO}
+      />
     </Fragment>
   </FeatureBlock>
 

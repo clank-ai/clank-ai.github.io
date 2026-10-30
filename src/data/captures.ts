@@ -41,6 +41,8 @@ export interface Frame {
   /** Seconds from the recording's start. */
   t: number;
   caption: string;
+  /** Where a phone's crop of the frame looks (CSS object-position); the middle top when not said. */
+  focus?: string;
 }
 export interface TextFrame extends Frame {
   text: string;
@@ -111,3 +113,7 @@ function imageFrames(folder: string): Capture<ImageFrame[]> {
 
 export const phoneFrames = imageFrames('phone');
 export const vscodeFrames = imageFrames('vscode');
+/** The demo session of 2026-10-29, captured from Clank 0.3.0b5 by hand (not clank-bench's): a coding task in VS Code
+ * with Clank's agent panel, and the console's pages while it ran. */
+export const demoVscodeFrames = imageFrames('demo-vscode');
+export const demoConsoleFrames = imageFrames('demo-console');

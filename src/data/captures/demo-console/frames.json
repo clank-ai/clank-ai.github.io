@@ -1,0 +1,38 @@
+[
+ {
+  "file": "01-folder.png",
+  "t": 40,
+  "focus": "60% top",
+  "caption": "This folder: everything the agent needs, checked (Docker, the workspace, the sandbox image, the model, the gateway), and a request in flight."
+ },
+ {
+  "file": "02-session.png",
+  "t": 95,
+  "focus": "0% top",
+  "caption": "The Monitor while the agent works: its context window (18,669 of 262,144 tokens, all read from the cache), what it does now (thinking, 63 tok/s), and each step and call as it happens."
+ },
+ {
+  "file": "03-context.png",
+  "t": 105,
+  "focus": "0% top",
+  "caption": "What fills the context window, part by part, and what compacting would free."
+ },
+ {
+  "file": "04-waiting.png",
+  "t": 570,
+  "focus": "100% top",
+  "caption": "A change waits for your approval: the Monitor says which (edit todo/server.py), and the header counts the questions waiting."
+ },
+ {
+  "file": "05-requests.png",
+  "t": 872,
+  "focus": "54% top",
+  "caption": "Requests (F7): every request the agent made, with its tokens, how much was read from the cache, its first token and its speed."
+ },
+ {
+  "file": "06-done.png",
+  "t": 880,
+  "focus": "0% top",
+  "caption": "The session done: 11 steps and 14 calls, 31,942 tokens of the 262,144-token window."
+ }
+]

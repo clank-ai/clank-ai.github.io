@@ -41,6 +41,7 @@ script checks each capture, copies it, deletes its sample, and ends by saying wh
 | `scripts/relative-urls.mjs` | Runs after `astro build`: makes the pages' asset paths relative (an image's `srcset` too), so `dist/` works from any folder |
 | `scripts/check-dist.mjs` | `npm run check` |
 | `scripts/sync-captures.py` | Copies clank-bench's captures into the site, each checked first (standard library only) |
+| `scripts/demo/` | How Home's VS Code and Console tabs and the Features page's screenshots were captured from a real demo session, and the scripts that did it (its README) |
 | `.github/workflows/pages.yml` | Builds, checks and publishes the site on every push to `main` |
 
 ## Deploy

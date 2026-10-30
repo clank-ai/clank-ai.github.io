@@ -1,11 +1,13 @@
 ---
-/** A framed screen: a title bar, then whatever it shows. */
+/** A framed screen: a title bar, then whatever it shows; `drawn` says under it that it is an illustration (a console
+ * frame from Clank's tests, drawn here, with example names), never a screenshot. */
 interface Props {
   title: string;
   class?: string;
   pad?: boolean;
+  drawn?: boolean;
 }
-const { title, class: cls, pad = true } = Astro.props;
+const { title, class: cls, pad = true, drawn = false } = Astro.props;
 ---
 
 <div class:list={['window', cls]}>
@@ -17,3 +19,12 @@ const { title, class: cls, pad = true } = Astro.props;
     <slot />
   </div>
 </div>
+{drawn && <p class="drawn">An illustration: a frame of the console from Clank's tests, with example names.</p>}
+
+<style>
+  .drawn {
+    margin: 8px 0 0;
+    font-size: 0.8rem;
+    color: var(--faint);
+  }
+</style>

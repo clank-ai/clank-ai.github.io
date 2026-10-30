@@ -1,0 +1,20 @@
+[
+ {
+  "file": "01-review.png",
+  "t": 150,
+  "focus": "100% top",
+  "caption": "A task in plain words, sent from Clank's agent panel. The model on this PC's GPU (frontier 262K lean, a 27B model) read the project and wrote todo/limits.py; in review mode the change waits beside your files: Allow once, Always or Reject."
+ },
+ {
+  "file": "02-tests.png",
+  "t": 690,
+  "focus": "100% top",
+  "caption": "Allowed, it wires the limiter into the server, writes the tests and runs them in the folder's container: all 9 pass. It runs them three more times, to be sure the concurrent test is not flaky."
+ },
+ {
+  "file": "03-done.png",
+  "t": 870,
+  "focus": "100% top",
+  "caption": "Done, with what it changed, in its own words. Under the panel, the readout: 45 tok/s, 32K of the 262K window, the GPU's memory."
+ }
+]

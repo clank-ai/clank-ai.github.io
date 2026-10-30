@@ -1,8 +1,9 @@
 ---
 /**
- * The top of Home: Clank in use, four ways, each a recording played back with a one-line caption. VS Code with
- * OpenCode in its terminal and Clank's agent panel beside it; the console in a terminal; the iPhone app over Tailscale,
- * in a phone's frame, with how it reaches the PC; and a flow running on a benchmark problem. The recordings are
+ * The top of Home: Clank in use, four ways, each a recording played back with a one-line caption. VS Code, a coding
+ * task with Clank's agent panel beside the files; the console in a terminal while it ran; the iPhone app over
+ * Tailscale, in a phone's frame, with how it reaches the PC; and a flow running on a benchmark problem. VS Code and the
+ * console are the demo session of 2026-10-29 (Clank 0.3.0b5, src/data/captures/demo-*); the iPhone and the flow are
  * clank-bench's captures, copied by scripts/sync-captures.py (src/data/captures.ts); until one is there, its sample
  * stands in and says "Sample" in development, and a build leaves that tab out (samples never ship).
  *
@@ -15,16 +16,12 @@ import { Image } from 'astro:assets';
 import FlowDiagram from '../flow/FlowDiagram.astro';
 import SampleTag from '../SampleTag.astro';
 import Icon from '../Icon.astro';
-import { consoleFrames, flowTrace, phoneFrames, shipped, vscodeFrames } from '../../data/captures';
-import { consoleFrame } from '../../scripts/console-frame';
+import { demoConsoleFrames, demoVscodeFrames, flowTrace, phoneFrames, shipped } from '../../data/captures';
 import { clock } from '../../scripts/flow-play';
 import { problemNumber } from '../../scripts/compare';
 import { texToHtml } from '../../scripts/texlite';
 import { PAGES, RELEASE } from '../../config';
 
-const term = consoleFrames.data.map((frame) => ({ ...frame, ...consoleFrame(frame.text) }));
-const cols = Math.max(...term.map((frame) => frame.cols));
-const rows = Math.max(...term.map((frame) => frame.rows));
 const trace = flowTrace.data;
 const LABEL: Record<string, string> = { you: 'YOU', task: 'TASK', verify: 'VERIFY', integrate: 'INTEGRATE' };
 const boxOf = (id: string) => trace.flow.boxes.find((box) => box.id === id);
@@ -36,20 +33,20 @@ const tabs = [
   {
     id: 'vscode',
     label: 'VS Code',
-    line: 'OpenCode in VS Code’s terminal, Clank’s agent panel beside it.',
-    pending: 'The agent panel comes with the next release.',
-    capture: vscodeFrames,
-    times: vscodeFrames.data.map((frame) => frame.t),
-    captions: vscodeFrames.data.map((frame) => frame.caption),
+    line: 'A coding task in VS Code: Clank’s agent panel beside your files, each change to allow or reject.',
+    pending: '',
+    capture: demoVscodeFrames,
+    times: demoVscodeFrames.data.map((frame) => frame.t),
+    captions: demoVscodeFrames.data.map((frame) => frame.caption),
   },
   {
     id: 'console',
     label: 'Console',
     line: 'The console in your terminal: what runs, what fills the window, and keys to steer it.',
     pending: '',
-    capture: consoleFrames,
-    times: consoleFrames.data.map((frame) => frame.t),
-    captions: consoleFrames.data.map((frame) => frame.caption),
+    capture: demoConsoleFrames,
+    times: demoConsoleFrames.data.map((frame) => frame.t),
+    captions: demoConsoleFrames.data.map((frame) => frame.caption),
   },
   {
     id: 'phone',
@@ -114,13 +111,14 @@ const compact = JSON.stringify({
       data-times={timesOf('vscode')}
       hidden={first !== 'vscode'}
     >
-      <div class="uc-screen uc-shot" role="img" aria-label="VS Code with Clank: the files, the editor, OpenCode and Clank's agent panel.">
+      <div class="uc-screen uc-shot" role="img" aria-label="VS Code with Clank: the files, the change the agent made, and Clank's agent panel.">
         {
-          vscodeFrames.data.map((frame, i) => (
+          demoVscodeFrames.data.map((frame, i) => (
             <Image
               src={frame.image}
               alt=""
               class:list={['uc-frame', i === 0 && 'on']}
+              style={`--focus: ${frame.focus ?? '50% top'}`}
               data-frame={i}
               widths={[640, 960, 1280, Math.min(1920, frame.image.width)]}
               sizes="(min-width: 1180px) 720px, (min-width: 760px) 92vw, 100vw"
@@ -144,8 +142,22 @@ const compact = JSON.stringify({
       data-times={timesOf('console')}
       hidden={first !== 'console'}
     >
-      <div class="uc-screen uc-term" role="img" aria-label="Clank's console in a terminal." style={`--cols: ${cols}; --rows: ${rows}`}>
-        {term.map((frame, i) => <pre class:list={['uc-frame', 'uc-cells', i === 0 && 'on']} data-frame={i} aria-hidden="true" set:html={frame.html} />)}
+      <div class="uc-screen uc-shot uc-console" role="img" aria-label="Clank's console in a terminal, while the agent works: This folder, the Monitor, Requests.">
+        {
+          demoConsoleFrames.data.map((frame, i) => (
+            <Image
+              src={frame.image}
+              alt=""
+              class:list={['uc-frame', i === 0 && 'on']}
+              style={`--focus: ${frame.focus ?? '50% top'}`}
+              data-frame={i}
+              widths={[640, 960, Math.min(1528, frame.image.width)]}
+              sizes="(min-width: 1180px) 720px, (min-width: 760px) 92vw, 100vw"
+              loading="lazy"
+              decoding="async"
+            />
+          ))
+        }
       </div>
     </section>
     )}
@@ -733,11 +745,11 @@ const compact = JSON.stringify({
       display: none;
     }
 
-    /* A window this narrow shows half of VS Code, large enough to read: the agent panel and the terminal's edge
-       (the recording's panel spans about a fifth to three fifths of its width). */
+    /* A window this narrow shows each frame's part worth reading, large enough to read: VS Code's agent panel, the
+       console's panel that the caption names (each frame's focus, in its frames.json). */
     .uc-shot img.uc-frame {
       object-fit: cover;
-      object-position: 40% top;
+      object-position: var(--focus, 50% top);
     }
 
     .uc-tabs button {
