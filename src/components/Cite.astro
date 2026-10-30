@@ -1,0 +1,28 @@
+---
+/** A citation in a post's text: the numbers of its references, each a link to its entry in the post's list. */
+interface Props {
+  n: number[];
+}
+const { n } = Astro.props;
+---
+
+<sup class="cite">[{n.map((each, i) => (
+  <>{i > 0 && ', '}<a href={`#ref-${each}`} aria-label={`reference ${each}`}>{each}</a></>
+))}]</sup>
+
+<style>
+  .cite {
+    margin-left: 1px;
+    font-size: 0.7em;
+    line-height: 0;
+    white-space: nowrap;
+    color: var(--faint);
+  }
+  .cite a {
+    color: var(--blue);
+    text-decoration: none;
+  }
+  .cite a:hover {
+    text-decoration: underline;
+  }
+</style>

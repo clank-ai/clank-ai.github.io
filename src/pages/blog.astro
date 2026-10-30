@@ -145,22 +145,24 @@ const machine = [
   }
   .stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
     gap: 12px;
     margin-top: 4px;
   }
   .stats div {
     display: flex;
     flex-direction: column-reverse;
+    min-width: 0;
     padding: 12px 14px;
     background: var(--well);
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
   }
   .stats dd {
+    margin: 0; /* a dd's own indent pushed the number past its box on a phone */
     font-family: var(--font-mono);
-    font-size: 1.2rem;
-    white-space: nowrap;
+    font-size: clamp(0.95rem, 0.85rem + 0.5vw, 1.2rem);
+    overflow-wrap: anywhere;
     color: var(--text-strong);
   }
   .stats dt {

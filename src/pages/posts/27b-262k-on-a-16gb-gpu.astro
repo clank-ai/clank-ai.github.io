@@ -1,7 +1,9 @@
 ---
 /**
- * Post: Swift 1.5 (Qwen3.8-27B) with its whole 262K context on a 16 GB GPU, with KVMem and Clank. What each piece is
- * and where it comes from, why it fits, what it did in a real session, what broke, and how to set it up. Every number
+ * Post: Swift 1.5 (Qwen3.8-27B) with its whole 262K context on a 16 GB GPU, with KVMem and Clank. How I got here (a
+ * short timeline: the dates from the repositories, the model cards and Clank's own records), what each piece is and
+ * where it comes from, why it fits, what it did in a real session, what broke, and how to set it up, the literature
+ * numbered in References (`REFS`, in the order the text first cites each; `<Cite>` links to them). Every number
  * comes from Clank's repository (docs/models/frontier-262k.md and the measurements it links), from the gateway's own
  * record of the session plotted (src/data/session-2026-10-20.json), or from the benchmark night's results
  * (src/data/bench-2026-10-27.json, exported by clank-bench's export.py; OpenCode alone against a flow is the site's
@@ -11,6 +13,7 @@
 import Base from '../../layouts/Base.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import CommandBlock from '../../components/CommandBlock.astro';
+import Cite from '../../components/Cite.astro';
 import { PAGES, LINKS, INSTALL } from '../../config';
 import { POSTS, postPath } from '../../data/blog';
 import session from '../../data/session-2026-10-20.json';
@@ -20,7 +23,7 @@ import { comparison } from '../../data/captures';
 const post = POSTS.find((p) => p.slug === '27b-262k-on-a-16gb-gpu')!;
 const repo = LINKS.github;
 const VIDEO = 'https://www.youtube.com/watch?v=h_KqS4GtU3I';
-const KVMEM_REPO = 'https://github.com/kvmem/kvmem-llama.cpp';
+const KVMEM_REPO = 'https://github.com/kvmem/kvmem'; // kvmem/kvmem-llama.cpp until it was renamed
 const FILE = 'Swift-1.5-Qwen3.8-27B-GSQ-RCO-IQ3_S-mtp.gguf';
 const REVISION = 'd74895bbe5db4bec1e0024e7cc87d59c02d7631a';
 const SHA = '9aecf1cd41b2cb2f32a74e0d889e33855ebef43b26f43b43feb5720239e677e5';
@@ -48,7 +51,7 @@ const pieces = [
     where: 'WSL 2, Ubuntu 22.04',
     name: 'KVMem server',
     does: 'Runs the model. A llama.cpp fork that keeps the whole KV cache in RAM and the part that matters on the GPU.',
-    from: 'kvmem/kvmem-llama.cpp, v0.16.0-rc1',
+    from: 'kvmem/kvmem, v0.16.0-rc1',
     href: KVMEM_REPO,
     hop: 'runs on',
   },
@@ -121,8 +124,8 @@ const settings: [string, string, string][] = [
 ];
 
 const build = [
-  'git clone --recurse-submodules https://github.com/kvmem/kvmem-llama.cpp.git',
-  'cd kvmem-llama.cpp',
+  'git clone --recurse-submodules https://github.com/kvmem/kvmem.git',
+  'cd kvmem',
   'git checkout v0.16.0-rc1        # commit db4bc22, the version measured here',
   "git submodule update --init     # llama.cpp at KVMem's pin",
   'git cherry-pick -n 7e20823      # the long tool result fix, from v0.17.0',
@@ -143,7 +146,7 @@ const withoutClank = [
   'mkdir -p ~/models && cd ~/models',
   `wget -c https://huggingface.co/ukisai/Swift-1.5-Qwen3.8-27B-GSQ-RCO-GGUF/resolve/${REVISION}/${FILE}`,
   `echo "${SHA}  ${FILE}" | sha256sum -c`,
-  'cd ~/kvmem-llama.cpp',
+  'cd ~/kvmem',
   `GGML_CUDA_DISABLE_GRAPHS=1 build/bin/llama-kvmem-server -m ~/models/${FILE} -c 262144 -n 32768 --kvmem-budget 57344 --kvmem-gen-reserve 40960 --kv-dtype q4_0 --spec-type draft-mtp --enable-thinking --host 127.0.0.1 --port 8080`,
 ];
 
@@ -168,41 +171,98 @@ const opencode = `{
   "model": "kvmem/MODEL_ID"
 }`;
 
-const sources: [string, string, string][] = [
-  ['https://huggingface.co/Qwen/Qwen3.8-27B', 'Qwen3.8-27B', 'the base model, by Qwen'],
-  ['https://huggingface.co/ukisai/Swift-1.5-Qwen3.8-27b', 'Swift 1.5', 'the fine-tune, by UkisAI'],
-  ['https://huggingface.co/ukisai/Swift-1.5-Qwen3.8-27B-GSQ-RCO-GGUF', 'The GGUF files', 'UkisAI’s, with the MTP head'],
-  ['https://arxiv.org/abs/2604.18556', 'GSQ', 'and'],
-  ['https://arxiv.org/abs/2605.00649', 'RCO', 'the quantization, by ISTA-DASLab'],
-  ['https://arxiv.org/abs/2609.04852', 'KVMem’s paper', 'and'],
-  [KVMEM_REPO, 'its code', 'the engine'],
-  ['https://github.com/ggml-org/llama.cpp', 'llama.cpp', 'what KVMem builds on'],
-  ['https://opencode.ai', 'OpenCode', 'the agent'],
-  [`${repo}/blob/main/docs/models/frontier-262k.md`, 'The whole recipe', 'in Clank’s repository, with every setting and why'],
-  [`${repo}/blob/main/docs/measurements/2026-10-18-the-frontier-preset.md`, 'The measurements', 'speed, memory and the long sessions'],
-  [VIDEO, 'Kai’s video', 'the one that started it'],
+/* The literature and the code, numbered in the order the text first cites them. */
+const REFS: { key: string; href: string; who: string; title: string; where: string }[] = [
+  { key: 'qwen', href: 'https://huggingface.co/Qwen/Qwen3.8-27B', who: 'Qwen Team (2026).', title: 'Qwen3.8-27B', where: 'Model card, Hugging Face, August 2026; the release: “Qwen3.8-Max: A New Bar for Coding and Cowork”, qwen.ai.' },
+  { key: 'kvmem', href: 'https://arxiv.org/abs/2609.04852', who: 'D. Chai, L. Wang, Z. Su, Z. Xia and Z. Yu (2026).', title: 'KVMem: Virtualizing Million-Token Agent Workspaces on a Consumer GPU', where: 'arXiv:2609.04852.' },
+  { key: 'kvmem-code', href: KVMEM_REPO, who: 'KVMem (2026).', title: 'kvmem/kvmem', where: 'GitHub, from September 14, 2026: v0.16.0-rc1, used here; v0.18.0 with NInfer as its backend, October 13, 2026.' },
+  { key: 'ninfer', href: 'https://github.com/Neroued/ninfer', who: 'Neroued (2026).', title: 'NInfer: high-performance single-GPU inference', where: 'GitHub; its RTX 5080 fork with a 128K Qwen3.8-27B: github.com/toddballinger/ninfer-5080.' },
+  { key: 'measured', href: `${repo}/blob/main/docs/measurements/2026-10-13-ninfer-and-kvmem.md`, who: 'Clank (2026).', title: 'NInfer and KVMem on this machine', where: 'Measurement, October 13, 2026, and the decision it led to (Clank’s decision 0034).' },
+  { key: 'swift', href: 'https://huggingface.co/ukisai/Swift-1.5-Qwen3.8-27b', who: 'UkisAI (2026).', title: 'Swift 1.5 Qwen3.8-27B', where: 'Model card, Hugging Face, September 24, 2026; its GGUF files with the MTP head: ukisai/Swift-1.5-Qwen3.8-27B-GSQ-RCO-GGUF.' },
+  { key: 'video', href: VIDEO, who: 'Kai (2026).', title: 'How I Got Frontier Performance on 16GB VRAM (Qwen 3.8 27B)', where: 'YouTube, October 18, 2026.' },
+  { key: 'gsq', href: 'https://arxiv.org/abs/2604.18556', who: 'A. Dadgarnia, S. Tabesh, M. Nikdan, M. Helcig, E. Kurtic, M. Kleinegger and D. Alistarh (2026).', title: 'GSQ: Highly-Accurate Low-Precision Scalar Quantization for LLMs via Gumbel-Softmax Sampling', where: 'arXiv:2604.18556.' },
+  { key: 'rco', href: 'https://arxiv.org/abs/2605.00649', who: 'M. Helcig and D. Alistarh (2026).', title: 'Model Compression with Exact Budget Constraints via Riemannian Manifolds', where: 'arXiv:2605.00649.' },
+  { key: 'mtp', href: 'https://arxiv.org/abs/2404.19737', who: 'F. Gloeckle, B. Youbi Idrissi, B. Rozière, D. Lopez-Paz and G. Synnaeve (2024).', title: 'Better & Faster Large Language Models via Multi-token Prediction', where: 'arXiv:2404.19737.' },
+  { key: 'specdec', href: 'https://arxiv.org/abs/2211.17192', who: 'Y. Leviathan, M. Kalman and Y. Matias (2023).', title: 'Fast Inference from Transformers via Speculative Decoding', where: 'ICML 2023; arXiv:2211.17192.' },
+  { key: 'gdn', href: 'https://arxiv.org/abs/2412.06464', who: 'S. Yang, J. Kautz and A. Hatamizadeh (2025).', title: 'Gated Delta Networks: Improving Mamba2 with Delta Rule', where: 'ICLR 2025; arXiv:2412.06464.' },
+  { key: 'gattn', href: 'https://arxiv.org/abs/2505.06708', who: 'Z. Qiu, Z. Wang, B. Zheng et al. (2025).', title: 'Gated Attention for Large Language Models: Non-linearity, Sparsity, and Attention-Sink-Free', where: 'arXiv:2505.06708.' },
+  { key: 'llamacpp', href: 'https://github.com/ggml-org/llama.cpp', who: 'ggml-org.', title: 'llama.cpp', where: 'GitHub: the engine KVMem builds on.' },
+  { key: 'opencode', href: 'https://opencode.ai', who: 'OpenCode.', title: 'OpenCode', where: 'opencode.ai: the coding agent.' },
+  { key: 'recipe', href: `${repo}/blob/main/docs/models/frontier-262k.md`, who: 'Clank (2026).', title: 'frontier 262K', where: 'The whole recipe, every setting and why, and its measurements (docs/measurements/2026-10-18-the-frontier-preset.md).' },
+];
+const cite = (...keys: string[]) => keys.map((key) => {
+  const at = REFS.findIndex((r) => r.key === key);
+  if (at < 0) throw new Error(`no reference ${key}`);
+  return at + 1;
+});
+
+/* How I got here: each date from the repositories, the model cards, or Clank's own records. */
+const timeline: { when: string; what: string; refs: string[] }[] = [
+  { when: 'August', what: 'Trial and error with a few Qwen models. The one that stayed was Qwen3.8-27B, out in early August.', refs: ['qwen'] },
+  { when: 'September 17', what: 'KVMem, three days after its code went up: most of the KV cache in system RAM, so the model kept a 262K-token context on 16 GB.', refs: ['kvmem', 'kvmem-code'] },
+  { when: 'October 11–12', what: 'NInfer, in its RTX 5080 fork: about twice as fast at reading long prompts, but only 45K tokens of context fit beside my desktop.', refs: ['ninfer', 'measured'] },
+  { when: 'October 11–13', what: 'Tried combining them: KVMem’s own builds with NInfer as the backend.', refs: ['kvmem-code'] },
+  { when: 'October 13', what: 'Back to KVMem alone. On ten coding tasks both passed eight, but KVMem took 24 minutes to NInfer’s 43, with nearly six times the context.', refs: ['measured'] },
+  { when: 'October 18', what: 'Swift 1.5, UkisAI’s fine-tune of Qwen3.8-27B (released September 24), after Kai’s video that day: it thinks about 42% less on average for the same GPQA Diamond score. It is what this post runs.', refs: ['swift', 'video'] },
+];
+
+/* The sections, for the contents list. */
+const toc: [string, string][] = [
+  ['history', 'How I got here'],
+  ['pieces', 'The pieces'],
+  ['file', 'The model file'],
+  ['fit', 'Why 262K tokens fit'],
+  ['session', 'In a real session'],
+  ['benchmarks', 'How capable it is'],
+  ['problems', 'What broke'],
+  ['settings', 'The settings'],
+  ['setup', 'Setup'],
+  ['references', 'References'],
 ];
 ---
 
 <Base title={`${post.title} · Clank`} description={post.dek} path={postPath(post)}>
+  <div class="post-wrap">
+  <nav class="toc" aria-label="On this page">
+    <p class="toc-title">On this page</p>
+    <ol>
+      {toc.map(([id, label]) => <li><a href={`#${id}`}>{label}</a></li>)}
+    </ol>
+  </nav>
   <article class="container post">
     <Breadcrumbs items={[{ label: 'Blog', href: PAGES.blog.path }, { label: 'This post' }]} />
     <h1>{post.title}</h1>
     <p class="dek">{post.dek}</p>
     <p class="byline">
-      <span>{post.author}</span><span aria-hidden="true">·</span><time datetime={post.date}>{post.dateText}</time><span aria-hidden="true">·</span><span>{post.minutes} min read</span>
+      <span>{post.author}</span><span aria-hidden="true">·</span><time datetime={post.date}>{post.dateText}</time><span aria-hidden="true">·</span><span>{post.minutes} min read</span>{post.updated && <><span aria-hidden="true">·</span><span>Updated <time datetime={post.updated}>{post.updatedText}</time></span></>}
     </p>
+    <dl class="stats">
+      {post.stats.map((s) => (
+        <div>
+          <dt>{s.label}</dt>
+          <dd>{s.value}</dd>
+        </div>
+      ))}
+    </dl>
 
     <p>
       This is the model I run every day for long agent sessions: Qwen3.8-27B in UkisAI’s Swift 1.5 fine-tune, with its
       full 262,144-token context, on one RTX 5080 with 16 GB.
     </p>
     <p>
-      It started with <a href={VIDEO}>Kai’s video</a> arguing that this model scores like a frontier model when its
-      reasoning effort is left at the default. On 16 GB, memory was the limit: only about 57,000 tokens of context fit
-      beside my desktop. KVMem moves most of the cache into system RAM, which took it to 262,144. Clank runs it all from
-      one preset.
+      On 16 GB, memory is the limit: only about 57,000 tokens of exact context fit beside my desktop. KVMem moves most of
+      the cache into system RAM, which takes it to 262,144, and Clank runs it all from one preset.
     </p>
+
+    <h2 id="history">How I got here</h2>
+    <ol class="timeline">
+      {timeline.map((t) => (
+        <li>
+          <span class="when">{t.when}</span>
+          <span class="what">{t.what}<Cite n={cite(...t.refs)} /></span>
+        </li>
+      ))}
+    </ol>
 
     <h2 id="pieces">The pieces</h2>
     <figure class="fig">
@@ -239,27 +299,30 @@ const sources: [string, string, string][] = [
       <ol class="lineage">
         <li class="card">
           <span class="who">Qwen</span>
-          <strong>Qwen3.8-27B</strong>
+          <strong>Qwen3.8-27B<Cite n={cite('qwen')} /></strong>
           <span>The base model: 27 billion parameters in 64 layers. Its reasoning effort defaults to xhigh.</span>
         </li>
         <li class="link" aria-hidden="true"><span>fine-tuned</span></li>
         <li class="card">
           <span class="who">UkisAI</span>
-          <strong>Swift 1.5</strong>
-          <span>Thinks about 42% less for the same GPQA Diamond score.</span>
+          <strong>Swift 1.5<Cite n={cite('swift')} /></strong>
+          <span>Thinks about 42% less, on average, for the same GPQA Diamond score.</span>
         </li>
         <li class="link" aria-hidden="true"><span>compressed</span></li>
         <li class="card">
           <span class="who">ISTA-DASLab, refined by UkisAI</span>
-          <strong>GSQ-RCO IQ3_S</strong>
-          <span>About 3.5 bits a weight: one 12.1 GB file, with the MTP head that drafts tokens.</span>
+          <strong>GSQ-RCO IQ3_S<Cite n={cite('gsq', 'rco')} /></strong>
+          <span>About 3.5 bits a weight: one 12.1 GB file, with the MTP head that drafts tokens.<Cite n={cite('mtp', 'specdec')} /></span>
         </li>
       </ol>
       <figcaption>The file’s KL divergence from the full-precision model is 0.0513 (UkisAI’s measure).</figcaption>
     </figure>
 
     <h2 id="fit">Why 262K tokens fit</h2>
-    <p>Most of the model’s layers keep no cache at all, and most of the cache that remains lives in RAM.</p>
+    <p>
+      Most of the model’s layers keep no cache at all<Cite n={cite('gdn', 'gattn')} />, and most of the cache that remains
+      lives in RAM<Cite n={cite('kvmem')} />.
+    </p>
 
     <figure class="fig">
       <div class="layers" role="img" aria-label="64 layers: every fourth one, 16 in all, attends fully and keeps a KV cache; the other 48 keep a small fixed state.">
@@ -269,7 +332,10 @@ const sources: [string, string, string][] = [
         <li><span class="sw full" aria-hidden="true" />16 full-attention layers: they keep a KV cache</li>
         <li><span class="sw lin" aria-hidden="true" />48 linear-attention layers: a small fixed state</li>
       </ul>
-      <figcaption>Every fourth layer attends to the whole context. Those 16 keep 18,432 bytes per token at q4_0.</figcaption>
+      <figcaption>
+        Every fourth layer is a gated attention layer that attends to the whole context; those 16 keep 18,432 bytes per
+        token at q4_0. The other 48 are Gated DeltaNet layers, each with a small state of a fixed size.
+      </figcaption>
     </figure>
 
     <figure class="fig">
@@ -539,12 +605,40 @@ const sources: [string, string, string][] = [
       </section>
     </div>
 
-    <h2 id="sources">Where each piece comes from</h2>
-    <ul class="sources">
-      {sources.map(([href, label, what]) => <li><a href={href}>{label}</a> <span>{what}</span></li>)}
-    </ul>
+    <h2 id="references">References</h2>
+    <ol class="refs">
+      {REFS.map((r, i) => (
+        <li id={`ref-${i + 1}`}>
+          <span class="ref-who">{r.who}</span> <a href={r.href}>{r.title}</a>. <span class="ref-where">{r.where}</span>
+        </li>
+      ))}
+    </ol>
   </article>
+  </div>
 </Base>
+
+<script>
+  /* The contents list marks the section in view. */
+  const links = new Map(
+    [...document.querySelectorAll<HTMLAnchorElement>('.toc a')].map((a) => [a.hash.slice(1), a] as const),
+  );
+  const shown = new Set<string>();
+  const mark = () => {
+    const first = [...links.keys()].find((id) => shown.has(id));
+    for (const [id, a] of links) a.toggleAttribute('aria-current', id === first);
+  };
+  const watch = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) (e.isIntersecting ? shown.add(e.target.id) : shown.delete(e.target.id));
+      mark();
+    },
+    { rootMargin: '-80px 0px -55% 0px' },
+  );
+  for (const id of links.keys()) {
+    const target = document.getElementById(id);
+    if (target) watch.observe(target);
+  }
+</script>
 
 <style>
   .post {
@@ -555,18 +649,149 @@ const sources: [string, string, string][] = [
     --s4: #c98500;
     --neutral: #3b4261;
     --track: #262a3d;
-    max-width: calc(46rem + 2 * var(--pad));
+    max-width: calc(44rem + 2 * var(--pad));
     padding-block: clamp(32px, 4vw, 48px) var(--section-gap);
     font-size: 1.125rem;
     line-height: 1.75;
   }
-  .post > p,
-  .post > ul,
-  .post > ol,
-  .post > h2,
-  .post > h3,
-  .post > .dek {
-    max-width: 40rem;
+  /* One column, text and figures the same width; on a wide screen the contents list stands in the left margin. */
+  .post-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, calc(44rem + 2 * var(--pad))) minmax(0, 1fr);
+  }
+  .post-wrap > .post {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+  }
+  .toc {
+    display: none;
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: end;
+    align-self: start;
+    position: sticky;
+    top: 96px;
+    width: 13rem;
+    margin: 168px 8px 0 0;
+    font-size: var(--fs-sm);
+  }
+  @media (min-width: 1260px) {
+    .toc {
+      display: block;
+    }
+  }
+  .toc-title {
+    margin: 0 0 10px;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-left: 1px solid var(--line);
+  }
+  .toc a {
+    display: block;
+    margin-left: -1px;
+    padding: 5px 0 5px 14px;
+    border-left: 2px solid transparent;
+    color: var(--muted);
+    line-height: 1.4;
+    text-decoration: none;
+  }
+  .toc a:hover {
+    color: var(--text-strong);
+  }
+  .toc a[aria-current] {
+    border-left-color: var(--blue);
+    color: var(--text-strong);
+  }
+
+  /* The key numbers, under the byline. */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    margin: 28px 0 8px;
+    overflow: hidden;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+  }
+  .stats div {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end; /* the number at the top of its cell, however long the label below */
+    gap: 2px;
+    min-width: 0;
+    padding: 14px 16px;
+    background: var(--surface);
+  }
+  .stats dd {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: clamp(1.05rem, 0.95rem + 0.5vw, 1.3rem);
+    line-height: 1.3;
+    color: var(--text-strong);
+    font-variant-numeric: tabular-nums;
+  }
+  .stats dt {
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+    color: var(--muted);
+  }
+  @media (max-width: 640px) {
+    .stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* How I got here: a date, then one line. */
+  .timeline {
+    margin: 20px 0 0;
+    padding: 0;
+    list-style: none;
+    border-left: 2px solid var(--line-strong);
+  }
+  .timeline li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+    gap: 4px 18px;
+    padding: 10px 0 10px 22px;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  .timeline li::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 19px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--blue);
+  }
+  .timeline li:last-child::before {
+    background: var(--blue);
+  }
+  .when {
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    line-height: 1.85;
+    color: var(--text-strong);
+    white-space: nowrap;
+  }
+  @media (max-width: 560px) {
+    .timeline li {
+      grid-template-columns: 1fr;
+    }
   }
   h1 {
     margin-top: 20px;
@@ -684,7 +909,7 @@ const sources: [string, string, string][] = [
     gap: 2px;
     padding: 12px 14px;
     background: var(--bg);
-    border: 1px solid var(--line-strong);
+    border: 1px solid var(--line);
     border-radius: var(--radius-sm);
   }
   .piece strong {
@@ -740,7 +965,7 @@ const sources: [string, string, string][] = [
     gap: 4px;
     padding: 12px 14px;
     background: var(--bg);
-    border: 1px solid var(--line-strong);
+    border: 1px solid var(--line);
     border-radius: var(--radius-sm);
     font-size: var(--fs-sm);
     line-height: 1.55;
@@ -1253,13 +1478,34 @@ const sources: [string, string, string][] = [
   .json code {
     color: var(--text);
   }
-  .sources {
-    padding-left: 1.2rem;
+  .refs {
+    margin-top: 16px;
+    padding-left: 1.6rem;
+    font-size: var(--fs-sm);
+    line-height: 1.6;
   }
-  .sources li + li {
-    margin-top: 0.35em;
+  .refs li {
+    padding-left: 4px;
+    scroll-margin-top: 96px;
   }
-  .sources span {
+  .refs li + li {
+    margin-top: 0.6em;
+  }
+  .refs li::marker {
+    color: var(--faint);
+    font-family: var(--font-mono);
+  }
+  .refs li:target {
+    background: color-mix(in srgb, var(--blue) 12%, transparent);
+    border-radius: 4px;
+  }
+  .ref-who {
+    color: var(--text);
+  }
+  .ref-where {
     color: var(--muted);
+  }
+  .refs a {
+    overflow-wrap: anywhere;
   }
 </style>

@@ -12,6 +12,9 @@ export interface Post {
   /** ISO date it was published, and as the page says it. */
   date: string;
   dateText: string;
+  /** ISO date it was last changed, and as the page says it, when it was. */
+  updated?: string;
+  updatedText?: string;
   minutes: number;
   author: string;
   stats: { value: string; label: string }[];
@@ -27,7 +30,9 @@ export const POSTS: Post[] = [
     tag: 'Setup',
     date: '2026-10-23',
     dateText: 'October 23, 2026',
-    minutes: 6,
+    updated: '2026-10-30',
+    updatedText: 'October 30, 2026',
+    minutes: 9,
     author: 'sjbevins',
     stats: [
       { value: '262,144', label: 'tokens of context' },
