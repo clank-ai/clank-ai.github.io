@@ -113,7 +113,7 @@ function imageFrames(folder: string): Capture<ImageFrame[]> {
 
 export const phoneFrames = imageFrames('phone');
 export const vscodeFrames = imageFrames('vscode');
-/** The demo session of 2026-10-29, captured from Clank 0.3.0b5 by hand (not clank-bench's): a coding task in VS Code
- * with Clank's agent panel, and the console's pages while it ran. */
+/** The demo sessions, captured by hand (not clank-bench's): a coding task in VS Code with Clank's agent panel
+ * (2026-10-29, Clank 0.3.0b5), and the console's pages while the same task ran again (2026-11-04, Clank 0.3.0b7). */
 export const demoVscodeFrames = imageFrames('demo-vscode');
 export const demoConsoleFrames = imageFrames('demo-console');

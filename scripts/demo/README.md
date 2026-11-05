@@ -1,7 +1,8 @@
 # The demo's screenshots
 
 Home's VS Code and Console tabs and the Features page's screenshots are real: Clank itself, captured while it worked,
-never drawn. They come from a demo session (2026-10-29, Clank 0.3.0b5): a Clank of its own (its own `CLANK_HOME` and
+never drawn. They come from a demo session (VS Code's: 2026-10-29, Clank 0.3.0b5; the console's again: 2026-11-04,
+Clank 0.3.0b7, 128 by 40 cells): a Clank of its own (its own `CLANK_HOME` and
 ports, so it never touches another Clank on the computer), the model on the computer's GPU (frontier 262K lean), and a
 small project, `todo-api` (a to-do API on Python's standard library, with its tests), given one task in plain words:
 add rate limiting, with tests. Nothing in them is personal: the demo's names only.
@@ -12,8 +13,10 @@ How they were made, to make them again:
    18310 and 18311, `runtime.json` 18300 and up, `remote.json` 7821), the host and the engine added (`clank host
    add`, `clank engine adopt`), a model loaded (`clank model load`), and the project opened (`clank workspace open`).
 2. **The task.** `demo.py start todo-api "<title>" "<the task>"` starts a session through Clank's API, as the agent
-   panel does; `demo.py mode todo-api auto` lets it go on without asking; `demo.py get agents/sessions
-   workspace=todo-api` shows a permission waiting.
+   panel does; `demo.py mode todo-api auto` lets it go on without asking (a change already waiting is answered
+   still: `clank questions answer <id> accept`); `demo.py get agents/sessions workspace=todo-api` shows a
+   permission waiting. To run the task again from its start, keep a copy of the project, check out its first
+   commit (and remove the `__pycache__` files a run left untracked), and put the copy back after.
 3. **The console.** `console-shots.py <out> <name>:<page>:<view>:<cols>x<rows>:<wait>` runs Clank's console against
    that service, waits until it has read the session, and saves Textual's own SVG of each page.
 4. **VS Code.** `code serve-web` on the project (Clank's extension installed with the server's own
