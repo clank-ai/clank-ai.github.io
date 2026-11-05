@@ -18,7 +18,7 @@ export const FAQ_GROUPS = [
       },
       {
         q: 'Do I need a graphics card?',
-        a: "Not for a cloud model: Clank then needs only Docker and an OpenRouter key. A model on your own computer needs an NVIDIA GPU; the 27B model with its full 262,144-token window runs on a 16 GB card.",
+        a: "Not for a cloud model: Clank then needs only Docker and an OpenRouter key. A model on your own computer needs an NVIDIA GPU; the 27B model with its full 262,144-token window runs on a 16 GB card. Its engine, KVMem, is built by hand for now, by the steps in Clank's docs, then adopted with `clank engine adopt`.",
       },
       {
         q: 'Can the agent touch my other folders?',

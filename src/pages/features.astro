@@ -147,7 +147,7 @@ const sections = [
     id="models"
     eyebrow="Models and engines"
     title="Any open model, on the engine you choose."
-    lead="A preset says how a model runs: its engine, its file, its window, its most output, its thinking budget. Clank installs llama.cpp (KVMem, for long windows, is built from its source), downloads the model and checks it, asking first at each step."
+    lead="A preset says how a model runs: its engine, its file, its window, its most output, its thinking budget. For a model on your GPU, the engine, KVMem, is built by hand today, by the steps in Clank's docs, and clank engine adopt checks it; then Clank downloads the model's file, checks it and loads the preset, asking first at each step. Clank's own llama.cpp recipe installs its CPU build, for completion."
   >
     <ul class="points">
       <li><span><b>Local.</b> Any open model as a GGUF file, checked by its SHA-256, served by llama.cpp or KVMem.</span></li>

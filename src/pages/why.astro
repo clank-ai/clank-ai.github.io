@@ -87,7 +87,7 @@ const independence = [
 const steps = [
   ['Check the machine', 'Look up drivers, CUDA, WSL 2, Docker and disk, a guide for each.', 'clank setup checks it all, says what is missing, and does each step, asking first.'],
   ['A sandbox for the agent', 'Write a container for it, mount the folder, decide what it may reach.', 'One workspace per folder, built on first use after asking. It reaches only Clank, and the hosts you allow it, through its proxy.'],
-  ['An engine', 'Build llama.cpp or another engine with the right options for your GPU.', 'Clank installs KVMem or llama.cpp by its recipe, or adopts a build you made.'],
+  ['An engine', 'Build llama.cpp or another engine with the right options for your GPU.', 'Built by hand today: KVMem, by the steps Clank’s docs write down; clank engine adopt checks the build, and Clank runs it from then on. Clank installs llama.cpp’s CPU build itself, for completion.'],
   ['A model file', 'Find a model, pick a quantization, download it, check it.', 'A preset names the file and its SHA-256; Clank downloads it, resumes it, checks it.'],
   ['Its settings', 'Work out the flags: the window, the cache, the most output, the thinking budget.', 'A preset holds them in one small file, and says whether it fits your GPU now.'],
   ['Load and switch', 'Start and stop servers by hand, a port for each.', 'Load, switch and unload from the console: Models (8), Presets (9), one key each.'],
@@ -166,7 +166,7 @@ const steps = [
         <p class="lead">
           Running a model on your own hardware, or adding a cloud provider, usually means a dozen tools and guides.
           Clank brings every step into one console and one set of commands. It does each step for you, asks first, and
-          shows what it did.
+          shows what it did, all but one for now: a GPU model's engine, KVMem, is built by hand.
         </p>
       </div>
       <div class="table-wrap">
@@ -198,9 +198,10 @@ const steps = [
           <p class="k"><span class="dot"></span>From install to a working session, on your GPU</p>
           <ol>
             <li><code>install</code><span>one line</span></li>
+            <li><code>build KVMem</code><span>by hand, by the steps in Clank's docs</span></li>
+            <li><code>adopt</code><span>clank engine adopt checks the build</span></li>
             <li><code>clank setup</code><span>each step, asked first</span></li>
-            <li><code>l</code><span>a preset that fits</span></li>
-            <li><code>y y y</code><span>engine, model, load</span></li>
+            <li><code>l · y y</code><span>a preset that fits: its file, the load</span></li>
             <li><code>F4 · g</code><span>the folder's workspace</span></li>
             <li><code>a</code><span>the agent, at work</span></li>
           </ol>
