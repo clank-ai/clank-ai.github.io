@@ -30,7 +30,7 @@ export const FAQ_GROUPS = [
       },
       {
         q: 'How do I remove it?',
-        a: 'Get started says how, step by step, in its Uninstalling section: Clank with two commands (`clank stop`, then `uv tool uninstall clank`), then, if you want, its folder (~/.clank), its containers and image, and what the installer added.',
+        a: 'Get started says how, step by step, in its Uninstalling section: Clank with two commands (`clank stop`, then `uv tool uninstall clank`), then, if you want, its folder (~/.clank, and on Linux ~/.cache/clank), its containers and image, and what the installer added.',
       },
     ],
   },

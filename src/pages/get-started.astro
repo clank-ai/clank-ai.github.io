@@ -45,6 +45,9 @@ const needs: Record<string, string[][]> = {
     ['uv and Git', 'installing Clank', 'the installer gets uv if it is missing, saying so, and offers Git, asking first; uv brings Python 3.12 by itself'],
     ['An OpenRouter account and key', 'path A, a cloud model', 'free models exist; paid ones need credits'],
     ['An NVIDIA GPU (16 GB is comfortable)', 'path B, a local model', 'not needed for path A'],
+    ['Disk', 'Clank and its workspaces', 'about 3 GB, and 10 to 15 GB more for a local model'],
+    ['VS Code (optional)', "Clank's VS Code window", "each release brings Clank's extension, checked against its SHA-256"],
+    ['Tailscale (optional)', 'Clank on your iPhone', 'on the PC and the iPhone, signed in to one account'],
   ],
   macos: [
     ['A macOS that Docker Desktop supports', 'everything', 'Clank on macOS is tested through its installer so far'],
@@ -52,13 +55,19 @@ const needs: Record<string, string[][]> = {
     ['uv and Git', 'installing Clank', 'the installer gets uv, and offers the command for Git, asking first'],
     ['An OpenRouter account and key', 'path A, a cloud model', 'free models exist; paid ones need credits'],
     ['A cloud model', 'the agent', "Clank's local engines need an NVIDIA GPU, which a Mac does not have: take path A"],
+    ['Disk', 'Clank and its workspaces', 'about 3 GB'],
+    ['VS Code (optional)', "Clank's VS Code window", "each release brings Clank's extension, checked against its SHA-256"],
+    ['Tailscale (optional)', 'Clank on your iPhone', 'on the Mac and the iPhone, signed in to one account'],
   ],
   linux: [
-    ['64-bit Linux with systemd', 'everything', 'Ubuntu 22.04 or 24.04, Debian 12, Fedora, RHEL 9 and its kin (Rocky, Alma), or Arch: the installer knows each'],
+    ['64-bit x86 Linux with systemd', 'everything', 'Ubuntu 22.04 or 24.04, Debian 12, Fedora, RHEL 9 and its kin (Rocky, Alma), or Arch: the installer knows each'],
     ['Docker Engine', "the agent's workspaces", "from Docker's own packages, not the snap: the installer offers it, starts it at boot and adds you to the docker group, asking before each"],
     ['uv and Git', 'installing Clank', "the installer gets uv, and offers your package manager's command for Git, asking first"],
     ['An OpenRouter account and key', 'path A, a cloud model', 'free models exist; paid ones need credits'],
     ['An NVIDIA GPU (16 GB is comfortable)', 'path B, a local model', 'with its driver; engines run on the computer itself here, rather than in WSL'],
+    ['Disk', 'Clank and its workspaces', 'about 3 GB, and 10 to 15 GB more for a local model'],
+    ['VS Code (optional)', "Clank's VS Code window", "each release brings Clank's extension, checked against its SHA-256"],
+    ['Tailscale (optional)', 'Clank on your iPhone', 'on the computer and the iPhone, signed in to one account'],
   ],
 };
 
@@ -91,6 +100,7 @@ const troubleBy: Record<string, string[][]> = {
   windows: [
     ['Docker Desktop asks for WSL, or will not start after installing', 'Restart Windows; if it still asks, run <code>wsl --install</code> in an administrator PowerShell, restart, then open Docker Desktop'],
     ['The installer cannot find winget', 'Update <b>App Installer</b> from the Microsoft Store, or install Git and Docker Desktop from their sites, then run the installer again'],
+    ['Scripts are disabled in PowerShell', 'The one line runs with <code>iex</code>, which the execution policy does not stop; for a downloaded copy, <code>powershell -ExecutionPolicy Bypass -File install.ps1</code>'],
   ],
   macos: [
     ['<code>brew</code> is not found', "Install Docker Desktop from Docker's page, open it once, then run the installer again"],
@@ -202,7 +212,14 @@ const trouble = [
           <ol class="says" data-for="linux">{installerSays.linux.map((t) => <li set:html={t} />)}</ol>
           <p class="mu" data-for="macos linux">
             To see first what it would do, without changing anything: <code>{INSTALL.unix.replace('| sh', '| CLANK_DRY_RUN=1 sh')}</code>.
-            <code>CLANK_YES=1</code> answers yes to every question, for a script.
+            <code>CLANK_YES=1</code> answers yes to every question, for a script, and then only checks Clank's setup;
+            <code>CLANK_VERSION=main</code> installs the main branch (or any tag), and <code>CLANK_NO_MODIFY_PATH=1</code>
+            changes no path.
+          </p>
+          <p class="mu" data-for="windows">
+            Set first, in the same PowerShell: <code>$env:CLANK_YES = '1'</code> answers yes to every question, for a
+            script; <code>$env:CLANK_VERSION = 'main'</code> installs the main branch (or any tag), and
+            <code>$env:CLANK_NO_MODIFY_PATH = '1'</code> changes no path.
           </p>
           <h3 class="h3 after">After it</h3>
           <p class="mu" data-for="windows">
@@ -888,7 +905,8 @@ const trouble = [
         <h2 id="uninstall-title" class="h2">Uninstalling</h2>
         <p class="para mu">
           Clank's own folder, <code data-for="windows">%USERPROFILE%\.clank</code><code data-for="macos linux">~/.clank</code>,
-          keeps your settings, records and keys: delete it to remove those too. Remove the workspace containers first, from
+          keeps your settings, records and keys: delete it to remove those too<span data-for="linux">, and
+          <code>~/.cache/clank</code>, the folder of the gateway's socket</span>. Remove the workspace containers first, from
           <b>Workspaces</b> (<Fragment set:html={k('F6')} />, <Fragment set:html={k('d')} />) or from
           <span data-for="windows macos">Docker Desktop</span><span data-for="linux">Docker</span>. If the installer
           installed uv and nothing else uses it,
