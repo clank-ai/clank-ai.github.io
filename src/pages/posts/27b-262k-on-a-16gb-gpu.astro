@@ -130,6 +130,7 @@ const build = [
   "git submodule update --init     # llama.cpp at KVMem's pin",
   'git cherry-pick -n 7e20823      # the long tool result fix, from v0.17.0',
   "scripts/apply-patches.sh        # KVMem's patch into llama.cpp",
+  "git apply CLANK/docs/models/kvmem-pin-the-system-prompt.patch   # Clank's patch (decision 0146)",
   'scripts/build-cuda.sh           # CUDA 13.2; 120a-real is for RTX 50-series',
 ];
 
@@ -581,7 +582,10 @@ const toc: [string, string][] = [
     <CommandBlock shell="Ubuntu (WSL)" label="build KVMem" lines={build} />
     <p class="note">
       The cherry-pick stops at one conflict: take v0.17.0’s version and keep v0.16’s <code>fprintf</code> logging. Other
-      cards need their own CUDA architecture.
+      cards need their own CUDA architecture. <code>CLANK</code> is a clone of Clank; or download
+      <a href={`${repo}/blob/main/docs/models/kvmem-pin-the-system-prompt.patch`}>Clank’s patch</a> alone and give its
+      path. It keeps a snapshot of the model’s state at the system prompt’s end, so a new chat’s first word comes in
+      about a second.
     </p>
     <h3>3. Run it</h3>
     <div class="options">

@@ -30,8 +30,8 @@ export const POSTS: Post[] = [
     tag: 'Setup',
     date: '2026-10-23',
     dateText: 'October 23, 2026',
-    updated: '2026-10-30',
-    updatedText: 'October 30, 2026',
+    updated: '2026-11-04',
+    updatedText: 'November 4, 2026',
     minutes: 9,
     author: 'sjbevins',
     stats: [
