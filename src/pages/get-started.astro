@@ -776,9 +776,11 @@ const trouble = [
               sends the flow; Clank checks it and draws it.
             </p>
             <p>
-              <Fragment set:html={k('r')} /> runs it, box by box, each a fresh session. It stops at the end for your review:
-              <Fragment set:html={k('y')} /> approves, <Fragment set:html={k('e')} /> edits, <Fragment set:html={k('b')} />
-              sends it back with a note.
+              <Fragment set:html={k('r')} /> runs it, box by box, each a fresh session. It stops at the end for your review,
+              a question under <b>Waiting for you</b>: <Fragment set:html={k('y')} /> approves,
+              <Fragment set:html={k('b')} /> sends it back with a note, <Fragment set:html={k('s')} /> stops the flow. Or
+              Enter on the gate in the Flow view: <Fragment set:html={k('a')} /> approves, <Fragment set:html={k('e')} />
+              opens the file in VS Code to edit, then approve, <Fragment set:html={k('s')} /> sends it back.
             </p>
             <p><a class="more" href="/#demo">Watch one run, step by step</a></p>
           </div>
