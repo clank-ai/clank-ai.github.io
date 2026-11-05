@@ -69,6 +69,7 @@ const sections = [
       <li><span><b>Live.</b> Its phase, its step, how much it has thought and written, the call it is writing.</span></li>
       <li><span><b>The Guide.</b> Stop, note, pause, compact, undo or drop, each showing its cost before you confirm.</span></li>
       <li><span><b>Three views.</b> Flow, Session and Context, one key apart.</span></li>
+      <li><span><b>Watch for.</b> Rules mark what needs your eye: an approval waiting, an answer stopped by the loop guard or cut off at its output limit, the same call again. Each does what you set in <code>config/monitor.json</code>: mark it, pause the session, tell your phone, or tell the model and go on.</span></li>
     </ul>
     <Fragment slot="art">
       <Shot
@@ -197,6 +198,8 @@ const sections = [
       <li><span><b>LaTeX.</b> Every change the agent makes to a document is built first; a marked-up PDF shows what changed.</span></li>
       <li><span><b>Artifacts and jobs.</b> Pages the agent makes from the folder's files, shown and commented on in the editor; long work runs as a job and reports back.</span></li>
       <li><span><b>Gates.</b> A flow's gates and questions, answered from the editor.</span></li>
+      <li><span><b>Plans.</b> The Planner writes a plan in Markdown and runs nothing; an open plan's Implement with Review, or with Auto, hands it to the agent, which ticks each step.</span></li>
+      <li><span><b>Notion.</b> The agent reads the Notion databases you share with Clank (<code>clank notion connect</code>) and proposes changes; nothing is written before you approve them.</span></li>
       <li><span><b>Elsewhere too.</b> From another computer over SSH, the folder opens in that computer's VS Code, connected to yours.</span></li>
     </ul>
     <Fragment slot="art">
@@ -231,7 +234,7 @@ const sections = [
     wide={!shipped(phoneFrames)}
     eyebrow="iPhone · over your tailnet"
     title="What runs, and what waits for you."
-    lead="The iPhone app installs once from a QR code on the console, runs full screen from its own icon, and stays live on one stream from your PC, through your tailnet only: Clank publishes it on your tailnet with Tailscale, never on the internet. It shows the model at work and the machine's load, what waits for you (a change to allow, a question from the agent, a flow's gate), each flow box by box, and a session as the model writes it. Chat, files, notifications and settings come next."
+    lead="The iPhone app installs once from a QR code on the console, runs full screen from its own icon, and stays live on one stream from your PC, through your tailnet only: Clank publishes it on your tailnet with Tailscale, never on the internet. It shows the model at work and the machine's load, what waits for you (a change to allow, a question from the agent, a flow's gate), each flow box by box, and a session as the model writes it. Chat, files, notifications and settings come next. To start: Tailscale on the PC and the iPhone, one account; clank remote on (or x on the console's Phone page, F9), then p there shows the QR code to scan."
   >
     <Fragment slot="art">
       <PhoneShots />

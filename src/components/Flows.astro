@@ -116,6 +116,23 @@ const flowBoxes = [
             drafts the flow; Clank checks each draft and tells the model what to fix.
           </p>
         </div>
+        <div class="point">
+          <h3>Steered on its own, if you want</h3>
+          <p>
+            With the orchestrator on (<kbd class="key">O</kbd> in the Flow view), a model looks at the run after each box
+            and at each question, the checks first, keeps a ledger of it, and decides: go on, change the boxes ahead, send
+            work back, or stop, within the flow's limits. You may answer any question first, or let it only watch and tell
+            you what to know.
+          </p>
+        </div>
+        <div class="point">
+          <h3>Work while a job runs</h3>
+          <p>
+            A box starts a long computation as a job and waits for it, its clock stopped. Meanwhile the orchestrator may
+            run up to three side tasks, research toward what comes next, each writing a note into the flow's corpus and
+            nothing else.
+          </p>
+        </div>
       </div>
     </div>
   </div>
