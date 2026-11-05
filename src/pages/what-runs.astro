@@ -11,7 +11,7 @@ import { PAGES, repo } from '../config';
 const processes: [string, string, string, string][] = [
   ['The service', '`clank serve`: Python, from the uv tool Clank was installed as', '127.0.0.1:7720', 'Clank itself: the console, VS Code and the phone ask it everything. `clank status`'],
   ['The gateway', 'Its own Python process, started by the service', '127.0.0.1:18210 (models), 127.0.0.1:18211 (the agent\'s internet proxy); on Linux also `gateway.sock` and `proxy.sock` in `~/.cache/clank/<home id>`, which only you and the edge open', 'Every model request goes through it, counted and recorded; the agent\'s internet goes through its proxy. `clank gateway status`'],
-  ['Model engines', 'llama.cpp or KVMem servers (in WSL on Windows; on Linux, on the computer itself), started by the service from a preset', '127.0.0.1, from 18200 (one port a slot)', 'Run the local models on your GPU. None runs until you load a model. `clank model status`'],
+  ['Model engines', 'llama.cpp or KVMem servers (in WSL on Windows; on Linux, on the computer itself), started by the service from a preset', '127.0.0.1, from 18200 (one port a slot)', 'Run the local models: KVMem a model on your GPU, llama.cpp\'s CPU build the small ones, such as completion. None runs until you load a model. `clank model status`'],
   ['The phone listener', 'Inside the service, only when you turn the phone page on', '127.0.0.1:7721', 'Serves the iPhone app; Tailscale publishes it on your tailnet only. `clank remote status`'],
   ['OpenCode', 'In each workspace\'s container, started when you work there', 'Inside the container only', 'The coding agent. It reaches nothing but Clank\'s gateway and, by your allowance, the proxy.'],
 ];
@@ -26,7 +26,7 @@ const docker: [string, string][] = [
 const files: [string, string][] = [
   ['`~/.clank/config/`', 'Every setting, in readable files you may edit (Clank reads them again when they change).'],
   ['`~/.clank/state/`', 'Clank\'s state database, the service\'s address and process, the gateway\'s.'],
-  ['`~/.clank/secrets/`', 'API keys (OpenRouter, Notion), in your user profile, which Windows keeps to your account and your PC\'s administrators.'],
+  ['`~/.clank/secrets/`', 'API keys (OpenRouter, Notion), in your home folder: on Windows your user profile, which Windows keeps to your account and your PC\'s administrators; on macOS and Linux a folder only your account may open.'],
   ['`~/.clank/logs/`', 'The service\'s and the gateway\'s logs; every model request; every internet exchange of the agent (`network/`); every exchange with your phone (`phone/`); `update.log`.'],
   ['`~/.clank/vscode/`', 'Clank\'s own VS Code profile (its settings and extensions), apart from yours.'],
   ['`~/.clank/library/`, `artifacts/`', 'Made for what you install later (skills, tool servers, shared presets) and for files made for you; the agent\'s own pages of results are kept with each project (next).'],
