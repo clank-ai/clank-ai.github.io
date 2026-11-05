@@ -413,7 +413,8 @@ main() {
     esac
     printf '\n%s%s CLANK%s %sinstaller%s\n' "$BRAND" "$MARK" "$R" "$B" "$R"
     note "$OS $(uname -m) · a beta: in daily use on Windows; on Linux with Docker Engine, tested on every change;"
-    note "macOS untested beyond this installer. It shows each command, and asks before each change."
+    note "macOS untested beyond this installer. It shows each command: it installs uv if it is missing, and Clank,"
+    note "and asks first before Git, Docker and Clank's setup."
     if [ "${CLANK_NO_MODIFY_PATH:-}" = 1 ]; then
         note "CLANK_NO_MODIFY_PATH=1: no PATH will be changed"
     fi
