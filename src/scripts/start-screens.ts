@@ -240,7 +240,10 @@ export function cloudCost(): Screen {
   return done(g);
 }
 
-/** Add a model, l: the local presets, each with its fit on this GPU and what it needs. */
+/**
+ * Add a model, l: the local presets, each with its fit on this GPU and what it needs. As Clank ships, KVMem has no
+ * recipe (add-model-local-60.txt), so each preset says its engine is not installed and Clank cannot install it.
+ */
 export function local(): Screen {
   const g = new Grid(GUTTER + W, 21);
   header(g, 0, NO_MODEL);
@@ -253,13 +256,13 @@ export function local(): Screen {
     [['your-model 262K                                               ', 'sel']],
     [['  kvmem-llamacpp · your-model · fit: known once its engine is', 'mu']],
     [['installed', 'mu']],
-    [["  install KVMem/llama.cpp; download your-model's weights", 'y']],
-    [['(11.3 GB)', 'y']],
+    [['  KVMem/llama.cpp is not installed here, and Clank has no', 'y']],
+    [['recipe for it', 'y']],
     [['your-model 96K', 'wb']],
     [['  kvmem-llamacpp · your-model · fit: known once its engine is', 'mu']],
     [['installed', 'mu']],
-    [["  install KVMem/llama.cpp; download your-model's weights", 'y']],
-    [['(11.3 GB)', 'y']],
+    [['  KVMem/llama.cpp is not installed here, and Clank has no', 'y']],
+    [['recipe for it', 'y']],
   ]);
   keys(g, end + 1, [['enter', 'set it up'], ['esc', 'back'], ['?', 'explain']]);
   return done(g);

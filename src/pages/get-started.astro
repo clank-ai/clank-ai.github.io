@@ -155,7 +155,7 @@ const trouble = [
         <a class="path b" href="#path-b">
           <span class="pk">Path B</span>
           <b>Your GPU</b>
-          <span>An open model on your own NVIDIA card. Nothing to pay per request; an engine and many GB to set up.</span>
+          <span>An open model on your own NVIDIA card. Nothing to pay per request; an engine to build and many GB to set up.</span>
         </a>
         <p class="paths-note">Both end the same way: a folder, and the agent at work in it.</p>
       </nav>
@@ -521,7 +521,9 @@ const trouble = [
       <h2 id="b-title" class="h2">A model on your own GPU</h2>
       <p class="intro">
         An open model on your own card: nothing to pay per request, and nothing leaves your computer. It takes longer to
-        set up than path A: an engine, a model's files of many gigabytes, and a load. Clank does each step, asking first.
+        set up than path A: an engine, a model's files of many gigabytes, and a load. The engine, KVMem, is built by hand
+        today, by steps Clank's docs write down (B3); then Clank downloads the model's file, checks it and loads the
+        preset, asking first.
       </p>
       <p class="callout" data-for="macos">On a Mac, take <a href="#path-a">path A</a>: Clank's local engines need an NVIDIA GPU.</p>
       <p class="callout" data-for="linux">
@@ -573,17 +575,19 @@ const trouble = [
             <p>
               On <b>Add a model</b> (<Fragment set:html={k('F12')} />), press <Fragment set:html={k('l')} />. It lists
               Clank's presets for the main slot, each with its engine and model, its fit on this GPU, and what it still
-              needs here. Enter sets the highlighted one up, one step at a time, asking first.
+              needs here. Until KVMem is built and adopted (B3), each says its engine is not installed and Clank has no
+              recipe for it. Then Enter sets the highlighted one up, one step at a time, asking first: the model's file,
+              then the load.
             </p>
           </div>
           <Screen
             screen={S.local()}
             title="clank · Add a model · Local"
-            label="Local: the presets for the main slot, each with its engine, model, fit, and what it still needs: the engine and the model's weights."
+            label="Local: the presets for the main slot, each with its engine, model, fit, and what it still needs: an engine Clank has no recipe for."
             marks={[
               { row: 7, text: 'a preset: the model with its settings' },
               { row: 8, text: 'its engine and model; its fit, once the engine is installed' },
-              { row: 10, text: 'what it still needs here' },
+              { row: 10, text: 'what it still needs: an engine built by hand' },
             ]}
           />
         </li>
@@ -592,11 +596,14 @@ const trouble = [
           <div class="st">
             <p class="sn">B3</p>
             <h3>The engine</h3>
-            <p><b>llama.cpp</b>: Clank has its recipe, and installs its release when asked.</p>
             <p>
-              <b>KVMem/llama.cpp</b>, for long windows: not one step yet. It is built from its source with CUDA (on
+              <b>KVMem/llama.cpp</b>, the engine every GPU preset uses: built by hand today, from its source with CUDA (on
               Windows, in WSL), then adopted with <code>clank engine adopt</code>, which checks it.
               <a href={docs('models/frontier-262k.md#building-it-on-a-new-machine')}>Every step is written down</a>.
+            </p>
+            <p>
+              <b>llama.cpp</b>: Clank has a recipe for llama.cpp's own CPU build, and installs it when asked. It runs the
+              small models on the CPU, such as completion in VS Code, not a model on your GPU.
             </p>
             <p class="mu">Both show on <b>Providers and models</b> (<Fragment set:html={k('0')} />), with whether each is installed.</p>
           </div>
@@ -606,7 +613,7 @@ const trouble = [
             label="Serving setups: KVMem/llama.cpp not installed; llama.cpp b11588 not installed, Clank has its recipe."
             marks={[
               { row: 2, text: 'KVMem/llama.cpp: built from its source, then adopted' },
-              { row: 4, text: 'llama.cpp: installed by its recipe' },
+              { row: 4, text: 'llama.cpp: its CPU build, by its recipe' },
             ]}
           />
         </li>
