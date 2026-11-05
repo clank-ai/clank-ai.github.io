@@ -114,7 +114,7 @@ const trouble = [
   ['“OpenRouter refuses … under your OpenRouter account’s privacy settings”', 'Your account at OpenRouter refuses providers that may train on prompts, as many free models’ do: allow them at <a href="https://openrouter.ai/settings/privacy">openrouter.ai/settings/privacy</a>, or pick another model'],
   ['“Rate limited” (429) on a free model', 'Free models take 20 requests a minute: OpenCode waits and asks again'],
   ['The agent stops partway, its answer cut off', 'A reasoning model’s thinking counts against its most output. Clank marks the cut and tells the model to go on; to give it more room, <kbd>e</kbd> on Presets, or <code>clank preset change "cloud: &lt;name&gt;" --output 65536</code>, then start OpenCode again'],
-  ['<code>git clone</code> or <code>pip</code> fails with 403 in a workspace', 'The agent reaches only the hosts you allow for its workspace, and a host it asks for waits for your answer in Clank’s console. Answer it there (<kbd>y</kbd> allows it), or, for testing, turn on dev mode (<code>clank dev on</code>): every public host, at once'],
+  ['<code>git clone</code> or <code>pip</code> fails with 403 in a workspace', 'The agent reaches only the hosts you allow for its workspace, and a host it asks for waits for your answer in Clank’s console. Answer it there (<kbd>y</kbd> allows it always, <kbd>o</kbd> once), or allow it yourself: <kbd>h</kbd> on This folder, or <code>clank workspace allow FOLDER --host NAME</code> (<code>--set code</code> for GitHub); or, for testing, turn on dev mode (<code>clank dev on</code>): every public host, at once'],
   ['“The free models’ limit for the day”', 'Free models take 50 requests a day until you bought 10 credits once, then 1,000; the count starts again at midnight UTC. An agent’s task can take dozens of requests: wait, buy credits, or pick a paid model'],
   ['<code>clank</code> is not found', 'Open a new terminal after <code>uv tool update-shell</code>'],
 ];
@@ -727,6 +727,18 @@ const trouble = [
               the change) or in VS Code. <Fragment set:html={k('r')} /> switches to <b>auto</b>, where it changes files
               without asking.
             </p>
+            <p>
+              <Fragment set:html={k('p')} /> switches the folder's agent to the <b>Planner</b>, which writes a plan in
+              Markdown and runs nothing (<Fragment set:html={k('r')} /> goes back); <Fragment set:html={k('i')} /> hands a
+              plan to the agent, in review or auto, and it follows the plan step by step, ticking each step.
+            </p>
+            <p>
+              The agent reaches the internet only through Clank, to the hosts you allow for this folder:
+              <Fragment set:html={k('h')} /> allows a named set (papers, python, code, data, docs) or one host, or takes
+              one back, as <code>clank workspace allow . --host pypi.org</code> or <code>--set papers</code> does. A host
+              it asks for waits under <b>Waiting for you</b>: <Fragment set:html={k('y')} /> allows it always,
+              <Fragment set:html={k('o')} /> once, <Fragment set:html={k('n')} /> refuses it.
+            </p>
           </div>
           <div class="ss keys-card">
             <p class="kc-t">On This folder</p>
@@ -736,6 +748,9 @@ const trouble = [
               <li><Fragment set:html={k('c')} /><span>the folder in VS Code, the agent beside it</span></li>
               <li><Fragment set:html={k('f')} /><span>build a flow with the model</span></li>
               <li><Fragment set:html={k('r')} /><span>review or auto</span></li>
+              <li><Fragment set:html={k('p')} /><span>the Planner: a plan, no runs</span></li>
+              <li><Fragment set:html={k('i')} /><span>hand a plan to the agent</span></li>
+              <li><Fragment set:html={k('h')} /><span>the hosts the agent may reach</span></li>
             </ul>
           </div>
         </li>
