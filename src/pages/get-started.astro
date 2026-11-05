@@ -42,7 +42,7 @@ const needs: Record<string, string[][]> = {
   windows: [
     ['Windows 10 (22H2) or 11, 64-bit', 'everything', 'with WSL 2, which Docker Desktop turns on when it installs'],
     ['Docker Desktop', "the agent's workspaces", 'the installer offers it, then waits for its first start; each folder you work in gets a container of its own, and the first downloads about a gigabyte'],
-    ['uv and Git', 'installing Clank', 'the installer gets them if they are missing, asking first; uv brings Python 3.12 by itself'],
+    ['uv and Git', 'installing Clank', 'the installer gets uv if it is missing, saying so, and offers Git, asking first; uv brings Python 3.12 by itself'],
     ['An OpenRouter account and key', 'path A, a cloud model', 'free models exist; paid ones need credits'],
     ['An NVIDIA GPU (16 GB is comfortable)', 'path B, a local model', 'not needed for path A'],
   ],
@@ -75,14 +75,14 @@ const installerSays: Record<string, string[]> = {
     '<b>Git</b>: if it is missing, <code>xcode-select --install</code> (Apple\'s command-line tools) or <code>brew install git</code>, asking first.',
     "<b>Docker Desktop</b>: if it is missing and you have Homebrew, it offers <code>brew install --cask docker</code>; without Homebrew, Docker's download page. Then it offers to open Docker Desktop and waits while you accept its terms in its window.",
     '<b>Clank</b>: its latest release, with <code>uv tool install</code>, then <code>uv tool update-shell</code> so <code>clank</code> is on your path.',
-    '<b><code>clank setup --check</code></b>: what is set up and what is next, item by item; it changes nothing.',
+    "<b>Clank's setup</b>: it offers to run <code>clank setup</code> at once, which asks before each step; if you say no, <code>clank setup --check</code> says what is left.",
   ],
   linux: [
     "<b>uv</b>: the one you have, or Astral's own installer.",
     '<b>Git</b>: if it is missing, your package manager\'s command for it (apt, dnf, pacman or zypper), with <code>sudo</code>, asking first.',
     "<b>Docker Engine</b>, from Docker's own packages: it reads your distribution, prints the exact commands Docker's installation pages give for it, and asks once before running them with <code>sudo</code>, which asks for your password itself. Then it offers to start Docker now and at every boot, and to add you to the <code>docker</code> group, saying first what Docker says of it: the group gives root's rights on that computer. Clank uses the group at once, with no log out and in. The snap's Docker and rootless Docker are not supported, and it says why.",
     '<b>Clank</b>: its latest release, with <code>uv tool install</code>, then <code>uv tool update-shell</code> so <code>clank</code> is on your path.',
-    '<b><code>clank setup --check</code></b>: what is set up and what is next, item by item; it changes nothing.',
+    "<b>Clank's setup</b>: it offers to run <code>clank setup</code> at once, which asks before each step; if you say no, <code>clank setup --check</code> says what is left.",
   ],
 };
 

@@ -45,7 +45,7 @@ const HEADS = ['What', 'Runs as', 'Listens on', 'For, and how to see it'];
 
 const startup: [string, string][] = [
   ['At sign-in', 'Only with `clank autostart on`: an entry in your Windows account\'s Run key starts the service and Docker. `clank autostart off` removes it.'],
-  ['The installer', 'Installs uv, Git and Docker when they are missing (Docker Desktop on Windows and macOS, Docker Engine from Docker\'s own packages on Linux), each asked first, then Clank with uv, and ends with Clank\'s setup (`clank setup`), which asks before each step. It changes nothing else.'],
+  ['The installer', 'Installs uv when it is missing, saying so, and Git and Docker when they are missing, each asked first (Docker Desktop on Windows and macOS, Docker Engine from Docker\'s own packages on Linux), then Clank with uv. On Windows it ends with `clank setup --check`, which changes nothing; on macOS and Linux it offers Clank\'s setup (`clank setup`), which asks before each step. It changes nothing else.'],
 ];
 
 const see: [string, string][] = [
