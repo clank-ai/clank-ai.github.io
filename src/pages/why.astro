@@ -88,7 +88,7 @@ const steps = [
   ['Check the machine', 'Look up drivers, CUDA, WSL 2, Docker and disk, a guide for each.', 'clank setup checks it all, says what is missing, and does each step, asking first.'],
   ['A sandbox for the agent', 'Write a container for it, mount the folder, decide what it may reach.', 'One workspace per folder, built on first use after asking. It reaches only Clank, and the hosts you allow it, through its proxy.'],
   ['An engine', 'Build llama.cpp or another engine with the right options for your GPU.', 'Built by hand today: KVMem, by the steps Clank’s docs write down; clank engine adopt checks the build, and Clank runs it from then on. Clank installs llama.cpp’s CPU build itself, for completion.'],
-  ['A model file', 'Find a model, pick a quantization, download it, check it.', 'A preset names the file and its SHA-256; Clank downloads it, resumes it, checks it.'],
+  ['A model file', 'Find a model, pick a quantization, download it, check it.', 'Clank’s catalog names the file and its SHA-256; Clank downloads it, resumes it, checks it.'],
   ['Its settings', 'Work out the flags: the window, the cache, the most output, the thinking budget.', 'A preset holds them in one small file, and says whether it fits your GPU now.'],
   ['Load and switch', 'Start and stop servers by hand, a port for each.', 'Load, switch and unload from the console: Models (8), Presets (9), one key each.'],
   ['A cloud provider', 'Open an account, store a key, point the agent at the provider and a model.', 'Add a model, c: agree once, paste the key, pick a model that takes tool calls; one test request.'],
