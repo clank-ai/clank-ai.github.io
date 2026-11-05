@@ -403,7 +403,8 @@ const trouble = [
             <p>
               Paste the key and press Enter. Clank asks OpenRouter whether it takes the key (which costs nothing), and keeps
               it only then, in its secrets folder, readable by you alone. The console shows dots and its last four
-              characters, never the rest.
+              characters, never the rest. A key that does not start <code>sk-or-v1-</code>, or holds a space, is refused
+              before it is sent: copy it whole from openrouter.ai, Keys.
             </p>
           </div>
           <Screen
@@ -448,8 +449,10 @@ const trouble = [
             <h3>Its settings, filled in for you</h3>
             <p>
               Its name, its context (a smaller one makes OpenCode compact sooner and each request cost less), its most
-              output, its thinking effort, and a day's and a month's cost limit (empty: none). It says what the test request
-              will cost. Enter takes these; Clank writes the preset and tests it.
+              output (its thinking and its answer together: by default 32,768 for a model that thinks with a context of
+              131,072 or more, 16,384 for any other, never more than the model's own or half the context), its thinking
+              effort, and a day's and a month's cost limit (empty: none). It says what the test request will cost. Enter
+              takes these; Clank writes the preset and tests it.
             </p>
           </div>
           <Screen
@@ -458,8 +461,9 @@ const trouble = [
             label="Its settings: title, context, most output, thinking effort, and a day's and a month's cost limit, with the cost of the test request."
             marks={[
               { row: 10, text: 'the context: smaller compacts sooner and costs less per request' },
-              { row: 22, text: "the limits: a day's and a month's, in US dollars" },
-              { row: 30, text: 'what the one short test request will cost' },
+              { row: 15, text: 'its most output: its thinking and its answer together' },
+              { row: 23, text: "the limits: a day's and a month's, in US dollars" },
+              { row: 31, text: 'what the one short test request will cost' },
             ]}
           />
         </li>

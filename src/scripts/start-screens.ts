@@ -77,7 +77,7 @@ export function choice(): Screen {
     [['here. This computer: NVIDIA GeForce RTX 4080, 16.0 GB; 32.0 GB', 'mu']],
     [['of memory.', 'mu']],
   ]);
-  keys(g, end + 1, [['c', 'cloud'], ['l', 'local'], ['esc', 'this folder'], ['?', 'explain']]);
+  keys(g, end + 1, [['c', 'cloud'], ['l', 'local'], ['?', 'explain'], ['esc', 'menu']]);
   return done(g);
 }
 
@@ -138,16 +138,17 @@ export function agreement(): Screen {
 
 /** Your OpenRouter key, in a field that never shows it. */
 export function key(): Screen {
-  const g = new Grid(GUTTER + W, 14);
+  const g = new Grid(GUTTER + W, 15);
   header(g, 0, NO_MODEL);
-  g.box(GUTTER, 1, W, 11, { title: 'Your OpenRouter key' });
+  g.box(GUTTER, 1, W, 12, { title: 'Your OpenRouter key' });
   row(g, 2, 2, [['Paste your OpenRouter key (openrouter.ai, Keys). It is never']]);
   row(g, 2, 3, [['shown: dots, then its last four.']]);
   field(g, 4, ['•••••••••••••••••••…-key', 'wb']);
   row(g, 2, 8, [['Enter: Clank asks OpenRouter whether it takes the key (which', 'mu']]);
-  row(g, 2, 9, [['costs nothing) and keeps it only then, in CLANK_HOME/secrets,', 'mu']]);
-  row(g, 2, 10, [['readable by you alone. It is never shown, logged or copied.', 'mu']]);
-  keys(g, 13, [['enter', 'check it'], ['esc', 'back'], ['?', 'explain']]);
+  row(g, 2, 9, [["costs nothing) and keeps it only then, in its own folder's", 'mu']]);
+  row(g, 2, 10, [['secrets (~/.clank/secrets), readable by you alone. It is never', 'mu']]);
+  row(g, 2, 11, [['shown, logged or copied.', 'mu']]);
+  keys(g, 14, [['enter', 'check it'], ['esc', 'back'], ['?', 'explain']]);
   return done(g);
 }
 
@@ -189,7 +190,7 @@ export function settings(): Screen {
   };
   labelled('Its title, as the pickers show it', null, ['cloud: Example Coder', 'wb']);
   labelled("Its context, in tokens (the model's window, 262,144; a smaller", 'one makes OpenCode compact sooner and each request cost less)', ['262144', 'wb']);
-  labelled('Its most output, in tokens (at most 32,768)', null, ['16384', 'wb']);
+  labelled('Its most output, in tokens: its thinking and its answer', 'together (at most 32,768)', ['32768', 'wb']);
   labelled('Its thinking effort (one of default, low, medium, high)', null, ['default', 'wb']);
   labelled("A day's cost limit, US dollars (empty: none)", null, ['']);
   labelled("A month's cost limit, US dollars (empty: none)", null, ['']);
