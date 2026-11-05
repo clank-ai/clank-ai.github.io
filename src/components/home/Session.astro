@@ -8,7 +8,7 @@ import { PAGES } from '../../config';
 const steps = [
   {
     t: 'Open a folder',
-    d: 'Type <code>clank</code> in a project folder. <b>This folder</b> lists what working there needs, and <kbd>g</kbd> does each step not done yet: Docker, the folder\'s workspace, the model, the gateway.',
+    d: 'Type <code>clank</code> in a project folder. <b>This folder</b> lists what working there needs, and <kbd>g</kbd> does each step not done yet: Docker, the folder\'s workspace, the sandbox image, its software, the model, the gateway.',
     shot: 'clank · This folder · F4',
     crop: folder(),
     label: 'This folder: each step working here needs, a check for each one done, then the keys to start the agent.',
@@ -43,7 +43,8 @@ const steps = [
       <p class="eyebrow">A session</p>
       <h2 id="session-title">What you do with it.</h2>
       <p class="lead">
-        A normal session, from a folder to the agent at work, with you watching. The screens are the console's own.
+        A normal session, from a folder to the agent at work, with you watching. The screens are drawn from the
+        console's own pages, with example names.
       </p>
     </div>
     <ol class="flow">

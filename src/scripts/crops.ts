@@ -3,7 +3,7 @@
  * every border meets. Each one is a part of a real page of the console (tests/console/snapshots in
  * Clank's repository), with example names and numbers: no one's own model or measurements.
  */
-import { Grid, clip, pad } from './demo/cells';
+import { Grid, clip, pad, wrap } from './demo/cells';
 import { renderOpenCode } from './demo/views';
 
 export interface Crop {
@@ -118,15 +118,29 @@ export function loopGuard(): Crop {
   return done(g);
 }
 
-/** Cloud cost: the header on every page, and one session's line in the Monitor. */
+/**
+ * Cloud cost: Providers and models (0), its Cloud panel: the account, OpenRouter's count and Clank's, today and this
+ * month, and the limits (providers-cloud.txt), wrapped as the console wraps it at this width.
+ */
 export function cost(): Crop {
-  const g = new Grid(56, 7);
-  row(g, 1, 0, [['◆ CLANK', 'or'], ['  docs  ', 'mu'], ['● cloud: Example Coder', 'g'], ['  ', ''], ['$0.42 today', 'y']]);
-  g.box(0, 1, 56, 6, { title: 'Cloud spending', right: 'limits: $5 a day, $60 a month' });
-  row(g, 2, 2, [['today       ', 'mu'], ...bar(3, 24, 'y'), ['  $0.42 of $5.00', '']]);
-  row(g, 2, 3, [['this month  ', 'mu'], ...bar(1, 24, 'y'), ['  $3.10 of $60', '']]);
-  row(g, 2, 4, [['this session: $0.18 · 21 requests', '']]);
-  row(g, 2, 5, [['at a limit, cloud requests wait; local work goes on', 'mu']]);
+  const W = 66;
+  const g = new Grid(W, 15);
+  const lines: Part[][] = [
+    [['OpenRouter (openrouter) · agreed 2026-10-11 11:40', 'wb']],
+    [['  key       ', 'mu'], ['set 2026-10-11 11:40, ends …-key']],
+    [['  policy    ', 'mu'], ['Clank asks only for providers that do not keep']],
+    [['your data (data_collection deny).']],
+    [['  account   ', 'mu'], ['key "made-up key label" (ends …-key): its own']],
+    [['limit $20.00, $18.71 left; OpenRouter counts $0.12 today,']],
+    [['$1.29 this month (UTC days)']],
+    [['  Clank     ', 'mu'], ['cloud $0.42 today · $0.42 this month (this']],
+    [["computer's days); today's limit $5.00; no monthly limit"]],
+    [['  check     ', 'mu'], ['not checked yet: c checks it']],
+    [['  presets   ', 'mu'], ['cloud: Example Coder']],
+  ];
+  g.box(0, 0, W, lines.length + 2, { title: 'Cloud' });
+  lines.forEach((parts, i) => row(g, 2, 1 + i, parts));
+  row(g, 1, lines.length + 3, [['a', 'key'], [' add a cloud model  ', 'mu'], ['k', 'key'], [' set the key  ', 'mu'], ['c', 'key'], [' check it  ', 'mu'], ['L', 'key'], [' cost limits', 'mu']]);
   return done(g);
 }
 
@@ -259,32 +273,45 @@ export function presets(): Crop {
   return done(g);
 }
 
-/** The question asked once per workspace, before its agent first uses the cloud. */
+/** The question asked once per workspace, before its agent first uses the cloud (ask-cloud-100.txt), wrapped here. */
 export function consent(): Crop {
-  const g = new Grid(56, 6);
-  g.box(0, 0, 56, 6, { title: 'Clank asks', k: 'y' });
-  row(g, 2, 1, [["Let my-api's agent use the cloud model?", 'wb']]);
-  row(g, 2, 2, [['Its requests go to OpenRouter; Notion pages and', 'mu']]);
-  row(g, 2, 3, [['local-only MCP servers never do.', 'mu']]);
-  row(g, 2, 4, [['y', 'key'], [' allow   ', 'mu'], ['n', 'key'], [' keep local', 'mu']]);
+  const W = 66;
+  const said = wrap(
+    "What goes: every request of its agent's sessions, to the cloud provider and then the model's provider: your messages, what the agent reads of the folder, command output, and its instructions. What never goes: Notion pages, and the MCP servers marked local only (a session that used one stays on this machine). What the agent wrote into the folder's files from them goes with the folder.",
+    W - 4,
+  );
+  const h = said.length + 6;
+  const g = new Grid(W, h);
+  g.box(0, 0, W, h, { title: "Let my-api's agent use the cloud model cloud: Example Coder?", k: 'y' });
+  said.forEach((line, i) => row(g, 2, 1 + i, [[line, '']]));
+  row(g, 2, said.length + 1, [['y', 'key'], ['  Allow: its requests go to the cloud provider from now on', '']]);
+  row(g, 2, said.length + 2, [['n', 'key'], ['  Keep local: it stays on this machine; not asked again', '']]);
+  row(g, 2, said.length + 4, [['y or n answers; Esc leaves it waiting.', 'mu']]);
   return done(g);
 }
 
-/** This folder (F4): what working here needs, a check for each step done. */
+/**
+ * This folder (F4): its first panel, every step working here needs, done, then the ways to start, in the page's own
+ * words (folder.py's checklist and its Ready line), with example names; the keys bar under it.
+ */
 export function folder(): Crop {
-  const g = new Grid(60, 11);
-  g.box(0, 0, 60, 11, { title: 'This folder', right: 'F4 · ~/my-api' });
-  const steps: [string, string, string][] = [
-    ['✓', 'g', 'Docker running'],
-    ['✓', 'g', "the folder's workspace: my-api"],
-    ['✓', 'g', 'its software: pip install -e .[test]'],
-    ['✓', 'g', 'a model: your-model, in the main slot'],
-    ['✓', 'g', 'the gateway'],
+  const W = 66;
+  const g = new Grid(W, 14);
+  g.box(0, 0, W, 12, { title: 'Get ready to work here' });
+  row(g, 2, 1, [['Folder: ~/my-api', '']]);
+  const steps: [string, string][] = [
+    ['Docker', 'running'],
+    ['This folder', 'ready: it can be a workspace'],
+    ['Its workspace', 'running: my-api, its container up'],
+    ['The sandbox image', 'built: clank-sandbox:5e1d0c8a2f47'],
+    ['Its software', 'installed: pip install -e .[test]'],
+    ['A model', 'ready: your-model in the main slot'],
+    ['The gateway', 'running on port 18210'],
   ];
-  steps.forEach(([m, k, t], i) => row(g, 2, 1 + i, [[m, k], [' ' + t, '']]));
-  row(g, 2, 7, [['Then work', 'wb']]);
-  row(g, 2, 8, [['a', 'key'], [' start the agent here  ', 'mu'], ['c', 'key'], [' VS Code  ', 'mu'], ['f', 'key'], [' build a flow', 'mu']]);
-  row(g, 2, 9, [['g', 'key'], [' does every step that is not done', 'mu']]);
+  steps.forEach(([name, said], i) => row(g, 2, 2 + i, [[` ${i + 1}  `, 'mu'], [pad(name, 19), ''], ['✓', 'g'], [' ' + said, '']]));
+  row(g, 2, 9, [['Ready:', 'wb'], ['  '], ['a', 'key'], [' start OpenCode here', 'mu']]);
+  row(g, 2, 10, [['        '], ['c', 'key'], [' open VS Code, OpenCode beside your files', 'mu']]);
+  row(g, 1, 13, [['g', 'key'], [' get everything ready  ', 'mu'], ['a', 'key'], [' OpenCode here  ', 'mu'], ['c', 'key'], [' in VS Code', 'mu']]);
   return done(g);
 }
 
