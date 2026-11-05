@@ -263,6 +263,15 @@ code.inline,
   white-space: nowrap;
 }
 
+/* On a phone a long command wraps inside its code rather than widening the page past the screen */
+@media (max-width: 640px) {
+  code.inline,
+  .prose code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
 kbd.key {
   display: inline-block;
   min-width: 1.6em;
