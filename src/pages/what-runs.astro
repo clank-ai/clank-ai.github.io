@@ -10,7 +10,7 @@ import { PAGES, repo } from '../config';
 
 const processes: [string, string, string, string][] = [
   ['The service', '`clank serve`: Python, from the uv tool Clank was installed as', '127.0.0.1:7720', 'Clank itself: the console, VS Code and the phone ask it everything. `clank status`'],
-  ['The gateway', 'Its own Python process, started by the service', '127.0.0.1:18210 (models), 127.0.0.1:18211 (the agent\'s internet proxy)', 'Every model request goes through it, counted and recorded; the agent\'s internet goes through its proxy. `clank gateway status`'],
+  ['The gateway', 'Its own Python process, started by the service', '127.0.0.1:18210 (models), 127.0.0.1:18211 (the agent\'s internet proxy); on Linux also `gateway.sock` and `proxy.sock` in `~/.cache/clank/<home id>`, which only you and the edge open', 'Every model request goes through it, counted and recorded; the agent\'s internet goes through its proxy. `clank gateway status`'],
   ['Model engines', 'llama.cpp or KVMem servers (in WSL on Windows; on Linux, on the computer itself), started by the service from a preset', '127.0.0.1, from 18200 (one port a slot)', 'Run the local models on your GPU. None runs until you load a model. `clank model status`'],
   ['The phone listener', 'Inside the service, only when you turn the phone page on', '127.0.0.1:7721', 'Serves the iPhone app; Tailscale publishes it on your tailnet only. `clank remote status`'],
   ['OpenCode', 'In each workspace\'s container, started when you work there', 'Inside the container only', 'The coding agent. It reaches nothing but Clank\'s gateway and, by your allowance, the proxy.'],
@@ -29,7 +29,10 @@ const files: [string, string][] = [
   ['`~/.clank/secrets/`', 'API keys (OpenRouter, Notion), in your user profile, which Windows keeps to your account and your PC\'s administrators.'],
   ['`~/.clank/logs/`', 'The service\'s and the gateway\'s logs; every model request; every internet exchange of the agent (`network/`); every exchange with your phone (`phone/`); `update.log`.'],
   ['`~/.clank/vscode/`', 'Clank\'s own VS Code profile (its settings and extensions), apart from yours.'],
-  ['`~/.clank/artifacts/`, `library/`', 'Pages of results the agent made; Clank\'s library of model and engine facts.'],
+  ['`~/.clank/library/`, `artifacts/`', 'Made for what you install later (skills, tool servers, shared presets) and for files made for you; the agent\'s own pages of results are kept with each project (next).'],
+  ['`.clank/` in a project\'s folder', 'What Clank and the agent keep with the project: pages of results (`artifacts/`), long jobs and their logs (`jobs/`), boards\' history (`boards/`), the notes a flow\'s boxes hand on (`handoff/`), marked-up figures, a LaTeX change\'s PDF, and the files sent to your phone (`outbox/`).'],
+  ['`~/.cache/clank/<home id>/` (Linux)', 'The gateway\'s and the proxy\'s sockets, `gateway.sock` and `proxy.sock`, yours alone: how the agent\'s container reaches them through the edge on Docker Engine. `clank gateway status` names the folder.'],
+  ['`~/.clank/` in WSL (Windows)', 'With a model on your GPU: the model files Clank downloads (10 to 15 GB) and any engine it installs, in the Ubuntu distribution that runs them (`clank host add`); a file or an engine you adopted stays where it was.'],
 ];
 
 const leaves: [string, string][] = [
@@ -115,7 +118,7 @@ function cell(text: string): string {
 
     <section aria-labelledby="processes">
       <h2 id="processes">Processes and ports</h2>
-      <p class="lead2">Every port listens on <code>127.0.0.1</code>: nothing of Clank's answers from your network.</p>
+      <p class="lead2">Every port listens on <code>127.0.0.1</code>, and on Linux the gateway's two sockets open only to you and the edge: nothing of Clank's answers from your network.</p>
       <div class="table">
         <table>
           <thead><tr>{HEADS.map((head) => <th>{head}</th>)}</tr></thead>
@@ -135,7 +138,7 @@ function cell(text: string): string {
 
     <section aria-labelledby="files">
       <h2 id="files">Files on your PC</h2>
-      <p class="lead2">Everything Clank keeps is in one folder, <code>~/.clank</code>. Remove it and Clank forgets everything.</p>
+      <p class="lead2">Clank keeps its own things in one folder, <code>~/.clank</code>: remove it and Clank forgets everything. What it keeps with a project is in that project's folder, and the last two rows are where else it writes.</p>
       <dl class="pairs">
         {files.map(([term, text]) => (<div><dt set:html={cell(term)} /><dd set:html={cell(text)} /></div>))}
       </dl>
