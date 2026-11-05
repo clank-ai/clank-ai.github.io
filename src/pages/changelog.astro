@@ -6,7 +6,12 @@
 import Base from '../layouts/Base.astro';
 import PageHeader from '../components/PageHeader.astro';
 import { Content } from '../content/changelog.md';
-import { PAGES, repo } from '../config';
+import { PAGES, RELEASE, repo } from '../config';
+
+/** Unreleased is named only while the main branch holds work the latest release does not (RELEASE.pending). */
+const lead =
+  'Every version of Clank, newest first. The one-line installer installs the latest release' +
+  (RELEASE.pending ? '; what is listed under Unreleased is on the main branch and comes with the next release.' : '.');
 ---
 
 <Base
@@ -18,7 +23,7 @@ import { PAGES, repo } from '../config';
     crumb="Changelog"
     eyebrow="Changelog"
     title="What changed, version by version."
-    lead="Every version of Clank, newest first. The one-line installer installs the latest release; what is listed under Unreleased is on the main branch and comes with the next release."
+    lead={lead}
   />
   <article class="container prose">
     <Content />
